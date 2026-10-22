@@ -4,7 +4,8 @@ import { E2E_DATABASE_URL, E2E_REDIS_URL } from './e2e-env';
 process.env.DATABASE_URL = E2E_DATABASE_URL;
 process.env.REDIS_URL = E2E_REDIS_URL;
 
-// Defaults for everything else; CI can override any of these.
+// Defaults for everything else; CI (or a shell) can override any of these with a non-empty value.
+// Empty values count as unset so a local .env with blank placeholders cannot break the e2e suite.
 const defaults: Record<string, string> = {
   NODE_ENV: 'test',
   JWT_ACCESS_SECRET: 'test-access-secret-test-access-secret',
@@ -25,5 +26,5 @@ const defaults: Record<string, string> = {
 };
 
 for (const [key, value] of Object.entries(defaults)) {
-  process.env[key] ??= value;
+  if (!process.env[key]) process.env[key] = value;
 }

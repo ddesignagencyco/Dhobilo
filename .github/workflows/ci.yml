@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+      - 'phase-*'
+  pull_request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_ENV: test
+  DATABASE_URL: postgresql://dhoblio:dhoblio@localhost:5432/dhoblio?schema=public
+  E2E_DATABASE_URL: postgresql://dhoblio:dhoblio@localhost:5432/dhoblio_test?schema=public
+  REDIS_URL: redis://localhost:6379
+  E2E_REDIS_URL: redis://localhost:6379/1
+  JWT_ACCESS_SECRET: test-access-secret-test-access-secret
+  JWT_REFRESH_SECRET: test-refresh-secret-test-refresh-secret
+  ENC_KEY_BASE64: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
+  HMAC_KEY_BASE64: CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=
+  OTP_BYPASS: 'true'
+
+jobs:
+  verify:
+    name: Lint, typecheck, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dhoblio
+          POSTGRES_PASSWORD: dhoblio
+          POSTGRES_DB: dhoblio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dhoblio"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client and validate schema
+        run: |
+          npm run db:generate
+          npx prisma validate --schema apps/api/prisma/schema.prisma
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build API
+        run: npm run api:build
+
+      - name: E2E tests
+        run: npm run test:e2e -w @dhoblio/api
+
+      - name: Export OpenAPI document
+        run: npm run openapi -w @dhoblio/api
+
+      - name: Upload OpenAPI document
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: apps/api/openapi.json
+          if-no-files-found: error
