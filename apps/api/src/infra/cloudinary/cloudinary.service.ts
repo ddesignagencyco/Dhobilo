@@ -104,9 +104,7 @@ export class CloudinaryService {
     expectedFolderPrefix: string,
     type: 'upload' | 'authenticated' = 'upload',
   ): Promise<{ publicId: string; url: string; bytes: number; format: string }> {
-    if (!publicId.startsWith(`${expectedFolderPrefix}/`)) {
-      throw new AppException('MEDIA_INVALID_ASSET', 'Asset is outside the expected folder', HttpStatus.BAD_REQUEST);
-    }
+    assertPublicIdInFolder(publicId, expectedFolderPrefix);
     const auth = Buffer.from(`${this.apiKey}:${this.apiSecret}`).toString('base64');
     const url = `https://api.cloudinary.com/v1_1/${this.cloudName}/resources/image/${type}/${encodeURI(publicId)}`;
     const res = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
@@ -117,6 +115,33 @@ export class CloudinaryService {
       throw new AppException('MEDIA_VERIFY_FAILED', 'Could not verify uploaded asset', HttpStatus.BAD_GATEWAY);
     }
     const body = (await res.json()) as { public_id: string; secure_url: string; bytes: number; format: string };
+    // Trust what Cloudinary says it resolved, not what we asked for: it must still be inside the caller's folder.
+    assertPublicIdInFolder(body.public_id, expectedFolderPrefix);
+    assertAssetAllowed(body);
     return { publicId: body.public_id, url: body.secure_url, bytes: body.bytes, format: body.format };
+  }
+}
+
+/**
+ * The account may be shared with other apps, so a public id must be a plain path under our folder:
+ * no `..`, empty segments, backslashes or control characters that could resolve to someone else's asset.
+ */
+export function assertPublicIdInFolder(publicId: string, folderPrefix: string): void {
+  const invalid = () => new AppException('MEDIA_INVALID_ASSET', 'Asset is outside the expected folder', HttpStatus.BAD_REQUEST);
+  if (!publicId.startsWith(`${folderPrefix}/`)) throw invalid();
+  const rest = publicId.slice(folderPrefix.length + 1);
+  if (!rest || /[\\\u0000-\u001f]/.test(rest) || rest.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')) {
+    throw invalid();
+  }
+}
+
+/** Cloudinary presets can't cap file size, so the API enforces the limits (TRD §15) after upload. */
+export function assertAssetAllowed(asset: { bytes: number; format: string }): void {
+  const format = asset.format.toLowerCase() === 'jpeg' ? 'jpg' : asset.format.toLowerCase();
+  if (!(MEDIA_LIMITS.formats as readonly string[]).includes(format)) {
+    throw new AppException('MEDIA_INVALID_ASSET', 'Only JPG, PNG or WebP images are accepted', HttpStatus.BAD_REQUEST);
+  }
+  if (asset.bytes > MEDIA_LIMITS.maxBytes) {
+    throw new AppException('MEDIA_INVALID_ASSET', 'The file is larger than 5 MB', HttpStatus.BAD_REQUEST);
   }
 }

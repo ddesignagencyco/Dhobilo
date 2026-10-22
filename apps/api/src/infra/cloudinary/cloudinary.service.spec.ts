@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
-import { CloudinaryService, signParams, uploadFolder } from './cloudinary.service';
+import { CloudinaryService, assertAssetAllowed, assertPublicIdInFolder, signParams, uploadFolder } from './cloudinary.service';
 
 function service(values: Record<string, string>) {
   return new CloudinaryService({ get: (k: string) => values[k] } as unknown as ConfigService<any, true>);
@@ -20,6 +20,41 @@ describe('uploadFolder', () => {
   it('follows the TRD folder layout', () => {
     expect(uploadFolder('staging', 'vendor-docs', 'v1')).toBe('dhoblio/staging/vendors/v1/docs');
     expect(uploadFolder('staging', 'proof', 'o1')).toBe('dhoblio/staging/proof/o1');
+  });
+});
+
+describe('assertPublicIdInFolder (shared Cloudinary account safety)', () => {
+  const folder = 'dhoblio/production/vendors/u1/docs';
+
+  it('accepts plain paths under the folder', () => {
+    expect(() => assertPublicIdInFolder(`${folder}/front`, folder)).not.toThrow();
+    expect(() => assertPublicIdInFolder(`${folder}/sub/front_abc123`, folder)).not.toThrow();
+  });
+
+  it.each([
+    ['another app', 'caresaath/secret'],
+    ['a sibling folder', 'dhoblio/production/vendors/u2/docs/front'],
+    ['a prefix lookalike', 'dhoblio/production/vendors/u1/docs-evil/front'],
+    ['the folder itself', folder],
+    ['dot-dot traversal', `${folder}/../../../../../caresaath/secret`],
+    ['a dot segment', `${folder}/./front`],
+    ['empty segments', `${folder}//front`],
+    ['a trailing slash', `${folder}/front/`],
+    ['a backslash', `${folder}/..\\caresaath`],
+    ['a control character', `${folder}/fr\u0000ont`],
+  ])('rejects %s', (_label, id) => {
+    expect(() => assertPublicIdInFolder(id, folder)).toThrow(/outside the expected folder/);
+  });
+});
+
+describe('assertAssetAllowed', () => {
+  it('accepts jpg/jpeg/png/webp up to 5 MB', () => {
+    for (const format of ['jpg', 'JPEG', 'png', 'webp']) expect(() => assertAssetAllowed({ format, bytes: 5 * 1024 * 1024 })).not.toThrow();
+  });
+
+  it('rejects other formats and oversized files', () => {
+    for (const format of ['pdf', 'gif', 'svg', 'exe']) expect(() => assertAssetAllowed({ format, bytes: 10 })).toThrow(/JPG, PNG or WebP/);
+    expect(() => assertAssetAllowed({ format: 'jpg', bytes: 5 * 1024 * 1024 + 1 })).toThrow(/larger than 5 MB/);
   });
 });
 
