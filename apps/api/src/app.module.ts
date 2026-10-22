@@ -16,11 +16,17 @@ import { bullBoardImports } from './infra/queue/bull-board.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { CryptoModule } from './common/crypto/crypto.module';
+import { TimeModule } from './common/time/clock';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { DiscoveryModule } from './modules/discovery/discovery.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { MediaModule } from './modules/media/media.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { SlotsModule } from './modules/slots/slots.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -43,6 +49,7 @@ import { UsersModule } from './modules/users/users.module';
     ...bullBoardImports(),
     MailModule,
     CloudinaryModule,
+    TimeModule,
     CryptoModule,
     NotificationsModule,
     AuditModule,
@@ -55,6 +62,11 @@ import { UsersModule } from './modules/users/users.module';
     VendorsModule,
     CatalogModule,
     AdminModule,
+    DiscoveryModule,
+    SlotsModule,
+    CartModule,
+    FinanceModule,
+    OrdersModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

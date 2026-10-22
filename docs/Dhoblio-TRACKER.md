@@ -157,16 +157,16 @@
 **Refs:** FR-C3–C7 · TRD §8, §11
 
 ### BE
-- [ ] **BE-3.1** Vendor discovery endpoint: city + geo (bbox + Haversine, within each vendor's radius), filter by service type, min rating, max price; sort by distance/rating/price; cursor pagination (FR-C3)
-- [ ] **BE-3.2** Discovery caching in Redis with invalidation on vendor/catalog changes; `EXPLAIN` the hot query and confirm index use
-- [ ] **BE-3.3** Vendor detail + public catalog endpoints (FR-C4)
-- [ ] **BE-3.4** Cart: one cart per customer per vendor, add/update/remove/clear, validation against active items (FR-C5)
-- [ ] **BE-3.5** `POST /cart/estimate`: server-side totals (subtotal, delivery fee, discount hook, total, commission preview internal) — target < 200 ms (FR-C5)
-- [ ] **BE-3.6** Slot service: generate pickup/delivery windows from vendor hours + turnaround + capacity; delivery slot must be ≥ pickup + turnaround (FR-C6, FR-C7)
-- [ ] **BE-3.7** `POST /orders` with required `Idempotency-Key`: re-validate prices/slots/vendor availability, snapshot items + address + commission rate, create order `PLACED` + `OrderStatusHistory` in one transaction; generate `orderNo`
-- [ ] **BE-3.8** Commission resolution service (VENDOR > CATEGORY > GLOBAL) used at placement (FR-A3 groundwork)
-- [ ] **BE-3.9** Order read APIs for customer: list (cursor) + detail
-- [ ] **BE-3.10** Tests: idempotent retry creates one order; price changed after cart → clear error; out-of-radius/closed vendor rejected; slot rules
+- [x] **BE-3.1** Vendor discovery endpoint: city + geo (bbox + Haversine, within each vendor's radius), filter by service type, min rating, max price; sort by distance/rating/price; cursor pagination (FR-C3)
+- [x] **BE-3.2** Discovery caching in Redis with invalidation on vendor/catalog changes; `EXPLAIN` the hot query and confirm index use
+- [x] **BE-3.3** Vendor detail + public catalog endpoints (FR-C4)
+- [x] **BE-3.4** Cart: one cart per customer per vendor, add/update/remove/clear, validation against active items (FR-C5)
+- [x] **BE-3.5** `POST /cart/estimate`: server-side totals (subtotal, delivery fee, discount hook, total, commission preview internal) — target < 200 ms (FR-C5)
+- [x] **BE-3.6** Slot service: generate pickup/delivery windows from vendor hours + turnaround + capacity; delivery slot must be ≥ pickup + turnaround (FR-C6, FR-C7)
+- [x] **BE-3.7** `POST /orders` with required `Idempotency-Key`: re-validate prices/slots/vendor availability, snapshot items + address + commission rate, create order `PLACED` + `OrderStatusHistory` in one transaction; generate `orderNo`
+- [x] **BE-3.8** Commission resolution service (VENDOR > CATEGORY > GLOBAL) used at placement (FR-A3 groundwork)
+- [x] **BE-3.9** Order read APIs for customer: list (cursor) + detail
+- [x] **BE-3.10** Tests: idempotent retry creates one order; price changed after cart → clear error; out-of-radius/closed vendor rejected; slot rules
 
 ### FE
 - [ ] **FE-3.1** Home/discovery: nearest-first list with skeleton loading, filter sheet (service type, rating, price), sort, infinite scroll (FR-C3)

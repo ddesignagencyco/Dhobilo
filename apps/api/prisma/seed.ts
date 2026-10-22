@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 // Placeholders from ERD §8; replace with the real pilot cities.
 const CITIES = [
-  { name: 'Lahore', nameUr: 'لاہور' },
-  { name: 'Karachi', nameUr: 'کراچی' },
-  { name: 'Islamabad', nameUr: 'اسلام آباد' },
+  { name: 'Lahore', nameUr: 'لاہور', code: 'LHR', deliveryFee: 150 },
+  { name: 'Karachi', nameUr: 'کراچی', code: 'KHI', deliveryFee: 150 },
+  { name: 'Islamabad', nameUr: 'اسلام آباد', code: 'ISB', deliveryFee: 150 },
 ];
 
 const CATEGORIES = [
@@ -110,7 +110,8 @@ async function seedDemoVendors() {
 
     await prisma.vendorHours.deleteMany({ where: { vendorId: vendor.id } });
     await prisma.vendorHours.createMany({
-      data: [1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({ vendorId: vendor.id, dayOfWeek, opensAt: 9 * 60, closesAt: 21 * 60 })),
+      // Open around the clock so the demo always shows up in discovery, whatever time you try it.
+      data: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({ vendorId: vendor.id, dayOfWeek, opensAt: 0, closesAt: 1440 })),
     });
     for (const [itemName, itemNameUr, category, serviceType, price, turnaroundHours] of DEMO_ITEMS) {
       const categoryId = categories.get(category);
@@ -139,7 +140,9 @@ function adminCredentials() {
 
 async function main() {
   for (const c of CITIES) {
-    await prisma.city.upsert({ where: { name: c.name }, update: { nameUr: c.nameUr }, create: c });
+    await prisma.city.upsert({ where: { name: c.name }, update: { nameUr: c.nameUr, code: c.code }, create: c });
+    // Starting fee only: never overwrites a fee an admin already changed.
+    await prisma.city.updateMany({ where: { name: c.name, deliveryFee: 0 }, data: { deliveryFee: c.deliveryFee } });
   }
 
   for (const c of CATEGORIES) {

@@ -1,7 +1,9 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
+import { DomainEvent, VendorChangedEvent } from '../../common/events/domain-events';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CreateServiceItemDto, ImportItemDto, UpdateServiceItemDto } from './dto/catalog.dto';
 
@@ -26,7 +28,15 @@ export interface ImportRowError {
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventEmitter2,
+  ) {}
+
+  /** Lets discovery drop cached search pages (prices, service types and availability of items changed). */
+  private changed(vendorId: string) {
+    return this.events.emitAsync(DomainEvent.VENDOR_CHANGED, { vendorId } satisfies VendorChangedEvent);
+  }
 
   categories() {
     return this.prisma.serviceCategory.findMany({ select: { id: true, name: true, nameUr: true }, orderBy: { id: 'asc' } });
@@ -51,20 +61,21 @@ export class CatalogService {
     }
     const data = this.itemData(dto);
     // A previously deleted item with the same name+service is brought back, since that pair is unique per vendor.
-    if (existing) {
-      return this.prisma.serviceItem.update({
-        where: { id: existing.id },
-        data: { ...data, deletedAt: null, isActive: dto.isActive ?? true },
-        select: itemSelect,
-      });
-    }
-    return this.prisma.serviceItem.create({ data: { ...data, vendorId, isActive: dto.isActive ?? true }, select: itemSelect });
+    const saved = existing
+      ? await this.prisma.serviceItem.update({
+          where: { id: existing.id },
+          data: { ...data, deletedAt: null, isActive: dto.isActive ?? true },
+          select: itemSelect,
+        })
+      : await this.prisma.serviceItem.create({ data: { ...data, vendorId, isActive: dto.isActive ?? true }, select: itemSelect });
+    await this.changed(vendorId);
+    return saved;
   }
 
   async updateItem(vendorId: string, id: string, dto: UpdateServiceItemDto) {
     await this.findOwned(vendorId, id);
     if (dto.categoryId !== undefined) await this.assertCategory(dto.categoryId);
-    return this.prisma.serviceItem.update({
+    const updated = await this.prisma.serviceItem.update({
       where: { id },
       data: {
         categoryId: dto.categoryId,
@@ -77,12 +88,15 @@ export class CatalogService {
       },
       select: itemSelect,
     });
+    await this.changed(vendorId);
+    return updated;
   }
 
   /** Soft delete: order history keeps its snapshot, and the name can be reused later. */
   async deleteItem(vendorId: string, id: string): Promise<void> {
     await this.findOwned(vendorId, id);
     await this.prisma.serviceItem.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
+    await this.changed(vendorId);
   }
 
   /**
@@ -112,7 +126,7 @@ export class CatalogService {
       this.importFailed([...errorsByRow].map(([row, errors]) => ({ row, errors })).sort((a, b) => a.row - b.row));
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       let created = 0;
       let updated = 0;
       for (const { row, categoryId } of resolved) {
@@ -138,6 +152,8 @@ export class CatalogService {
       }
       return { created, updated, total: resolved.length };
     });
+    await this.changed(vendorId);
+    return result;
   }
 
   importFailed(errors: ImportRowError[]): never {

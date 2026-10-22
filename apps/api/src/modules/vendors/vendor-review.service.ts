@@ -1,9 +1,11 @@
 import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Availability, Prisma, Role, VendorStatus } from '@prisma/client';
 import type { AuthUser } from '../../common/auth/auth-user';
 import { FieldCrypto } from '../../common/crypto/field-crypto';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
+import { DomainEvent, VendorChangedEvent } from '../../common/events/domain-events';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, afterCursor, sliceWithCursor } from '../../common/pagination/cursor';
 import { CloudinaryService } from '../../infra/cloudinary/cloudinary.service';
 import { PrismaService } from '../../infra/prisma/prisma.service';
@@ -53,6 +55,7 @@ export class VendorReviewService {
     private readonly crypto: FieldCrypto,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly events: EventEmitter2,
   ) {}
 
   /** Review queue: oldest first, so applicants are served in the order they applied. */
@@ -212,6 +215,7 @@ export class VendorReviewService {
       return current;
     });
 
+    await this.events.emitAsync(DomainEvent.VENDOR_CHANGED, { vendorId: id } satisfies VendorChangedEvent);
     await this.notifications.notifyVendorDecision(before.owner, before.businessName, t.decision, t.reason, ctx.requestId);
 
     return this.prisma.vendor.findUniqueOrThrow({

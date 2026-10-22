@@ -10,7 +10,9 @@ Backend only; the frontend (`apps/web`) has not been started.
 
 - Phase 0 (Foundation): done.
 - Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
-- Phase 2 (Vendor onboarding, approval, catalog): backend done. Signed-download links for vendor documents follow Cloudinary's documented scheme but have not been tried against a live Cloudinary account yet.
+- Phase 2 (Vendor onboarding, approval, catalog): backend done. Uploads, verification and the short-lived signed document links were checked end to end against a live Cloudinary account (private files, not publicly reachable).
+
+- Phase 3 (Discovery, cart, order placement): backend done. Cash on delivery only until Phase 6; promo codes are refused until Phase 7.
 
 ### API so far (`/api/v1`)
 
@@ -23,12 +25,18 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Vendor | `POST /vendor/register`, `GET/PATCH /vendor/profile`, `GET/PUT /vendor/hours`, `PATCH /vendor/availability`, `GET/POST /vendor/staff`, `DELETE /vendor/staff/:userId` |
 | Catalog | `GET /service-categories` (public), `GET/POST /vendor/catalog/items`, `PATCH/DELETE /vendor/catalog/items/:id`, `POST /vendor/catalog/import` (JSON or CSV) |
 | Admin | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
+| Discovery (public) | `GET /vendors` (geo search: `lat`, `lng`, `q`, `serviceType`, `minRating`, `maxPrice`, `sort=distance, rating or price`, cursor), `GET /vendors/:id`, `GET /vendors/:id/catalog`, `GET /vendors/:id/slots` |
+| Cart | `GET/PUT/DELETE /cart`, `POST /cart/estimate` (customers) |
+| Orders | `POST /orders` (needs an `Idempotency-Key` header), `GET /orders`, `GET /orders/:id` (customers) |
+| Admin | `PATCH /admin/cities/:id` (delivery fee, active flag, order code) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
 Every route needs a bearer token unless marked `@Public()`. Roles are enforced with `@Roles()`, resource ownership with `@OwnedBy()`, and vendor-panel routes by vendor status with `@RequireVendorStatus()`.
 Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYPASS=true` (dev only; the app refuses to boot with it in production).
 
 **Demo data** (development only, created by `npx prisma db seed`): vendor owners `+923000000011`, `+923000000012`, `+923000000013` (approved, with hours and a catalog in Lahore, Karachi and Islamabad) and `+923000000019` (pending, for the admin review queue). Sign in with the bypass code. The admin is `admin@dhoblio.local`.
+
+**How ordering works:** a vendor shows up in discovery only when it is approved, set to Open, inside today's opening hours (in the city's timezone), has at least one active item and its own service radius reaches the customer. Pickup and delivery are hourly windows inside the vendor's hours (default capacity 10 orders per window, 1 hour minimum notice, up to 7 days ahead); delivery cannot be earlier than pickup end plus the longest item turnaround. To place an order the client sends the total it was shown (`expectedTotal`); if prices moved, the API answers `409 PRICE_CHANGED` with the new total instead of charging it. Retrying with the same `Idempotency-Key` returns the original order. Commission (vendor rule, else category rule, else global) is fixed on the order at placement and never shown to customers. Order numbers look like `DHB-LHR-000123`.
 
 **Cloudinary setup** (needed for vendor registration): set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `CLOUDINARY_UPLOAD_PRESET` in `.env`. Vendor documents are uploaded as `authenticated` assets, so they never have a public URL. The API itself enforces JPG/PNG/WebP and 5 MB when it verifies an upload (presets cannot cap file size).
 

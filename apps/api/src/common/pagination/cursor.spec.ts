@@ -1,4 +1,4 @@
-import { afterCursor, decodeCursor, encodeCursor, sliceWithCursor } from './cursor';
+import { afterCursor, beforeCursor, decodeCursor, encodeCursor, sliceWithCursor } from './cursor';
 
 const row = (n: number) => ({ id: `id-${n}`, createdAt: new Date(Date.UTC(2026, 0, n)) });
 
@@ -18,6 +18,12 @@ describe('cursor pagination', () => {
     expect(afterCursor(undefined)).toEqual({});
     const r = row(2);
     expect(afterCursor(encodeCursor(r))).toEqual({ OR: [{ createdAt: { gt: r.createdAt } }, { createdAt: r.createdAt, id: { gt: r.id } }] });
+  });
+
+  it('builds the mirror-image filter for newest-first lists', () => {
+    expect(beforeCursor(undefined)).toEqual({});
+    const r = row(2);
+    expect(beforeCursor(encodeCursor(r))).toEqual({ OR: [{ createdAt: { lt: r.createdAt } }, { createdAt: r.createdAt, id: { lt: r.id } }] });
   });
 
   it('slices the look-ahead row and returns a next cursor only when more exist', () => {

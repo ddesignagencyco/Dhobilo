@@ -1,5 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Availability, Prisma } from '@prisma/client';
+import { DomainEvent, VendorChangedEvent } from '../../common/events/domain-events';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
 import { PrismaService } from '../../infra/prisma/prisma.service';
@@ -18,6 +20,7 @@ const profileSelect = {
   availability: true,
   serviceRadiusKm: true,
   respondWithinMin: true,
+  slotCapacity: true,
   ratingAvg: true,
   ratingCount: true,
   approvedAt: true,
@@ -42,7 +45,10 @@ export function assertValidHours(hours: HoursEntryDto[]): void {
 
 @Injectable()
 export class VendorProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly events: EventEmitter2,
+  ) {}
 
   /** Own profile with status, rejection reason and which documents were verified (no document URLs, no CNIC). */
   async getProfile(vendorId: string) {
@@ -51,17 +57,20 @@ export class VendorProfileService {
     return vendor;
   }
 
-  updateProfile(vendorId: string, dto: UpdateVendorProfileDto) {
-    return this.prisma.vendor.update({
+  async updateProfile(vendorId: string, dto: UpdateVendorProfileDto) {
+    const updated = await this.prisma.vendor.update({
       where: { id: vendorId },
       data: {
         businessName: dto.businessName,
         description: dto.description,
         serviceRadiusKm: dto.serviceRadiusKm,
         respondWithinMin: dto.respondWithinMin,
+        slotCapacity: dto.slotCapacity,
       },
       select: profileSelect,
     });
+    await this.changed(vendorId);
+    return updated;
   }
 
   getHours(vendorId: string) {
@@ -81,6 +90,7 @@ export class VendorProfileService {
         data: hours.map((h) => ({ vendorId, dayOfWeek: h.dayOfWeek, opensAt: h.opensAt, closesAt: h.closesAt })),
       }),
     ]);
+    await this.changed(vendorId);
     return this.getHours(vendorId);
   }
 
@@ -90,6 +100,12 @@ export class VendorProfileService {
       data: { availability },
       select: { id: true, availability: true },
     });
+    await this.changed(vendorId);
     return { id, availability: current };
+  }
+
+  /** Lets discovery drop cached search pages that may now be wrong. */
+  private changed(vendorId: string) {
+    return this.events.emitAsync(DomainEvent.VENDOR_CHANGED, { vendorId } satisfies VendorChangedEvent);
   }
 }

@@ -32,6 +32,13 @@ export function afterCursor(cursor: string | undefined) {
   return { OR: [{ createdAt: { gt: createdAt } }, { createdAt, id: { gt: id } }] };
 }
 
+/** Same as afterCursor but for newest-first lists (createdAt desc, id desc): rows strictly older than the cursor. */
+export function beforeCursor(cursor: string | undefined) {
+  if (!cursor) return {};
+  const { createdAt, id } = decodeCursor(cursor);
+  return { OR: [{ createdAt: { lt: createdAt } }, { createdAt, id: { lt: id } }] };
+}
+
 /** Trims the extra look-ahead row fetched with `take: limit + 1` and derives the next cursor. */
 export function sliceWithCursor<T extends CursorPosition>(rows: T[], limit: number): { items: T[]; nextCursor: string | null } {
   const items = rows.slice(0, limit);

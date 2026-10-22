@@ -274,9 +274,9 @@ describe('Vendor registration and panel (e2e)', () => {
       const ok = await http
         .patch('/api/v1/vendor/profile')
         .set(owner.auth)
-        .send({ description: ' Fast and clean ', serviceRadiusKm: 7.5, respondWithinMin: 10 })
+        .send({ description: ' Fast and clean ', serviceRadiusKm: 7.5, respondWithinMin: 10, slotCapacity: 4 })
         .expect(200);
-      expect(ok.body.data).toMatchObject({ description: 'Fast and clean', respondWithinMin: 10 });
+      expect(ok.body.data).toMatchObject({ description: 'Fast and clean', respondWithinMin: 10, slotCapacity: 4 });
       expect(Number(ok.body.data.serviceRadiusKm)).toBe(7.5);
 
       for (const bad of [
@@ -285,6 +285,9 @@ describe('Vendor registration and panel (e2e)', () => {
         { serviceRadiusKm: 1.234 },
         { respondWithinMin: 4 },
         { respondWithinMin: 61 },
+        { slotCapacity: 0 },
+        { slotCapacity: 101 },
+        { slotCapacity: 2.5 },
         { status: 'APPROVED' },
         { ratingAvg: 5 },
         { lat: 1 },

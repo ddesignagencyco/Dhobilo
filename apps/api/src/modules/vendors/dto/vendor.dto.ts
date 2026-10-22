@@ -109,6 +109,13 @@ export class UpdateVendorProfileDto {
   @Min(5)
   @Max(60)
   respondWithinMin?: number;
+
+  /** Max orders per hourly pickup (and per delivery) slot. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  slotCapacity?: number;
 }
 
 export class HoursEntryDto {
