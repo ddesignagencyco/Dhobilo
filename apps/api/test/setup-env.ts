@@ -8,6 +8,8 @@ const defaults: Record<string, string> = {
   ENC_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
   HMAC_KEY_BASE64: Buffer.alloc(32, 9).toString('base64'),
   OTP_BYPASS: 'true',
+  // Lets tests choose the client IP via X-Forwarded-For (per-IP rate limits).
+  TRUST_PROXY: '1',
   SMTP_HOST: 'localhost',
   SMTP_PORT: '1025',
 };

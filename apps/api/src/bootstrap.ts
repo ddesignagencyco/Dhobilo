@@ -2,6 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import type { Express } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { requestId } from './common/middleware/request-id.middleware';
@@ -13,10 +15,16 @@ export const GLOBAL_PREFIX = 'api/v1';
 export function configureApp(app: INestApplication): void {
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 
+  const trustProxy = config.get('TRUST_PROXY', { infer: true });
+  if (trustProxy > 0) {
+    (app.getHttpAdapter().getInstance() as Express).set('trust proxy', trustProxy);
+  }
+
   app.use(requestId);
   app.useLogger(app.get(Logger));
   app.use(helmet());
   app.use(compression());
+  app.use(cookieParser());
 
   const rawOrigins = config.get('CORS_ORIGINS', { infer: true }) || config.get('APP_URL', { infer: true });
   const origins = String(rawOrigins)

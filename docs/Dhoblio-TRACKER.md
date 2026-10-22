@@ -86,17 +86,17 @@
 **Refs:** FR-C1, FR-C2 · TRD §6
 
 ### BE
-- [ ] **BE-1.1** `POST /auth/otp/request`: E.164 normalisation, Redis rate limits (phone + IP), hashed OTP with TTL, enqueue SMS job (FR-C1)
-- [ ] **BE-1.2** `SmsProvider` interface + `MockSmsProvider` (logs OTP) + first real PK gateway adapter
-- [ ] **BE-1.3** `POST /auth/otp/verify`: attempt limit, user upsert, role-aware first login, `phoneVerifiedAt` (FR-C1)
-- [ ] **BE-1.4** JWT access (15 m) + rotating refresh (hashed in `Session`, reuse detection), `/auth/refresh`, `/auth/logout`
-- [ ] **BE-1.5** Admin email + password login (argon2id), lockout after repeated failures
-- [ ] **BE-1.6** RBAC: `JwtAuthGuard`, `RolesGuard`, `OwnershipGuard`, `@CurrentUser()` decorator; status checks (suspended users blocked)
-- [ ] **BE-1.7** `GET/PATCH /me` (name, locale), device-token register/remove
-- [ ] **BE-1.8** Addresses CRUD with lat/lng, city resolution, default address rule, soft delete (FR-C2)
-- [ ] **BE-1.9** `GET /cities` (active only)
-- [ ] **BE-1.10** Referral code generation on first login (used in Phase 7)
-- [ ] **BE-1.11** Tests: OTP rate-limit, expiry, brute-force, refresh reuse, RBAC matrix for every role
+- [x] **BE-1.1** `POST /auth/otp/request`: E.164 normalisation, Redis rate limits (phone + IP), hashed OTP with TTL, enqueue SMS job (FR-C1)
+- [ ] **BE-1.2** `SmsProvider` interface + `MockSmsProvider` (logs OTP) + first real PK gateway adapter *(interface + mock done; real adapter waits on the SMS provider decision, TRD §20 item 2)*
+- [x] **BE-1.3** `POST /auth/otp/verify`: attempt limit, user upsert, role-aware first login, `phoneVerifiedAt` (FR-C1)
+- [x] **BE-1.4** JWT access (15 m) + rotating refresh (hashed in `Session`, reuse detection), `/auth/refresh`, `/auth/logout`
+- [x] **BE-1.5** Admin email + password login (argon2id), lockout after repeated failures
+- [x] **BE-1.6** RBAC: `JwtAuthGuard`, `RolesGuard`, `OwnershipGuard`, `@CurrentUser()` decorator; status checks (suspended users blocked)
+- [x] **BE-1.7** `GET/PATCH /me` (name, locale), device-token register/remove
+- [x] **BE-1.8** Addresses CRUD with lat/lng, city resolution, default address rule, soft delete (FR-C2)
+- [x] **BE-1.9** `GET /cities` (active only)
+- [x] **BE-1.10** Referral code generation on first login (used in Phase 7)
+- [x] **BE-1.11** Tests: OTP rate-limit, expiry, brute-force, refresh reuse, RBAC matrix for every role
 
 ### FE
 - [ ] **FE-1.1** Phone entry + OTP screen: numeric keypad, 6-box input, resend countdown, auto-submit, Urdu/English copy (FR-C1)

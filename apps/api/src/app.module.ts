@@ -15,8 +15,12 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { bullBoardImports } from './infra/queue/bull-board.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { CitiesModule } from './modules/cities/cities.module';
 import { HealthModule } from './modules/health/health.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -35,6 +39,10 @@ import { HealthModule } from './modules/health/health.module';
     CloudinaryModule,
     AuditModule,
     HealthModule,
+    AuthModule,
+    UsersModule,
+    CitiesModule,
+    AddressesModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

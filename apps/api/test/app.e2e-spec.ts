@@ -3,10 +3,12 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp, setupSwagger } from '../src/bootstrap';
+import { Public } from '../src/common/decorators/public.decorator';
 import { Audit } from '../src/modules/audit/audit.decorator';
 import { PrismaService } from '../src/infra/prisma/prisma.service';
 import { AppException } from '../src/common/errors/app.exception';
 
+@Public()
 @Controller('e2e-probe')
 class ProbeController {
   @Get('boom')

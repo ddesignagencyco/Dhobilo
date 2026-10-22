@@ -6,7 +6,22 @@ Product and technical specs live in [docs/](docs/): [SRS](docs/Dhoblio-SRS.md), 
 
 ## Status
 
-Phase 0 (Foundation), backend only. The frontend (`apps/web`) has not been started.
+Backend only; the frontend (`apps/web`) has not been started.
+
+- Phase 0 (Foundation): done.
+- Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
+
+### API so far (`/api/v1`)
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/admin/login` |
+| Profile | `GET/PATCH /me`, `POST/DELETE /me/devices` |
+| Addresses | `GET/POST /me/addresses`, `PATCH/DELETE /me/addresses/:id` |
+| Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
+
+Every route needs a bearer token unless marked `@Public()`. Roles are enforced with `@Roles()`, resource ownership with `@OwnedBy()`.
+Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYPASS=true` (dev only; the app refuses to boot with it in production).
 
 | Done | Where |
 |---|---|
@@ -22,7 +37,7 @@ Phase 0 (Foundation), backend only. The frontend (`apps/web`) has not been start
 | Swagger UI at `/api/v1/docs`, OpenAPI JSON at `/api/v1/docs-json` | `src/bootstrap.ts` |
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 
-Next: Phase 1 (auth, users, addresses). See the [tracker](docs/Dhoblio-TRACKER.md).
+Next: Phase 2 (vendor onboarding, approval, catalog). See the [tracker](docs/Dhoblio-TRACKER.md).
 
 ## Stack
 

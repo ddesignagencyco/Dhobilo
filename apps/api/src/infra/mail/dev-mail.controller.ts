@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { Public } from '../../common/decorators/public.decorator';
 import { MailService } from './mail.service';
 
 class TestEmailDto {
@@ -14,6 +15,7 @@ class TestEmailDto {
 
 /** Dev-only (BE-0.7). Not registered when NODE_ENV=production; see MailModule. */
 @ApiExcludeController()
+@Public()
 @Controller('dev')
 export class DevMailController {
   constructor(private readonly mail: MailService) {}

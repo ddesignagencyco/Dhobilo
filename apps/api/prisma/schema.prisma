@@ -250,6 +250,8 @@ model OtpCode {
 model Session {
   id          String    @id @default(uuid()) @db.Uuid
   userId      String    @db.Uuid
+  // All rotations of one login share a family; reuse of a rotated token revokes the whole family (TRD §6.2).
+  familyId    String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   refreshHash String    @unique
   deviceInfo  String?
   ip          String?
@@ -260,6 +262,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([familyId])
 }
 
 model DeviceToken {

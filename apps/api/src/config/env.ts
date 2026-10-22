@@ -11,13 +11,18 @@ export const envSchema = z
     APP_URL: z.string().url().default('http://localhost:3000'),
     API_URL: z.string().url().default('http://localhost:4000'),
     CORS_ORIGINS: z.string().optional(),
+    /** Number of reverse-proxy hops to trust for client IP (rate limits, audit). 0 = trust none. */
+    TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().min(1),
 
     JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 chars'),
     JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 chars'),
-    JWT_ACCESS_TTL: z.string().default('15m'),
+    JWT_ACCESS_TTL: z
+      .string()
+      .regex(/^\d+[smhd]$/, 'JWT_ACCESS_TTL must look like 15m, 1h, 900s or 1d')
+      .default('15m'),
     JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
     OTP_BYPASS: bool.default(false),

@@ -2,8 +2,10 @@ import { Global, Inject, Injectable, Module, OnApplicationShutdown } from '@nest
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import type { Env } from '../../config/env';
+import { RateLimiter } from './rate-limiter.service';
+import { REDIS } from './redis.constants';
 
-export const REDIS = Symbol('REDIS');
+export { REDIS };
 
 @Injectable()
 class RedisShutdown implements OnApplicationShutdown {
@@ -25,7 +27,8 @@ class RedisShutdown implements OnApplicationShutdown {
         new Redis(config.get('REDIS_URL', { infer: true }), { maxRetriesPerRequest: 3, lazyConnect: false }),
     },
     RedisShutdown,
+    RateLimiter,
   ],
-  exports: [REDIS],
+  exports: [REDIS, RateLimiter],
 })
 export class RedisModule {}

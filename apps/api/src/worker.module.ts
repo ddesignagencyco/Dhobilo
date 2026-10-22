@@ -11,6 +11,7 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
 
 /**
  * Same codebase as the API, BullMQ processors only (TRD §3). No HTTP listener; module processors are
@@ -31,6 +32,7 @@ import { AuditModule } from './modules/audit/audit.module';
     MailModule,
     CloudinaryModule,
     AuditModule,
+    NotificationsWorkerModule,
   ],
 })
 export class WorkerModule {}
