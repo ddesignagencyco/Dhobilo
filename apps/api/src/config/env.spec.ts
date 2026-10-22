@@ -19,6 +19,14 @@ describe('validateEnv', () => {
     expect(env.BULL_BOARD_ENABLED).toBe(false);
   });
 
+  it('defaults the Cloudinary root folder and rejects unsafe values', () => {
+    expect(validateEnv(base).CLOUDINARY_FOLDER_ROOT).toBe('dhoblio');
+    expect(validateEnv({ ...base, CLOUDINARY_FOLDER_ROOT: 'apps/dhoblio' }).CLOUDINARY_FOLDER_ROOT).toBe('apps/dhoblio');
+    for (const bad of ['', '../caresaath', '/dhoblio', 'dhoblio/', 'a b', 'a//b']) {
+      expect(() => validateEnv({ ...base, CLOUDINARY_FOLDER_ROOT: bad })).toThrow(/CLOUDINARY_FOLDER_ROOT/);
+    }
+  });
+
   it('refuses OTP_BYPASS=true in production', () => {
     expect(() => validateEnv({ ...base, NODE_ENV: 'production', OTP_BYPASS: 'true' })).toThrow(/OTP_BYPASS/);
   });

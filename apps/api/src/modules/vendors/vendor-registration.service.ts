@@ -62,7 +62,7 @@ export class VendorRegistrationService {
     }
 
     // Only assets this user uploaded to their own private folder are accepted.
-    const folder = uploadFolder(this.config.get('NODE_ENV', { infer: true }), 'vendor-docs', user.id);
+    const folder = uploadFolder(this.config.get('NODE_ENV', { infer: true }), 'vendor-docs', user.id, this.cloudinary.folderRoot);
     const verified = await Promise.all(dto.documents.map((d) => this.cloudinary.verifyAsset(d.publicId, folder, 'authenticated')));
 
     const fields = {

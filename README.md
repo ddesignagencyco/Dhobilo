@@ -32,7 +32,7 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 
 **Cloudinary setup** (needed for vendor registration): set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `CLOUDINARY_UPLOAD_PRESET` in `.env`. Vendor documents are uploaded as `authenticated` assets, so they never have a public URL. The API itself enforces JPG/PNG/WebP and 5 MB when it verifies an upload (presets cannot cap file size).
 
-*Sharing one Cloudinary account with another app:* everything Dhoblio stores lives under `dhoblio/<env>/...`, and the API refuses any file outside the caller's own folder (including `..` tricks), so two apps on one account do not collide. Still give Dhoblio its own **upload preset** (signed mode, allowed formats `jpg,png,webp`, name it e.g. `dhoblio_vendor_docs`) and, ideally, its own **API key** (Cloudinary dashboard > Settings > API Keys > Generate New API Key) so each app's key can be revoked on its own. Storage and bandwidth quotas are shared across the whole account.
+*Sharing one Cloudinary account with another app:* everything Dhoblio stores lives under `<CLOUDINARY_FOLDER_ROOT>/<env>/...` (default `dhoblio`; folders are created automatically on first upload, nothing to set up in the dashboard), and the API refuses any file outside the caller's own folder (including `..` tricks), so two apps on one account do not collide. Still give Dhoblio its own **upload preset** (signed mode, allowed formats `jpg,png,webp`, name it e.g. `dhoblio_vendor_docs`) and, ideally, its own **API key** (Cloudinary dashboard > Settings > API Keys > Generate New API Key) so each app's key can be revoked on its own. Storage and bandwidth quotas are shared across the whole account.
 
 | Done | Where |
 |---|---|

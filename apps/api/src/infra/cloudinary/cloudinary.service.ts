@@ -4,6 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { AppException } from '../../common/errors/app.exception';
 import type { Env } from '../../config/env';
 
+/** Everything Dhoblio stores lives under this root (CLOUDINARY_FOLDER_ROOT), then `<env>/...`. */
+export const DEFAULT_FOLDER_ROOT = 'dhoblio';
+
 export type UploadKind = 'vendor-docs' | 'rider' | 'proof' | 'complaint' | 'catalog';
 
 /** Enforced by the Cloudinary upload preset; echoed to clients so they can pre-check files (TRD §15). */
@@ -29,8 +32,8 @@ export function signParams(params: Record<string, string | number>, apiSecret: s
 }
 
 /** Folder layout from TRD §15: dhoblio/{env}/... */
-export function uploadFolder(env: string, kind: UploadKind, ownerId: string): string {
-  const base = `dhoblio/${env}`;
+export function uploadFolder(env: string, kind: UploadKind, ownerId: string, root = DEFAULT_FOLDER_ROOT): string {
+  const base = `${root}/${env}`;
   switch (kind) {
     case 'vendor-docs':
       return `${base}/vendors/${ownerId}/docs`;
@@ -48,6 +51,11 @@ export function uploadFolder(env: string, kind: UploadKind, ownerId: string): st
 @Injectable()
 export class CloudinaryService {
   constructor(private readonly config: ConfigService<Env, true>) {}
+
+  /** Public so other services build folders from the same root. Falls back to the default when unset. */
+  get folderRoot(): string {
+    return this.config.get('CLOUDINARY_FOLDER_ROOT', { infer: true }) || DEFAULT_FOLDER_ROOT;
+  }
 
   private get cloudName() {
     return this.config.get('CLOUDINARY_CLOUD_NAME', { infer: true });
@@ -68,7 +76,7 @@ export class CloudinaryService {
       throw new AppException('MEDIA_NOT_CONFIGURED', 'Media uploads are not configured', HttpStatus.SERVICE_UNAVAILABLE);
     }
     const timestamp = Math.floor(Date.now() / 1000);
-    const folder = uploadFolder(this.config.get('NODE_ENV', { infer: true }), kind, ownerId);
+    const folder = uploadFolder(this.config.get('NODE_ENV', { infer: true }), kind, ownerId, this.folderRoot);
     const upload_preset = this.config.get('CLOUDINARY_UPLOAD_PRESET', { infer: true });
     const type = opts.sensitive ? 'authenticated' : 'upload';
     const signature = signParams({ folder, timestamp, type, upload_preset }, this.apiSecret);

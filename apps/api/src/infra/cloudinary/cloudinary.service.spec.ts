@@ -67,6 +67,15 @@ describe('CloudinaryService', () => {
     NODE_ENV: 'development',
   };
 
+  it('uses the configured root folder, defaulting to dhoblio', () => {
+    expect(uploadFolder('production', 'vendor-docs', 'u1', 'acme-laundry')).toBe('acme-laundry/production/vendors/u1/docs');
+    const custom = service({ ...cfg, CLOUDINARY_FOLDER_ROOT: 'shared/dhoblio' });
+    expect(custom.signUpload('vendor-docs', 'u1').folder).toBe('shared/dhoblio/development/vendors/u1/docs');
+    expect(custom.folderRoot).toBe('shared/dhoblio');
+    expect(service(cfg).folderRoot).toBe('dhoblio');
+    expect(service(cfg).signUpload('vendor-docs', 'u1').folder).toBe('dhoblio/development/vendors/u1/docs');
+  });
+
   it('stores sensitive documents as authenticated', () => {
     const s = service(cfg).signUpload('vendor-docs', 'v1', { sensitive: true });
     expect(s.type).toBe('authenticated');

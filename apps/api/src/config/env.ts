@@ -39,6 +39,11 @@ export const envSchema = z
     CLOUDINARY_API_KEY: z.string().default(''),
     CLOUDINARY_API_SECRET: z.string().default(''),
     CLOUDINARY_UPLOAD_PRESET: z.string().default(''),
+    /** Top-level Cloudinary folder for everything Dhoblio stores (kept apart from other apps on the same account). */
+    CLOUDINARY_FOLDER_ROOT: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/, 'CLOUDINARY_FOLDER_ROOT must be a plain folder path like dhoblio')
+      .default('dhoblio'),
 
     SMTP_HOST: z.string().default('localhost'),
     SMTP_PORT: z.coerce.number().int().positive().default(1025),
