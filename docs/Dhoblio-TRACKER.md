@@ -230,16 +230,16 @@
 **Refs:** FR-R1–R7 · TRD §9 (dispatch), §12
 
 ### BE
-- [ ] **BE-5.1** Rider registration (CNIC encrypted, photo upload) → `PENDING`; admin approve/reject/suspend (FR-R1, FR-A2)
-- [ ] **BE-5.2** `DeliveryJob` creation: PICKUP on `ACCEPTED`, DROP on `READY`; unique per order+type
-- [ ] **BE-5.3** Rider online/offline + location ping stored in Redis GEO with heartbeat TTL (FR-R2)
-- [ ] **BE-5.4** Dispatch worker: auto-assign nearest available approved rider with widening radius; re-assign on timeout/decline; ops alert if unassigned (FR-R2)
-- [ ] **BE-5.5** Manual mode: riders list nearby available jobs and accept (race-safe claim) (FR-R2)
-- [ ] **BE-5.6** Job status updates: accepted → in transit → completed/failed; drives order transitions (`PICKED_UP`, `OUT_FOR_DELIVERY`, `DELIVERED`) (FR-R4)
-- [ ] **BE-5.7** Proof of delivery: photo (Cloudinary) or customer OTP (generated on `OUT_FOR_DELIVERY`, hashed, sent to customer) (FR-R5)
-- [ ] **BE-5.8** Rider earnings: per-job fee record, daily summary, completed count (FR-R6)
-- [ ] **BE-5.9** `CourierPartner` adapter interface (create job, cancel, webhook status, tracking ref) + mock partner; switchable per city (FR-R7)
-- [ ] **BE-5.10** Admin dispatch endpoints: reassign, force-assign, mark failed
+- [x] **BE-5.1** Rider registration (CNIC encrypted, photo upload) → `PENDING`; admin approve/reject/suspend (FR-R1, FR-A2)
+- [x] **BE-5.2** `DeliveryJob` creation: PICKUP on `ACCEPTED`, DROP on `READY`; unique per order+type
+- [x] **BE-5.3** Rider online/offline + location ping stored in Redis GEO with heartbeat TTL (FR-R2)
+- [x] **BE-5.4** Dispatch worker: auto-assign nearest available approved rider with widening radius; re-assign on timeout/decline; ops alert if unassigned (FR-R2)
+- [x] **BE-5.5** Manual mode: riders list nearby available jobs and accept (race-safe claim) (FR-R2)
+- [x] **BE-5.6** Job status updates: accepted → in transit → completed/failed; drives order transitions (`PICKED_UP`, `OUT_FOR_DELIVERY`, `DELIVERED`) (FR-R4)
+- [x] **BE-5.7** Proof of delivery: photo (Cloudinary) or customer OTP (generated on `OUT_FOR_DELIVERY`, hashed, sent to customer) (FR-R5)
+- [x] **BE-5.8** Rider earnings: per-job fee record, daily summary, completed count (FR-R6)
+- [x] **BE-5.9** `CourierPartner` adapter interface (create job, cancel, webhook status, tracking ref) + mock partner; switchable per city (FR-R7)
+- [x] **BE-5.10** Admin dispatch endpoints: reassign, force-assign, mark failed
 - [ ] **BE-5.11** Tests: two riders accept same job (one wins), OTP brute force limits, illegal rider transitions, partner webhook idempotency
 
 ### FE

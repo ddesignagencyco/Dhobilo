@@ -38,6 +38,24 @@ describe('POST /media/sign (e2e)', () => {
     expect(JSON.stringify(res.body)).not.toContain('test-secret');
   });
 
+  it('lets riders sign rider-photo (public) and delivery-proof (private) uploads into their own folders, and nobody else', async () => {
+    const rider = await createUserWithToken(t, Role.RIDER);
+    const photo = await http.post('/api/v1/media/sign').set(rider.auth).send({ kind: 'rider-photo' }).expect(200);
+    expect(photo.body.data.folder).toBe(`dhoblio/test/riders/${rider.user.id}`);
+    expect(photo.body.data.type).toBe('upload'); // customers see the rider's photo
+    const proof = await http.post('/api/v1/media/sign').set(rider.auth).send({ kind: 'delivery-proof' }).expect(200);
+    expect(proof.body.data.folder).toBe(`dhoblio/test/proof/${rider.user.id}`);
+    expect(proof.body.data.type).toBe('authenticated'); // proof photos are never public
+
+    // each kind belongs to one role
+    await http.post('/api/v1/media/sign').set(rider.auth).send({ kind: 'vendor-docs' }).expect(403);
+    const owner = await createUserWithToken(t, Role.VENDOR_OWNER);
+    await http.post('/api/v1/media/sign').set(owner.auth).send({ kind: 'rider-photo' }).expect(403);
+    await http.post('/api/v1/media/sign').set(owner.auth).send({ kind: 'delivery-proof' }).expect(403);
+    const customer = await createUserWithToken(t, Role.CUSTOMER);
+    await http.post('/api/v1/media/sign').set(customer.auth).send({ kind: 'rider-photo' }).expect(403);
+  });
+
   it('gives each vendor a different folder', async () => {
     const a = await createUserWithToken(t, Role.VENDOR_OWNER);
     const b = await createUserWithToken(t, Role.VENDOR_OWNER);

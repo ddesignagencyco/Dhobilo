@@ -18,6 +18,11 @@ export const WHATSAPP_TEMPLATES: Record<TemplateName, { bspId: string; paramOrde
   vendor_new_order: { bspId: 'dhoblio_vendor_new_order', paramOrder: ['orderNo', 'items', 'total', 'minutes'] },
   vendor_order_cancelled: { bspId: 'dhoblio_vendor_order_cancelled', paramOrder: ['orderNo', 'reason'] },
   vendor_order_expired: { bspId: 'dhoblio_vendor_order_expired', paramOrder: ['orderNo'] },
+  order_rider_assigned: { bspId: 'dhoblio_order_rider_assigned', paramOrder: ['orderNo', 'rider', 'jobType'] },
+  delivery_code: { bspId: 'dhoblio_delivery_code', paramOrder: ['orderNo', 'code'] },
+  rider_job_offer: { bspId: 'dhoblio_rider_job_offer', paramOrder: ['orderNo', 'jobType', 'minutes'] },
+  rider_job_assigned: { bspId: 'dhoblio_rider_job_assigned', paramOrder: ['orderNo', 'jobType'] },
+  rider_job_cancelled: { bspId: 'dhoblio_rider_job_cancelled', paramOrder: ['orderNo', 'jobType', 'reason'] },
 };
 
 export function whatsappParams(name: TemplateName, params: TemplateParams): string[] {

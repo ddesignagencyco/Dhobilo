@@ -63,6 +63,28 @@ export const envSchema = z
 
     GOOGLE_MAPS_API_KEY: z.string().default(''),
 
+    /** Delivery and dispatch (Phase 5). Fees are what a rider earns per completed leg, in PKR. */
+    RIDER_FEE_PICKUP_PKR: z.coerce.number().min(0).default(80),
+    RIDER_FEE_DROP_PKR: z.coerce.number().min(0).default(120),
+    /** Auto-dispatch starts this many minutes before a job's scheduled window opens. */
+    DISPATCH_LEAD_MIN: z.coerce.number().int().min(0).default(60),
+    /** How long a rider has to accept an offered job before it goes to the next one. */
+    DISPATCH_OFFER_TIMEOUT_SEC: z.coerce.number().int().min(5).default(90),
+    /** Search rounds (each widens the radius, then repeats the last) before ops is alerted. */
+    DISPATCH_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(8),
+    DISPATCH_RETRY_SEC: z.coerce.number().int().min(1).default(30),
+    /** A rider counts as reachable only if they pinged within this many seconds. */
+    RIDER_HEARTBEAT_TTL_SEC: z.coerce.number().int().min(10).default(120),
+    RIDER_MAX_ACTIVE_JOBS: z.coerce.number().int().min(1).default(3),
+    /** Customers can see the rider's live position once the rider is on the way. */
+    RIDER_TRACKING_ENABLED: bool.default(true),
+    DELIVERY_OTP_TTL_HOURS: z.coerce.number().int().min(1).default(24),
+    DELIVERY_OTP_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
+    /** Where to email when a job cannot be assigned to anyone (optional). */
+    OPS_ALERT_EMAIL: z.string().default(''),
+    /** Shared secret the mock courier partner signs its webhooks with (testing). */
+    COURIER_MOCK_WEBHOOK_SECRET: z.string().default(''),
+
     BULL_BOARD_ENABLED: bool.default(false),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   })

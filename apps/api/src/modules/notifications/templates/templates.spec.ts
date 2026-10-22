@@ -4,7 +4,7 @@ import { WHATSAPP_TEMPLATES, whatsappParams } from './whatsapp-templates';
 
 const NAMES = Object.keys(ORDER_TEMPLATES) as TemplateName[];
 const LOCALES: TemplateLocale[] = ['en', 'ur'];
-const FULL: TemplateParams = { orderNo: 'DHB-LHR-000123', vendor: 'Sparkle Laundry', reason: 'Too busy today.', items: 3, total: '510.00', minutes: 15 };
+const FULL: TemplateParams = { orderNo: 'DHB-LHR-000123', vendor: 'Sparkle Laundry', reason: 'Too busy today.', items: 3, total: '510.00', minutes: 15, rider: 'Bilal', code: '4821', jobType: 'delivery' };
 
 describe('notification templates', () => {
   it('every template exists in English and Urdu with a non-empty title and body', () => {
@@ -42,6 +42,13 @@ describe('notification templates', () => {
 
   it('renders the vendor alert with counts and deadline', () => {
     expect(renderTemplate('vendor_new_order', 'en', FULL).body).toBe('New order DHB-LHR-000123: 3 item(s), Rs 510.00. Please respond within 15 min.');
+  });
+
+  it("writes the job type in the reader's language and only shows the code where a template asks for it", () => {
+    expect(renderTemplate('rider_job_offer', 'en', FULL).body).toBe('New delivery job for order DHB-LHR-000123. Open the app and accept within 15 min.');
+    expect(renderTemplate('rider_job_offer', 'ur', { ...FULL, jobType: 'pickup' }).body).toContain('پک اپ');
+    expect(renderTemplate('delivery_code', 'en', FULL).body).toContain('4821');
+    expect(renderTemplate('order_accepted', 'en', FULL).body).not.toContain('4821');
   });
 
   it('there is a customer template for every status an order can enter', () => {

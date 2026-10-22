@@ -1,5 +1,6 @@
 import { adminDocs, systemDocs } from './ops/admin';
 import { accountDocs, authDocs } from './ops/auth';
+import { adminDeliveryDocs, customerDeliveryDocs, riderDocs, webhookDocs } from './ops/delivery';
 import { cartDocs, discoveryDocs, orderDocs } from './ops/shopping';
 import { catalogDocs, vendorDocs, vendorOrderDocs } from './ops/vendor';
 import type { OperationDocs } from './types';
@@ -11,9 +12,13 @@ export const OPERATION_DOCS: OperationDocs = {
   ...discoveryDocs,
   ...cartDocs,
   ...orderDocs,
+  ...customerDeliveryDocs,
+  ...riderDocs,
   ...vendorDocs,
   ...catalogDocs,
   ...vendorOrderDocs,
   ...adminDocs,
+  ...adminDeliveryDocs,
+  ...webhookDocs,
   ...systemDocs,
 };

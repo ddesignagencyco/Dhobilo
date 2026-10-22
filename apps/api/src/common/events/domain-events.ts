@@ -9,6 +9,8 @@ export const DomainEvent = {
   ORDER_PLACED: 'order.placed',
   /** An order moved to a new status (committed). Drives live tracking, notifications and timers. */
   ORDER_STATUS_CHANGED: 'order.status_changed',
+  /** A delivery job moved (offered, accepted, started, completed, failed, cancelled ...). */
+  DELIVERY_JOB_CHANGED: 'delivery.job_changed',
 } as const;
 
 export interface VendorChangedEvent {
@@ -32,4 +34,15 @@ export interface OrderStatusChangedEvent {
   reason?: string;
   at: string;
   requestId?: string;
+}
+
+export interface DeliveryJobChangedEvent {
+  jobId: string;
+  orderId: string;
+  jobType: import('@prisma/client').JobType;
+  from: import('@prisma/client').JobStatus;
+  to: import('@prisma/client').JobStatus;
+  riderId: string | null;
+  actor: 'RIDER' | 'ADMIN' | 'SYSTEM' | 'PARTNER';
+  at: string;
 }

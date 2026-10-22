@@ -12,7 +12,12 @@ export type TemplateName =
   | 'order_delivered'
   | 'vendor_new_order'
   | 'vendor_order_cancelled'
-  | 'vendor_order_expired';
+  | 'vendor_order_expired'
+  | 'order_rider_assigned'
+  | 'delivery_code'
+  | 'rider_job_offer'
+  | 'rider_job_assigned'
+  | 'rider_job_cancelled';
 
 export interface TemplateParams {
   orderNo: string;
@@ -21,7 +26,18 @@ export interface TemplateParams {
   items?: number;
   total?: string;
   minutes?: number;
+  /** Rider's name, shown to customers. */
+  rider?: string;
+  /** The 4-digit delivery code. */
+  code?: string;
+  /** Which leg a rider job is. Written out in the reader's language when rendered. */
+  jobType?: 'pickup' | 'delivery';
 }
+
+const JOB_WORDS: Record<NonNullable<TemplateParams['jobType']>, Record<TemplateLocale, string>> = {
+  pickup: { en: 'pickup', ur: 'پک اپ' },
+  delivery: { en: 'delivery', ur: 'ڈیلیوری' },
+};
 
 interface Text {
   title: string;
@@ -81,12 +97,34 @@ export const ORDER_TEMPLATES: Record<TemplateName, Record<TemplateLocale, Text>>
     en: { title: 'Order expired', body: 'Order {orderNo} was rejected automatically because it was not answered in time.' },
     ur: { title: 'آرڈر کی مدت ختم', body: 'آرڈر {orderNo} بروقت جواب نہ ملنے کی وجہ سے خود بخود مسترد ہو گیا۔' },
   },
+  order_rider_assigned: {
+    en: { title: 'Rider assigned', body: '{rider} will handle the {jobType} for your order {orderNo}.' },
+    ur: { title: 'رائیڈر مقرر', body: 'آپ کے آرڈر {orderNo} کی {jobType} {rider} کریں گے۔' },
+  },
+  delivery_code: {
+    en: { title: 'Your delivery code', body: 'Order {orderNo}: your delivery code is {code}. Give it to the rider only when you have your clothes.' },
+    ur: { title: 'آپ کا ڈیلیوری کوڈ', body: 'آرڈر {orderNo}: آپ کا ڈیلیوری کوڈ {code} ہے۔ یہ کوڈ رائیڈر کو صرف کپڑے ملنے پر دیں۔' },
+  },
+  rider_job_offer: {
+    en: { title: 'New {jobType} job', body: 'New {jobType} job for order {orderNo}. Open the app and accept within {minutes} min.' },
+    ur: { title: 'نیا {jobType} کام', body: 'آرڈر {orderNo} کی نئی {jobType}۔ ایپ کھولیں اور {minutes} منٹ میں قبول کریں۔' },
+  },
+  rider_job_assigned: {
+    en: { title: 'Job assigned to you', body: 'You were given the {jobType} job for order {orderNo}.' },
+    ur: { title: 'آپ کو کام سونپا گیا', body: 'آپ کو آرڈر {orderNo} کی {jobType} سونپی گئی ہے۔' },
+  },
+  rider_job_cancelled: {
+    en: { title: 'Job cancelled', body: 'The {jobType} job for order {orderNo} is no longer yours. {reason}' },
+    ur: { title: 'کام منسوخ', body: 'آرڈر {orderNo} کی {jobType} اب آپ کے ذمے نہیں۔ {reason}' },
+  },
 };
 
 export function renderTemplate(name: TemplateName, locale: TemplateLocale, params: TemplateParams): Text & { values: string[] } {
   const fill = (text: string) =>
     text
-      .replace(/\{(\w+)\}/g, (_m, key: keyof TemplateParams) => String(params[key] ?? ''))
+      .replace(/\{(\w+)\}/g, (_m, key: keyof TemplateParams) =>
+        key === 'jobType' ? (params.jobType ? JOB_WORDS[params.jobType][locale] : '') : String(params[key] ?? ''),
+      )
       .replace(/\s+/g, ' ')
       .trim();
   const t = ORDER_TEMPLATES[name][locale];

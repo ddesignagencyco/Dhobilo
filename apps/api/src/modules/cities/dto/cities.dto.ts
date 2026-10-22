@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString, Length, Matches, Max, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID, Length, Matches, Max, Min } from 'class-validator';
 
 export class UpdateCityDto {
   /** Flat fee added to every order in this city, in PKR. */
@@ -25,4 +25,9 @@ export class UpdateCityDto {
   @IsString()
   @Length(1, 80)
   nameUr?: string;
+
+  /** Courier partner that handles pickups and deliveries in this city (from GET /admin/courier-partners). `null` goes back to our own riders. */
+  @IsOptional()
+  @IsUUID()
+  courierPartnerId?: string | null;
 }

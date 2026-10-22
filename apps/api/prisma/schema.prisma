@@ -197,8 +197,11 @@ model City {
   deliveryFee Decimal @default(0) @db.Decimal(10, 2)
   // Last order number issued in this city; incremented atomically when an order is placed.
   orderSeq  Int      @default(0)
+  // When set (and the partner is active), deliveries in this city go to the courier partner instead of our riders.
+  courierPartnerId String? @db.Uuid
   createdAt DateTime @default(now())
 
+  courierPartner CourierPartner? @relation(fields: [courierPartnerId], references: [id])
   vendors   Vendor[]
   riders    Rider[]
   orders    Order[]
@@ -556,6 +559,8 @@ model Rider {
   lastLng            Float?
   lastSeenAt         DateTime?
   approvedAt         DateTime?
+  approvedById       String?     @db.Uuid
+  rejectionReason    String?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
 
@@ -576,7 +581,22 @@ model CourierPartner {
   isActive   Boolean @default(false)
   configJson Json?
 
-  jobs DeliveryJob[]
+  jobs          DeliveryJob[]
+  cities        City[]
+  webhookEvents CourierWebhookEvent[]
+}
+
+/** Every webhook a courier partner sent, keyed by their event id, so a retried delivery is applied once. */
+model CourierWebhookEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  partnerId String   @db.Uuid
+  eventId   String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  partner CourierPartner @relation(fields: [partnerId], references: [id])
+
+  @@unique([partnerId, eventId])
 }
 
 model DeliveryJob {
@@ -596,8 +616,15 @@ model DeliveryJob {
   proofPhotoUrl      String?
   proofPhotoPublicId String?
   proofOtpHash       String?
+  proofOtpExpiresAt  DateTime?
+  proofOtpAttempts   Int       @default(0)
   failureReason      String?
   riderFee           Decimal?  @db.Decimal(10, 2)
+  // Riders who declined or let the offer lapse; dispatch never offers the job to them again.
+  declinedRiderIds   String[]  @default([]) @db.Uuid
+  dispatchAttempts   Int       @default(0)
+  // Set once ops has been alerted that nobody could be found, so the alert is sent once.
+  unassignedAlertedAt DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

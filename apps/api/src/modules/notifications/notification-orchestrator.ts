@@ -34,7 +34,7 @@ const personSelect = {
 type Person = Prisma.UserGetPayload<{ select: typeof personSelect }>;
 
 /** Which of a person's channels a notice may use. */
-interface Reach {
+export interface Reach {
   push: boolean;
   text: boolean; // WhatsApp, falling back to SMS
   email: boolean;
@@ -47,6 +47,9 @@ interface Notice {
   reach: Reach;
   data: Record<string, string>;
 }
+
+/** Templates whose text carries a secret: the delivery goes out, but the log row keeps only the title. */
+const SECRET_TEMPLATES: readonly TemplateName[] = ['delivery_code'];
 
 const FOR_STATUS: Partial<Record<OrderStatus, TemplateName>> = {
   ACCEPTED: 'order_accepted',
@@ -119,6 +122,26 @@ export class NotificationOrchestrator {
     });
   }
 
+  /**
+   * Sends one templated message to one user outside the order-status flow (rider offers, delivery codes, rider
+   * assignments). Respects the person's language and channel preferences. Never throws.
+   */
+  async notifyUser(
+    userId: string,
+    template: TemplateName,
+    params: TemplateParams,
+    data: Record<string, string>,
+    reach: Reach = { push: true, text: true, email: false },
+    requestId?: string,
+  ): Promise<void> {
+    try {
+      const person = await this.prisma.user.findUnique({ where: { id: userId }, select: personSelect });
+      if (person) await this.dispatch({ person, template, params, reach, data }, requestId);
+    } catch (err) {
+      this.logger.error({ err, userId, template }, 'Could not send a notification');
+    }
+  }
+
   /** Owner gets every channel (incl. email); staff get push only, so a shared shop phone isn't spammed. */
   private vendorPeople(o: LoadedOrder, template: TemplateName, params: TemplateParams, data: Record<string, string>): Notice[] {
     return [
@@ -131,7 +154,7 @@ export class NotificationOrchestrator {
     const prefs: NotificationPrefs = resolvePrefs(n.person.notificationPrefs);
     const locale = lang(n.person.locale);
     const msg = renderTemplate(n.template, locale, n.params);
-    const payload = { title: msg.title, body: msg.body, data: n.data } satisfies Prisma.InputJsonObject;
+    const payload = { title: msg.title, body: SECRET_TEMPLATES.includes(n.template) ? '(hidden)' : msg.body, data: n.data } satisfies Prisma.InputJsonObject;
     const tokens = n.person.deviceTokens.map((t) => t.token);
 
     const queueJob = async (channel: NotificationChannel, name: string, job: (id: string) => object) => {

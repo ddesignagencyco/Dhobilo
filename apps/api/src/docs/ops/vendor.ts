@@ -8,15 +8,19 @@ const OWNER_OR_STAFF = ['VENDOR_OWNER', 'VENDOR_STAFF'] as const;
 
 export const vendorDocs: OperationDocs = {
   'POST /media/sign': {
-    summary: 'Get permission to upload a document',
-    who: [...OWNER],
+    summary: 'Get permission to upload a file',
+    who: ['VENDOR_OWNER', 'RIDER'],
     description:
-      'Step 1 of vendor registration. Returns a signed form for **direct upload to Cloudinary** (the file never passes through our server). ' +
-      'Documents are stored privately: they never get a public URL.\n\n' +
+      'Returns a signed form for **direct upload to Cloudinary** (the file never passes through our server). Each kind of upload belongs to one account type:\n\n' +
+      '| `kind` | For | Stored |\n|---|---|---|\n| `vendor-docs` | vendor owners (CNIC, shop photos) | privately, never a public URL |\n| `rider-photo` | riders (profile photo customers see) | publicly |\n| `delivery-proof` | riders (proof-of-delivery photo) | privately |\n\n' +
       '1. Call this endpoint.\n2. Upload each file to `https://api.cloudinary.com/v1_1/{cloud_name}/image/upload` as `multipart/form-data` with the returned fields (`api_key`, `timestamp`, `signature`, `folder`, `upload_preset`, `type`) plus `file`.\n' +
-      '3. Send the returned `public_id` values to `POST /vendor/register`.\n\n' +
+      '3. Send the returned `public_id` values to `POST /vendor/register` (vendors), `POST /rider/register` (rider photo) or `POST /rider/jobs/{id}/complete` (delivery proof).\n\n' +
       'Allowed: JPG, PNG or WebP up to 5 MB (checked again on the server). 30 signatures per hour.',
-    requests: { default: { summary: 'Vendor verification documents', value: { kind: 'vendor-docs' } } },
+    requests: {
+      default: { summary: 'Vendor verification documents', value: { kind: 'vendor-docs' } },
+      riderPhoto: { summary: 'Rider profile photo', value: { kind: 'rider-photo' } },
+      proof: { summary: 'Proof-of-delivery photo', value: { kind: 'delivery-proof' } },
+    },
     response: {
       example: ok({
         timestamp: 1792675000,
@@ -30,6 +34,7 @@ export const vendorDocs: OperationDocs = {
       }),
     },
     errors: [
+      { status: 403, code: 'FORBIDDEN', when: 'This kind of upload belongs to a different account type (for example a rider asking for `vendor-docs`).' },
       { status: 429, code: 'RATE_LIMITED', when: 'Too many attempts. Please try again later.' },
       { status: 503, code: 'MEDIA_NOT_CONFIGURED', when: 'Media uploads are not configured.' },
     ],

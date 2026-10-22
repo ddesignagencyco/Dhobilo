@@ -2,8 +2,14 @@ import * as argon2 from 'argon2';
 import request from 'supertest';
 import { OPERATION_DOCS } from '../src/docs';
 import { Clock } from '../src/common/time/clock';
-import { Basics, NOW, TestApp, clearRateLimits, createAdmin, createLiveVendor, createTestApp, createVendorFixture, fixedClock, otpLogin, prepareReferenceData, randomPhone } from './helpers';
-import { DELIVERY, PICKUP, orderScenario } from './order-helpers';
+import { Role } from '@prisma/client';
+import { CloudinaryService, uploadFolder } from '../src/infra/cloudinary/cloudinary.service';
+import { DispatchService } from '../src/modules/delivery/dispatch.service';
+import { mockWebhookSignature } from '../src/modules/delivery/courier/mock-courier.provider';
+import { NotificationOrchestrator } from '../src/modules/notifications/notification-orchestrator';
+import { acceptedOrder, createRider, jobOf } from './delivery-helpers';
+import { Basics, NOW, TestApp, clearRateLimits, createAdmin, createLiveVendor, createTestApp, createUserWithToken, createVendorFixture, fixedClock, otpLogin, prepareReferenceData, randomCnic, randomPhone } from './helpers';
+import { DELIVERY, PICKUP, orderScenario, placeOrder } from './order-helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = Record<string, any>;
@@ -44,9 +50,10 @@ describe('Swagger examples match the real API (e2e)', () => {
   let http: ReturnType<typeof request>;
   let basics: Basics;
   let admin: Awaited<ReturnType<typeof createAdmin>>;
+  const clock = fixedClock(NOW);
 
   beforeAll(async () => {
-    t = await createTestApp({ customize: (b) => b.overrideProvider(Clock).useValue(fixedClock(NOW)) });
+    t = await createTestApp({ customize: (b) => b.overrideProvider(Clock).useValue(clock) });
     http = request(t.app.getHttpServer());
     basics = await prepareReferenceData(t);
     admin = await createAdmin(t);
@@ -56,6 +63,7 @@ describe('Swagger examples match the real API (e2e)', () => {
     expect(problems.splice(0)).toEqual([]);
   });
   beforeEach(async () => {
+    clock.set(NOW);
     await clearRateLimits(t.redis);
     await t.redis.incr('disc:ver');
   });
@@ -185,6 +193,99 @@ describe('Swagger examples match the real API (e2e)', () => {
     const other = await createVendorFixture(t, basics.cityId, { status: 'PENDING' });
     await http.post(`/api/v1/admin/vendors/${other.vendor.id}/reject`).set(admin.auth).send({ reason: 'The CNIC photo is blurry. Please upload a clear one.' }).expect(200).then((r) => expectMatchesDocs('POST /admin/vendors/{id}/reject', r.body));
     await http.patch(`/api/v1/admin/cities/${basics.cityId}`).set(admin.auth).send({ deliveryFee: 150 }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/cities/{id}', r.body));
+  });
+
+  it('delivery: the rider app, the dispatch board, courier partners and the customer’s view', async () => {
+    const SEARCH_OPEN = new Date('2026-10-24T04:30:00Z');
+    const dispatch = t.app.get(DispatchService);
+    jest.spyOn(t.app.get(CloudinaryService), 'verifyAsset').mockImplementation(async (publicId: string) => ({ publicId, url: `https://res.cloudinary.com/demo/image/upload/${publicId}.jpg`, bytes: 1000, format: 'jpg' }));
+    const notify = jest.spyOn(t.app.get(NotificationOrchestrator), 'notifyUser');
+    const code = () => [...notify.mock.calls].reverse().find((c) => c[1] === 'delivery_code')![2].code as string;
+    const rider = (r: { auth: Record<string, string> }, method: 'post' | 'get', path: string, body: object = {}) => http[method]('/api/v1/rider' + path).set(r.auth).send(method === 'post' ? body : undefined);
+    const adminCall = (method: 'post' | 'get' | 'patch', path: string, body: object = {}) => http[method]('/api/v1' + path).set(admin.auth).send(method === 'get' ? undefined : body);
+    await t.prisma.rider.updateMany({ data: { isOnline: false } });
+    await t.redis.del(`rider:geo:${basics.cityId}`);
+
+    // — applying, and the admin's review queue —
+    const applicant = await createUserWithToken(t, Role.RIDER);
+    const apply = (u: typeof applicant) => http.post('/api/v1/rider/register').set(u.auth).send({ name: 'Bilal Ahmed', cnic: randomCnic(), cityId: basics.cityId, photoPublicId: uploadFolder('test', 'rider', u.user.id) + '/face' });
+    const registered = await apply(applicant).expect(201);
+    expectMatchesDocs('POST /rider/register', registered.body);
+    await rider(applicant, 'get', '/status').expect(200).then((r) => expectMatchesDocs('GET /rider/status', r.body));
+    const riderId = registered.body.data.id as string;
+    await adminCall('get', '/admin/riders?status=PENDING').expect(200).then((r) => expectMatchesDocs('GET /admin/riders', r.body));
+    await adminCall('get', `/admin/riders/${riderId}`).expect(200).then((r) => expectMatchesDocs('GET /admin/riders/{id}', r.body));
+    await adminCall('get', `/admin/riders/${riderId}/cnic`).expect(200).then((r) => expectMatchesDocs('GET /admin/riders/{id}/cnic', r.body));
+    await adminCall('post', `/admin/riders/${riderId}/approve`).expect(200).then((r) => expectMatchesDocs('POST /admin/riders/{id}/approve', r.body));
+    await adminCall('post', `/admin/riders/${riderId}/suspend`, { reason: 'Repeated customer complaints' }).expect(200).then((r) => expectMatchesDocs('POST /admin/riders/{id}/suspend', r.body));
+    await adminCall('post', `/admin/riders/${riderId}/reactivate`).expect(200).then((r) => expectMatchesDocs('POST /admin/riders/{id}/reactivate', r.body));
+    const turnedDown = await apply(await createUserWithToken(t, Role.RIDER)).expect(201);
+    await adminCall('post', `/admin/riders/${turnedDown.body.data.id}/reject`, { reason: 'Photo is blurry — please upload a clear one' }).expect(200).then((r) => expectMatchesDocs('POST /admin/riders/{id}/reject', r.body));
+
+    // — three orders waiting for pickup, two riders who work —
+    const s = await orderScenario(t, basics);
+    const orderA = await acceptedOrder(http, t, s, () => placeOrder(http, s));
+    const orderB = await acceptedOrder(http, t, s, () => placeOrder(http, s));
+    const orderC = await acceptedOrder(http, t, s, () => placeOrder(http, s));
+    const orderD = await acceptedOrder(http, t, s, () => placeOrder(http, s)); // for the courier partner, further down
+    const jobD = await jobOf(t, orderD.id, 'PICKUP');
+    const jobA = await jobOf(t, orderA.id, 'PICKUP');
+    const jobB = await jobOf(t, orderB.id, 'PICKUP');
+    const jobC = await jobOf(t, orderC.id, 'PICKUP');
+    const r1 = await createRider(t, basics, { name: 'Bilal Ahmed', online: false });
+    const r2 = await createRider(t, basics, { name: 'Imran Shah', lat: 31.6 });
+    clock.set(SEARCH_OPEN);
+
+    // — the rider app —
+    await rider(r1, 'post', '/online', { lat: 31.52, lng: 74.35 }).expect(200).then((r) => expectMatchesDocs('POST /rider/online', r.body));
+    await rider(r1, 'post', '/location', { lat: 31.5201, lng: 74.3501 }).expect(200).then((r) => expectMatchesDocs('POST /rider/location', r.body));
+    await rider(r1, 'get', '/me').expect(200).then((r) => expectMatchesDocs('GET /rider/me', r.body));
+    await rider(r1, 'get', '/jobs/available').expect(200).then((r) => expectMatchesDocs('GET /rider/jobs/available', r.body));
+    await rider(r1, 'post', `/jobs/${jobA.id}/claim`).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/claim', r.body));
+    await rider(r1, 'post', `/jobs/${jobA.id}/release`, { reason: 'My bike broke down' }).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/release', r.body));
+    expect(await dispatch.dispatch(jobB.id)).toBe('offered');
+    await rider(r1, 'post', `/jobs/${jobB.id}/accept`).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/accept', r.body));
+    expect(await dispatch.dispatch(jobC.id)).toBe('offered');
+    await rider(r1, 'post', `/jobs/${jobC.id}/decline`, { reason: 'Too far' }).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/decline', r.body));
+    await rider(r1, 'get', '/jobs').expect(200).then((r) => expectMatchesDocs('GET /rider/jobs', r.body));
+    await rider(r1, 'get', `/jobs/${jobB.id}`).expect(200).then((r) => expectMatchesDocs('GET /rider/jobs/{id}', r.body));
+    await rider(r1, 'post', `/jobs/${jobB.id}/start`).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/start', r.body));
+    await rider(r1, 'post', `/jobs/${jobB.id}/complete`).expect(200); // the pickup: the clothes are with the shop now
+    await rider(r2, 'post', `/jobs/${jobC.id}/claim`).expect(200);
+    await rider(r2, 'post', `/jobs/${jobC.id}/fail`, { reason: 'Customer did not answer after 3 calls' }).expect(200).then((r) => expectMatchesDocs('POST /rider/jobs/{id}/fail', r.body));
+
+    // — a delivery with the customer’s code —
+    for (const status of ['IN_PROCESS', 'READY']) await http.post(`/api/v1/vendor/orders/${orderB.id}/status`).set(s.vendor.owner.auth).send({ status }).expect(200);
+    const drop = await jobOf(t, orderB.id, 'DROP');
+    await rider(r1, 'post', `/jobs/${drop.id}/claim`).expect(200);
+    await rider(r1, 'post', `/jobs/${drop.id}/start`).expect(200);
+    await http.get(`/api/v1/orders/${orderB.id}/delivery`).set(s.customer.auth).expect(200).then((r) => expectMatchesDocs('GET /orders/{id}/delivery', r.body));
+    await http.get(`/api/v1/orders/${orderB.id}/rider-location`).set(s.customer.auth).expect(200).then((r) => expectMatchesDocs('GET /orders/{id}/rider-location', r.body));
+    await http.post(`/api/v1/orders/${orderB.id}/delivery-code/resend`).set(s.customer.auth).expect(200).then((r) => expectMatchesDocs('POST /orders/{id}/delivery-code/resend', r.body));
+    const done = await rider(r1, 'post', `/jobs/${drop.id}/complete`, { otp: code() }).expect(200);
+    expectMatchesDocs('POST /rider/jobs/{id}/complete', done.body);
+    await rider(r1, 'get', '/earnings').expect(200).then((r) => expectMatchesDocs('GET /rider/earnings', r.body));
+    await rider(r1, 'post', '/offline').expect(200).then((r) => expectMatchesDocs('POST /rider/offline', r.body));
+
+    // — the dispatch board —
+    await adminCall('get', `/admin/delivery/summary?cityId=${basics.cityId}`).expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/summary', r.body));
+    await adminCall('get', '/admin/delivery/jobs?status=UNASSIGNED,FAILED').expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/jobs', r.body));
+    await adminCall('get', `/admin/delivery/jobs/${jobC.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/jobs/{id}', r.body));
+    await adminCall('post', `/admin/delivery/jobs/${jobC.id}/redispatch`).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/redispatch', r.body));
+    await adminCall('post', `/admin/delivery/jobs/${jobC.id}/assign`, { riderId: r2.rider.id }).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/assign', r.body));
+    await adminCall('post', `/admin/delivery/jobs/${jobC.id}/unassign`).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/unassign', r.body));
+    await adminCall('post', `/admin/delivery/jobs/${jobC.id}/fail`, { reason: 'Customer moved away' }).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/fail', r.body));
+
+    // — a courier partner —
+    const partner = await t.prisma.courierPartner.upsert({ where: { code: 'mock' }, update: { isActive: false }, create: { code: 'mock', name: 'Mock courier (testing)' } });
+    await adminCall('get', '/admin/courier-partners').expect(200).then((r) => expectMatchesDocs('GET /admin/courier-partners', r.body));
+    await adminCall('patch', `/admin/courier-partners/${partner.id}`, { isActive: true }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/courier-partners/{id}', r.body));
+    await adminCall('patch', `/admin/cities/${basics.cityId}`, { courierPartnerId: partner.id }).expect(200);
+    expect(await dispatch.dispatch(jobD.id)).toBe('partner');
+    const event = { eventId: 'evt-docs-0001', trackingRef: (await t.prisma.deliveryJob.findUniqueOrThrow({ where: { id: jobD.id } })).partnerRef!, status: 'IN_TRANSIT' };
+    await http.post('/api/v1/webhooks/courier/mock').set('x-courier-signature', mockWebhookSignature('test-courier-secret', event)).send(event).expect(200).then((r) => expectMatchesDocs('POST /webhooks/courier/{code}', r.body));
+    await adminCall('patch', `/admin/cities/${basics.cityId}`, { courierPartnerId: null }).expect(200);
+    await t.prisma.courierPartner.update({ where: { id: partner.id }, data: { isActive: false } });
   });
 
   it('health checks', async () => {

@@ -21,6 +21,7 @@ const defaults: Record<string, string> = {
   CLOUDINARY_API_KEY: 'test-key',
   CLOUDINARY_API_SECRET: 'test-secret',
   CLOUDINARY_UPLOAD_PRESET: 'test-preset',
+  COURIER_MOCK_WEBHOOK_SECRET: 'test-courier-secret',
 };
 
 for (const [key, value] of Object.entries(defaults)) {

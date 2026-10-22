@@ -42,6 +42,21 @@ export function vendorDecisionMessage(businessName: string, decision: VendorDeci
   }
 }
 
+/** Plain-English rider decision texts (riders get an SMS; per-locale templates can follow when riders have a language setting). */
+export function riderDecisionMessage(decision: VendorDecision, reason?: string): string {
+  const why = reason ? ` Reason: ${reason}` : '';
+  switch (decision) {
+    case 'APPROVED':
+      return 'Dhoblio: your rider account is approved. Sign in, go online and start taking jobs.';
+    case 'REJECTED':
+      return `Dhoblio: we could not approve your rider application.${why} Sign in to fix the details and resubmit.`;
+    case 'SUSPENDED':
+      return `Dhoblio: your rider account is suspended.${why} Contact support for help.`;
+    case 'REACTIVATED':
+      return 'Dhoblio: your rider account is active again. Go online to take jobs.';
+  }
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -64,6 +79,15 @@ export class NotificationsService {
       await Promise.all(jobs);
     } catch (err) {
       this.logger.error({ err, decision, requestId }, 'Could not enqueue vendor decision notifications');
+    }
+  }
+
+  /** Tells a rider about an admin decision by SMS. Never throws, for the same reason as notifyVendorDecision. */
+  async notifyRiderDecision(to: Recipient, decision: VendorDecision, reason?: string, requestId?: string) {
+    try {
+      await this.queue.add(SEND_SMS_JOB, { to: to.phone, message: riderDecisionMessage(decision, reason), requestId } satisfies SendSmsJob);
+    } catch (err) {
+      this.logger.error({ err, decision, requestId }, 'Could not enqueue rider decision notification');
     }
   }
 }

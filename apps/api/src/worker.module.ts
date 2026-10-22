@@ -11,6 +11,8 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { DeliveryWorkerModule } from './modules/delivery/delivery-worker.module';
+import { DispatchBootstrap } from './modules/delivery/dispatch.processor';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
 import { OrderLifecycleModule } from './modules/orders/lifecycle/order-lifecycle.module';
@@ -43,7 +45,8 @@ import { TimeModule } from './common/time/clock';
     OrderTimersModule,
     NotificationOrchestratorModule,
     NotificationsWorkerModule,
+    DeliveryWorkerModule,
   ],
-  providers: [OrderTimersBootstrap],
+  providers: [OrderTimersBootstrap, DispatchBootstrap],
 })
 export class WorkerModule {}

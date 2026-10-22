@@ -21,6 +21,7 @@ import { AddressesModule } from './modules/addresses/addresses.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { MediaModule } from './modules/media/media.module';
@@ -69,6 +70,7 @@ import { UsersModule } from './modules/users/users.module';
     CartModule,
     FinanceModule,
     OrdersModule,
+    DeliveryModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

@@ -18,6 +18,7 @@ Laundry & dry-cleaning marketplace for Pakistan. Customers order, vendors work t
 | Ordering (customer) | any new phone, e.g. \`03001234567\` |
 | The vendor panel | \`03000000011\` (Lahore), \`03000000012\` (Karachi), \`03000000013\` (Islamabad) |
 | Vendor review (pending shop) | \`03000000019\` |
+| The rider app | any new phone, choosing role \`RIDER\` when you sign in, then *Apply to ride* (an admin approves it) |
 | Admin | *Admin sign-in* with \`admin@dhoblio.local\` / \`ChangeMe!12345\` |
 
 A full customer journey: **Find vendors near me** → **Vendor price list** → **Available pickup / delivery windows** → **Price estimate** → **Place an order**.
@@ -40,8 +41,8 @@ Then switch to the vendor account to **Accept** it and move it along.
 | Customer | browse, build a cart, place and track orders, manage addresses |
 | Vendor owner | register the shop, set hours and prices, work orders, manage staff |
 | Vendor staff | work orders and switch Open / Busy / Closed |
-| Admin | review vendors, support orders, set city fees |
-| Rider | *(delivery module is coming in a later phase)* |
+| Rider | apply, go online, take pickup and delivery jobs, prove delivery, see earnings |
+| Admin | review vendors and riders, run the dispatch board, support orders, set city fees and couriers |
 `;
 
 /** Tag order = section order in the UI. */
@@ -55,12 +56,16 @@ export const TAGS: [name: string, description: string][] = [
   ['cart', 'The customer’s saved carts and the instant price estimate.'],
   ['orders', 'Customer: place, track (live), cancel, reorder.'],
   ['vendor', 'Vendor onboarding and shop settings: registration, hours, availability, staff.'],
-  ['media', 'Signed upload forms for vendor documents (direct to Cloudinary, stored privately).'],
+  ['media', 'Signed upload forms for direct-to-Cloudinary uploads: vendor documents and delivery proofs (private), rider photos.'],
   ['catalog', 'Service categories and each vendor’s price list, including bulk import.'],
   ['vendor-orders', 'The vendor’s order board: accept, reject and move orders through the workflow.'],
+  ['rider', 'The rider app: apply, go online, take pickup and delivery jobs, prove delivery with the customer’s code, see earnings.'],
   ['admin-vendors', 'Admin: review applications, approve / reject / suspend vendors, audited CNIC access.'],
   ['admin-orders', 'Admin: find any order, see everything, cancel with a reason.'],
-  ['admin-cities', 'Admin: delivery fee, active switch and order-number code per city.'],
+  ['admin-riders', 'Admin: review rider applications, approve / reject / suspend, audited CNIC access.'],
+  ['admin-delivery', 'Admin: the dispatch board (find, assign, take back, fail and re-send jobs) and courier partners.'],
+  ['admin-cities', 'Admin: delivery fee, active switch, order-number code and courier partner per city.'],
+  ['webhooks', 'Calls made **to** us by partners (courier status updates). Signed, not logged-in.'],
   ['health', 'Liveness and readiness probes.'],
 ];
 
