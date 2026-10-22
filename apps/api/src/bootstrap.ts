@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { text } from 'express';
@@ -9,6 +9,8 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { requestId } from './common/middleware/request-id.middleware';
 import type { Env } from './config/env';
+import { enrichDocument } from './docs/enrich';
+import { SWAGGER_UI_OPTIONS, createDocumentBuilder } from './docs/swagger.config';
 
 export const GLOBAL_PREFIX = 'api/v1';
 
@@ -40,18 +42,15 @@ export function configureApp(app: INestApplication): void {
   app.enableShutdownHooks();
 }
 
+/** The OpenAPI document: what the code declares, plus the hand-written docs from src/docs (examples, who can call, errors). */
 export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
-  const options = new DocumentBuilder()
-    .setTitle('Dhoblio API')
-    .setDescription('Laundry & dry-cleaning aggregator platform (v1)')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  return SwaggerModule.createDocument(app, options);
+  return enrichDocument(SwaggerModule.createDocument(app, createDocumentBuilder().build()));
 }
 
 export function setupSwagger(app: INestApplication): void {
   SwaggerModule.setup(`${GLOBAL_PREFIX}/docs`, app, buildOpenApiDocument(app), {
+    ...SWAGGER_UI_OPTIONS,
     jsonDocumentUrl: `${GLOBAL_PREFIX}/docs-json`,
+    yamlDocumentUrl: `${GLOBAL_PREFIX}/docs-yaml`,
   });
 }

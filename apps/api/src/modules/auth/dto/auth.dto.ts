@@ -6,7 +6,10 @@ import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 
 export const SIGNUP_ROLES = [Role.CUSTOMER, Role.VENDOR_OWNER, Role.RIDER] as const;
 
 export class RequestOtpDto {
-  /** Pakistani mobile number in any common format (03XX..., +92 3XX..., 92...). */
+  /**
+   * Pakistani mobile number in any common format (03XX..., +92 3XX..., 92...).
+   * @example 03001234567
+   */
   @IsString()
   @Length(10, 20)
   phone!: string;

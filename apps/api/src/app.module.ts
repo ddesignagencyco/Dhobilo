@@ -24,6 +24,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { MediaModule } from './modules/media/media.module';
+import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { SlotsModule } from './modules/slots/slots.module';
@@ -52,6 +53,7 @@ import { UsersModule } from './modules/users/users.module';
     TimeModule,
     CryptoModule,
     NotificationsModule,
+    NotificationOrchestratorModule,
     AuditModule,
     HealthModule,
     AuthModule,

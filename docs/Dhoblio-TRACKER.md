@@ -194,17 +194,17 @@
 **Refs:** FR-C9, FR-C10, FR-C12, FR-V5, FR-V6 · TRD §9, §10, §12, §14
 
 ### BE
-- [ ] **BE-4.1** `OrderStateMachine`: explicit transition table with allowed actors, optimistic concurrency, transactional history write, post-commit domain events (TRD §10)
-- [ ] **BE-4.2** Vendor accept/reject with reason (FR-V5); vendor status updates received → in process → ready → handed to rider (FR-V6)
-- [ ] **BE-4.3** `order-timers` queue: delayed `vendor-response-timeout` → auto-reject/cancel and notify; idempotent
-- [ ] **BE-4.4** Customer cancel rules (before pickup), admin cancel, `CANCELLED` state
-- [ ] **BE-4.5** SSE endpoint `/orders/:id/events` with Redis pub/sub fan-out and `Last-Event-ID` replay; polling fallback endpoint (FR-C9)
-- [ ] **BE-4.6** Notifications module: orchestrator, channel interfaces (SMS, WhatsApp, Push/FCM, Email), en/ur templates, per-user locale, `Notification` log (FR-C10)
-- [ ] **BE-4.7** WhatsApp adapter via BSP + approved template map; fallback to SMS on failure
-- [ ] **BE-4.8** FCM adapter + device-token cleanup on invalid-token responses
-- [ ] **BE-4.9** Order history with filters + `POST /orders/:id/reorder` (re-validates items/prices, returns a prefilled cart) (FR-C12)
-- [ ] **BE-4.10** Vendor order endpoints: board by status, counts, detail
-- [ ] **BE-4.11** Tests: every legal/illegal transition by every role; timeout fires once; notification fan-out per status
+- [x] **BE-4.1** `OrderStateMachine`: explicit transition table with allowed actors, optimistic concurrency, transactional history write, post-commit domain events (TRD §10)
+- [x] **BE-4.2** Vendor accept/reject with reason (FR-V5); vendor status updates received → in process → ready → handed to rider (FR-V6)
+- [x] **BE-4.3** `order-timers` queue: delayed `vendor-response-timeout` → auto-reject/cancel and notify; idempotent
+- [x] **BE-4.4** Customer cancel rules (before pickup), admin cancel, `CANCELLED` state
+- [x] **BE-4.5** SSE endpoint `/orders/:id/events` with Redis pub/sub fan-out and `Last-Event-ID` replay; polling fallback endpoint (FR-C9)
+- [x] **BE-4.6** Notifications module: orchestrator, channel interfaces (SMS, WhatsApp, Push/FCM, Email), en/ur templates, per-user locale, `Notification` log (FR-C10)
+- [x] **BE-4.7** WhatsApp adapter via BSP + approved template map; fallback to SMS on failure (adapter + mock done; real BSP provider pending choice of provider)
+- [x] **BE-4.8** FCM adapter + device-token cleanup on invalid-token responses (FCM v1 client + cleanup done, unit-tested; not yet run against live Firebase)
+- [x] **BE-4.9** Order history with filters + `POST /orders/:id/reorder` (re-validates items/prices, returns a prefilled cart) (FR-C12)
+- [x] **BE-4.10** Vendor order endpoints: board by status, counts, detail
+- [x] **BE-4.11** Tests: every legal/illegal transition by every role; timeout fires once; notification fan-out per status
 
 ### FE
 - [ ] **FE-4.1** Customer tracking screen: status timeline (Picked up → In process → Ready → Out for delivery → Delivered) via SSE with polling fallback and reconnect (FR-C9)

@@ -56,6 +56,7 @@ export const envSchema = z
     WHATSAPP_PROVIDER: z.string().default('mock'),
     WHATSAPP_TOKEN: z.string().default(''),
 
+    PUSH_PROVIDER: z.enum(['mock', 'fcm']).default('mock'),
     FCM_PROJECT_ID: z.string().default(''),
     FCM_CLIENT_EMAIL: z.string().default(''),
     FCM_PRIVATE_KEY: z.string().default(''),
@@ -72,6 +73,11 @@ export const envSchema = z
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
       });
+    }
+    if (env.PUSH_PROVIDER === 'fcm') {
+      for (const key of ['FCM_PROJECT_ID', 'FCM_CLIENT_EMAIL', 'FCM_PRIVATE_KEY'] as const) {
+        if (!env[key]) ctx.addIssue({ code: 'custom', path: [key], message: `${key} is required when PUSH_PROVIDER=fcm` });
+      }
     }
     if (!/^[A-Za-z0-9_-]+$/.test(env.ENC_KEY_ID)) {
       ctx.addIssue({ code: 'custom', path: ['ENC_KEY_ID'], message: 'ENC_KEY_ID may only contain letters, digits, _ and -' });

@@ -7,6 +7,8 @@ export const DomainEvent = {
   VENDOR_CHANGED: 'vendor.changed',
   /** An order was placed (consumed by timers, notifications and dispatch in later phases). */
   ORDER_PLACED: 'order.placed',
+  /** An order moved to a new status (committed). Drives live tracking, notifications and timers. */
+  ORDER_STATUS_CHANGED: 'order.status_changed',
 } as const;
 
 export interface VendorChangedEvent {
@@ -17,5 +19,17 @@ export interface OrderPlacedEvent {
   orderId: string;
   vendorId: string;
   customerId: string;
+  requestId?: string;
+}
+
+export interface OrderStatusChangedEvent {
+  orderId: string;
+  from: import('@prisma/client').OrderStatus;
+  to: import('@prisma/client').OrderStatus;
+  /** Position in OrderStatusHistory; strictly increasing, used as the SSE event id. */
+  seq: number;
+  actor: 'CUSTOMER' | 'VENDOR' | 'RIDER' | 'ADMIN' | 'SYSTEM';
+  reason?: string;
+  at: string;
   requestId?: string;
 }

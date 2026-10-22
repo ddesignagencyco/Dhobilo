@@ -6,16 +6,20 @@ import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
 import { DomainEvent, OrderPlacedEvent } from '../../common/events/domain-events';
 import { haversineKm } from '../../common/geo/haversine';
-import { fmt, parseMoney } from '../../common/money/money';
+import { fmt, money, parseMoney } from '../../common/money/money';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, beforeCursor, sliceWithCursor } from '../../common/pagination/cursor';
 import { Clock } from '../../common/time/clock';
 import { localParts } from '../../common/time/zoned';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { RateLimiter } from '../../infra/redis/rate-limiter.service';
+import { CartService } from '../cart/cart.service';
 import { PricingService, QuotedVendor, mergeLines } from '../cart/pricing.service';
 import { CommissionService } from '../finance/commission.service';
 import { SlotsService } from '../slots/slots.service';
 import { ListOrdersQueryDto, PlaceOrderDto } from './dto/orders.dto';
+import { OrderLifecycleService } from './lifecycle/order-lifecycle.service';
+import { actorKindOf } from './lifecycle/order-state-machine';
+import { OrderAccessService } from './order-access.service';
 import { orderSelect, orderSummarySelect, toOrderSummary, toOrderView } from './order-view';
 
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9_-]{8,100}$/;
@@ -52,6 +56,9 @@ export class OrdersService {
     private readonly limiter: RateLimiter,
     private readonly events: EventEmitter2,
     private readonly clock: Clock,
+    private readonly lifecycle: OrderLifecycleService,
+    private readonly access: OrderAccessService,
+    private readonly cart: CartService,
   ) {}
 
   /**
@@ -202,7 +209,13 @@ export class OrdersService {
   async list(customerId: string, q: ListOrdersQueryDto) {
     const limit = Math.min(q.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const rows = await this.prisma.order.findMany({
-      where: { customerId, ...(q.status ? { status: q.status } : {}), ...beforeCursor(q.cursor) },
+      where: {
+        customerId,
+        ...(q.status ? { status: q.status } : {}),
+        ...(q.vendorId ? { vendorId: q.vendorId } : {}),
+        ...(q.from || q.to ? { placedAt: { ...(q.from ? { gte: new Date(q.from) } : {}), ...(q.to ? { lt: new Date(q.to) } : {}) } } : {}),
+        ...beforeCursor(q.cursor),
+      },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       select: orderSummarySelect,
@@ -215,6 +228,59 @@ export class OrdersService {
     const order = await this.prisma.order.findFirst({ where: { id: orderId, customerId }, select: orderSelect });
     if (!order) throw new AppException(ErrorCode.NOT_FOUND, 'Order not found.', HttpStatus.NOT_FOUND);
     return toOrderView(order);
+  }
+
+  /** Customer cancels before pickup (PLACED or ACCEPTED); the state machine enforces that window. */
+  async cancel(user: AuthUser, orderId: string, reason: string | undefined, requestId?: string) {
+    await this.lifecycle.transition(orderId, OrderStatus.CANCELLED, { kind: 'CUSTOMER', userId: user.id, role: user.role }, { reason, requestId });
+    return this.getOwn(user.id, orderId);
+  }
+
+  /** Status history for the order screen; visible to the customer, the vendor's people and admins. */
+  async timeline(user: AuthUser, orderId: string) {
+    await this.access.assertCanView(user, orderId);
+    const rows = await this.prisma.orderStatusHistory.findMany({ where: { orderId }, orderBy: { seq: 'asc' } });
+    return rows.map((r) => ({ status: r.toStatus, from: r.fromStatus, at: r.createdAt, by: actorKindOf(r.actorRole), note: r.note }));
+  }
+
+  /**
+   * One-tap reorder (FR-C12): refills the cart for that vendor from the old order using today's items and prices,
+   * and says what could not be carried over. The customer still confirms and places the order as usual.
+   */
+  async reorder(user: AuthUser, orderId: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, customerId: user.id },
+      select: { vendorId: true, items: { select: { serviceItemId: true, name: true, unitPrice: true, qty: true } } },
+    });
+    if (!order) throw new AppException(ErrorCode.NOT_FOUND, 'Order not found.', HttpStatus.NOT_FOUND);
+
+    const ids = order.items.map((i) => i.serviceItemId).filter((id): id is string => !!id);
+    const current = await this.prisma.serviceItem.findMany({
+      where: { id: { in: ids }, vendorId: order.vendorId, isActive: true, deletedAt: null },
+      select: { id: true, price: true },
+    });
+    const now = new Map(current.map((c) => [c.id, c.price]));
+
+    const unavailable: { name: string }[] = [];
+    const priceChanges: { name: string; oldUnitPrice: string; newUnitPrice: string }[] = [];
+    const lines: { serviceItemId: string; qty: number }[] = [];
+    for (const item of order.items) {
+      const price = item.serviceItemId ? now.get(item.serviceItemId) : undefined;
+      if (!item.serviceItemId || price === undefined) {
+        unavailable.push({ name: item.name });
+        continue;
+      }
+      lines.push({ serviceItemId: item.serviceItemId, qty: item.qty });
+      if (!money(price).equals(money(item.unitPrice))) {
+        priceChanges.push({ name: item.name, oldUnitPrice: fmt(money(item.unitPrice)), newUnitPrice: fmt(money(price)) });
+      }
+    }
+    if (lines.length === 0) {
+      throw new AppException('NOTHING_TO_REORDER', 'None of the items from this order are available any more.', HttpStatus.UNPROCESSABLE_ENTITY, { unavailable });
+    }
+    // set() re-checks that the vendor is still live (404 if not) and that every line is purchasable.
+    const cart = await this.cart.set(user.id, { vendorId: order.vendorId, items: lines });
+    return { cart, unavailable, priceChanges };
   }
 
   /** Only COD exists until Phase 6, and promo codes until Phase 7: refuse rather than silently ignore. */

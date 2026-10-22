@@ -13,6 +13,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 - Phase 2 (Vendor onboarding, approval, catalog): backend done. Uploads, verification and the short-lived signed document links were checked end to end against a live Cloudinary account (private files, not publicly reachable).
 
 - Phase 3 (Discovery, cart, order placement): backend done. Cash on delivery only until Phase 6; promo codes are refused until Phase 7.
+- Phase 4 (Order lifecycle, vendor operations, notifications): backend done. State machine, vendor accept/reject/advance, cancel, reorder, live tracking (SSE), vendor-timeout auto-cancel, and English/Urdu notifications over SMS, WhatsApp (SMS fallback), push and email. The real WhatsApp provider and SMS gateway adapters wait on choosing providers (mock providers work); the FCM client is unit-tested but not yet run against live Firebase.
 
 ### API so far (`/api/v1`)
 
@@ -27,7 +28,10 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Admin | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
 | Discovery (public) | `GET /vendors` (geo search: `lat`, `lng`, `q`, `serviceType`, `minRating`, `maxPrice`, `sort=distance, rating or price`, cursor), `GET /vendors/:id`, `GET /vendors/:id/catalog`, `GET /vendors/:id/slots` |
 | Cart | `GET/PUT/DELETE /cart`, `POST /cart/estimate` (customers) |
-| Orders | `POST /orders` (needs an `Idempotency-Key` header), `GET /orders`, `GET /orders/:id` (customers) |
+| Orders | `POST /orders` (needs an `Idempotency-Key` header), `GET /orders` (filters: status, vendor, dates), `GET /orders/:id`, `POST /orders/:id/cancel`, `POST /orders/:id/reorder`, `GET /orders/:id/timeline`, `GET /orders/:id/events` (live SSE; customer, vendor or admin) |
+| Vendor orders | `GET /vendor/orders` (board), `GET /vendor/orders/counts`, `GET /vendor/orders/:id`, `POST /vendor/orders/:id/{accept,reject,status}` |
+| Admin orders | `GET /admin/orders`, `GET /admin/orders/:id`, `POST /admin/orders/:id/cancel` |
+| Notifications | `GET/PATCH /me/notification-preferences` (language and per-channel opt-outs) |
 | Admin | `PATCH /admin/cities/:id` (delivery fee, active flag, order code) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
@@ -54,10 +58,10 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Field encryption (AES-256-GCM with key ids for rotation, keyed hashes) | `src/common/crypto` |
 | `@Audit()` decorator and interceptor writing `AuditLog` | `src/modules/audit` |
 | `/health/live` and `/health/ready` (Postgres + Redis) | `src/modules/health` |
-| Swagger UI at `/api/v1/docs`, OpenAPI JSON at `/api/v1/docs-json` | `src/bootstrap.ts` |
+| Swagger UI at `/api/v1/docs` (OpenAPI JSON at `/api/v1/docs-json`): every operation has a summary, who can call it, request and response examples and error examples; signing in through the UI applies the token automatically. Kept truthful by tests that compare examples with real responses | `src/docs`, `src/bootstrap.ts` |
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 
-Next: Phase 3 (discovery, cart, order placement). See the [tracker](docs/Dhoblio-TRACKER.md).
+Next: Phase 5 (see the tracker). See the [tracker](docs/Dhoblio-TRACKER.md).
 
 ## Stack
 

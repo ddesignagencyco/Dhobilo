@@ -215,6 +215,8 @@ model User {
   status          UserStatus @default(ACTIVE)
   locale          Locale     @default(EN)
   referralCode    String?    @unique
+  // Which channels the user wants order updates on: { push, whatsapp, sms, email } (missing = on).
+  notificationPrefs Json?
   phoneVerifiedAt DateTime?
   lastLoginAt     DateTime?
   createdAt       DateTime   @default(now())
@@ -529,11 +531,14 @@ model OrderStatusHistory {
   actorId    String?      @db.Uuid
   actorRole  Role?
   note       String?
+  // Global, strictly increasing: gives live-tracking events a replayable order (SSE Last-Event-ID).
+  seq        Int          @default(autoincrement())
   createdAt  DateTime     @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId, createdAt])
+  @@index([orderId, seq])
 }
 
 // ───────────── DELIVERY ─────────────

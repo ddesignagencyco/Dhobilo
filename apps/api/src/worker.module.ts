@@ -11,7 +11,12 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
+import { OrderLifecycleModule } from './modules/orders/lifecycle/order-lifecycle.module';
+import { OrderTimersBootstrap } from './modules/orders/timers/order-timers.bootstrap';
+import { OrderTimersModule } from './modules/orders/timers/order-timers.module';
+import { TimeModule } from './common/time/clock';
 
 /**
  * Same codebase as the API, BullMQ processors only (TRD §3). No HTTP listener; module processors are
@@ -32,7 +37,13 @@ import { NotificationsWorkerModule } from './modules/notifications/notifications
     MailModule,
     CloudinaryModule,
     AuditModule,
+    TimeModule,
+    // Order events can start in the worker (timers), so live-update publishing and notifications run here too.
+    OrderLifecycleModule,
+    OrderTimersModule,
+    NotificationOrchestratorModule,
     NotificationsWorkerModule,
   ],
+  providers: [OrderTimersBootstrap],
 })
 export class WorkerModule {}

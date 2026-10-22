@@ -1,28 +1,134 @@
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { NotificationsProcessor } from './notifications.processor';
 import { NotificationsService, vendorDecisionMessage } from './notifications.service';
 
-const job = (name: string, data: object) => ({ name, data }) as unknown as Job;
+const job = (name: string, data: object, attemptsMade = 0, attempts = 5) => ({ name, data, attemptsMade, opts: { attempts } }) as unknown as Job;
+
+function setup() {
+  const sms = { send: jest.fn().mockResolvedValue(undefined) };
+  const mail = { send: jest.fn().mockResolvedValue({ messageId: 'm1' }) };
+  const whatsapp = { send: jest.fn().mockResolvedValue(undefined) };
+  const push = { send: jest.fn().mockResolvedValue({ ok: true }) };
+  const prisma = {
+    notification: { update: jest.fn().mockResolvedValue({}), create: jest.fn().mockResolvedValue({ id: 'fallback-row' }) },
+    deviceToken: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+  };
+  const queue = { add: jest.fn().mockResolvedValue({}) };
+  const processor = new NotificationsProcessor(sms, mail as never, whatsapp, push, prisma as never, queue as never);
+  return { sms, mail, whatsapp, push, prisma, queue, processor };
+}
+
+const lastUpdate = (p: ReturnType<typeof setup>) => p.prisma.notification.update.mock.calls.at(-1)![0];
 
 describe('NotificationsProcessor', () => {
-  const sms = { send: jest.fn() };
-  const mail = { send: jest.fn() };
-  const processor = new NotificationsProcessor(sms, mail as never);
+  it('delivers SMS and email, and marks the log row SENT', async () => {
+    const p = setup();
+    await p.processor.process(job('send-sms', { notificationId: 'n1', to: '+923001234567', message: 'hi' }));
+    expect(p.sms.send).toHaveBeenCalledWith('+923001234567', 'hi');
+    expect(lastUpdate(p)).toMatchObject({ where: { id: 'n1' }, data: { status: 'SENT', attempts: 1, error: null } });
 
-  beforeEach(() => jest.clearAllMocks());
-
-  it('delivers send-sms through the SMS provider', async () => {
-    await processor.process(job('send-sms', { to: '+923001234567', message: 'hi' }));
-    expect(sms.send).toHaveBeenCalledWith('+923001234567', 'hi');
+    await p.processor.process(job('send-email', { notificationId: 'n2', to: 'a@b.co', subject: 's', text: 't' }));
+    expect(p.mail.send).toHaveBeenCalledWith({ to: 'a@b.co', subject: 's', text: 't' });
   });
 
-  it('delivers send-email through the mail service', async () => {
-    await processor.process(job('send-email', { to: 'a@b.co', subject: 's', text: 't' }));
-    expect(mail.send).toHaveBeenCalledWith({ to: 'a@b.co', subject: 's', text: 't' });
+  it('delivers WhatsApp template messages', async () => {
+    const p = setup();
+    const data = { notificationId: 'n1', to: '+923001234567', templateName: 'order_accepted_en', language: 'en', params: ['DHB-1', 'V'], fallbackText: 'accepted' };
+    await p.processor.process(job('send-whatsapp', data));
+    expect(p.whatsapp.send).toHaveBeenCalledWith({ to: '+923001234567', templateName: 'order_accepted_en', language: 'en', params: ['DHB-1', 'V'], fallbackText: 'accepted' });
   });
 
-  it('fails loudly on unknown jobs so they retry and surface', async () => {
-    await expect(processor.process(job('send-pigeon', {}))).rejects.toThrow(/No handler/);
+  it('jobs without a log row (OTP codes) deliver without touching the notification table', async () => {
+    const p = setup();
+    await p.processor.process(job('send-sms', { to: '+923001234567', message: '123456' }));
+    expect(p.sms.send).toHaveBeenCalled();
+    expect(p.prisma.notification.update).not.toHaveBeenCalled();
+  });
+
+  it('a failed attempt keeps the row QUEUED with the error and lets the queue retry', async () => {
+    const p = setup();
+    p.sms.send.mockRejectedValue(new Error('gateway timeout'));
+    await expect(p.processor.process(job('send-sms', { notificationId: 'n1', to: '+9230', message: 'x' }, 1))).rejects.toThrow('gateway timeout');
+    expect(lastUpdate(p).data).toMatchObject({ status: 'QUEUED', attempts: 2, error: 'gateway timeout' });
+    expect(p.queue.add).not.toHaveBeenCalled();
+  });
+
+  it('after the last attempt the row is FAILED', async () => {
+    const p = setup();
+    p.sms.send.mockRejectedValue(new Error('gateway down'));
+    await expect(p.processor.process(job('send-sms', { notificationId: 'n1', to: '+9230', message: 'x' }, 4))).rejects.toThrow();
+    expect(lastUpdate(p).data).toMatchObject({ status: 'FAILED', attempts: 5 });
+  });
+
+  describe('WhatsApp -> SMS fallback on final failure', () => {
+    const data = { notificationId: 'n1', userId: 'u1', to: '+923001234567', templateName: 't', language: 'en', params: [], fallbackText: 'Order DHB-1 accepted', fallbackSms: true };
+
+    it('queues the same text by SMS, with its own log row', async () => {
+      const p = setup();
+      p.whatsapp.send.mockRejectedValue(new Error('BSP down'));
+      await expect(p.processor.process(job('send-whatsapp', data, 4))).rejects.toThrow('BSP down');
+      expect(p.prisma.notification.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ userId: 'u1', channel: 'SMS' }) }));
+      expect(p.queue.add).toHaveBeenCalledWith('send-sms', expect.objectContaining({ notificationId: 'fallback-row', to: '+923001234567', message: 'Order DHB-1 accepted' }));
+    });
+
+    it('does not fall back while retries remain, or when the user switched SMS off', async () => {
+      const early = setup();
+      early.whatsapp.send.mockRejectedValue(new Error('x'));
+      await expect(early.processor.process(job('send-whatsapp', data, 2))).rejects.toThrow();
+      expect(early.queue.add).not.toHaveBeenCalled();
+
+      const optedOut = setup();
+      optedOut.whatsapp.send.mockRejectedValue(new Error('x'));
+      await expect(optedOut.processor.process(job('send-whatsapp', { ...data, fallbackSms: false }, 4))).rejects.toThrow();
+      expect(optedOut.queue.add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('push', () => {
+    const data = { notificationId: 'n1', tokens: ['good-1', 'invalid-2', 'good-3'], title: 'T', body: 'B', data: { orderId: 'o1' } };
+
+    it('sends to every device and deletes dead tokens straight away', async () => {
+      const p = setup();
+      p.push.send.mockImplementation(async (t: string) => (t.startsWith('invalid-') ? { ok: false, invalidToken: true, error: 'UNREGISTERED' } : { ok: true }));
+      await p.processor.process(job('send-push', data));
+      expect(p.push.send).toHaveBeenCalledTimes(3);
+      expect(p.push.send).toHaveBeenCalledWith('good-1', { title: 'T', body: 'B', data: { orderId: 'o1' } });
+      expect(p.prisma.deviceToken.deleteMany).toHaveBeenCalledWith({ where: { token: { in: ['invalid-2'] } } });
+      expect(lastUpdate(p).data).toMatchObject({ status: 'SENT' });
+    });
+
+    it('counts as delivered if at least one device got it, even when another hit a transient error', async () => {
+      const p = setup();
+      p.push.send.mockResolvedValueOnce({ ok: true }).mockRejectedValueOnce(new Error('FCM 503')).mockResolvedValueOnce({ ok: true });
+      await p.processor.process(job('send-push', data));
+      expect(lastUpdate(p).data).toMatchObject({ status: 'SENT' });
+    });
+
+    it('retries when every device failed transiently', async () => {
+      const p = setup();
+      p.push.send.mockRejectedValue(new Error('FCM 503'));
+      await expect(p.processor.process(job('send-push', data))).rejects.toThrow('FCM 503');
+      expect(lastUpdate(p).data).toMatchObject({ status: 'QUEUED', attempts: 1 });
+    });
+
+    it('gives up immediately (no retries) when every token is dead', async () => {
+      const p = setup();
+      p.push.send.mockResolvedValue({ ok: false, invalidToken: true, error: 'UNREGISTERED' });
+      await expect(p.processor.process(job('send-push', data))).rejects.toBeInstanceOf(UnrecoverableError);
+      expect(p.prisma.deviceToken.deleteMany).toHaveBeenCalledWith({ where: { token: { in: ['good-1', 'invalid-2', 'good-3'] } } });
+      expect(lastUpdate(p).data).toMatchObject({ status: 'FAILED' });
+    });
+  });
+
+  it('fails unknown jobs for good instead of retrying them', async () => {
+    const p = setup();
+    await expect(p.processor.process(job('send-pigeon', {}))).rejects.toBeInstanceOf(UnrecoverableError);
+  });
+
+  it('a broken log write never fails a delivered message', async () => {
+    const p = setup();
+    p.prisma.notification.update.mockRejectedValue(new Error('db blip'));
+    await expect(p.processor.process(job('send-sms', { notificationId: 'n1', to: '+9230', message: 'x' }))).resolves.toBeUndefined();
   });
 });
 

@@ -6,6 +6,6 @@ import { PricingService } from './pricing.service';
 @Module({
   controllers: [CartController],
   providers: [CartService, PricingService],
-  exports: [PricingService],
+  exports: [PricingService, CartService],
 })
 export class CartModule {}

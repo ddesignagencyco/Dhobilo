@@ -48,10 +48,34 @@ export class PlaceOrderDto {
   promoCode?: string;
 }
 
+export class CancelOrderDto {
+  /** Optional note on why (shown to the vendor). */
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(200)
+  reason?: string;
+}
+
 export class ListOrdersQueryDto {
   @IsOptional()
   @IsEnum(OrderStatus)
   status?: OrderStatus;
+
+  /** Only orders from this vendor. */
+  @IsOptional()
+  @IsUUID()
+  vendorId?: string;
+
+  /** Placed on or after this moment (ISO 8601). */
+  @IsOptional()
+  @IsISO8601()
+  from?: string;
+
+  /** Placed before this moment (ISO 8601). */
+  @IsOptional()
+  @IsISO8601()
+  to?: string;
 
   @IsOptional()
   @Matches(/^[A-Za-z0-9_-]+$/)
