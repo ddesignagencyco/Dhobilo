@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import { text } from 'express';
 import type { Express } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
@@ -25,6 +26,8 @@ export function configureApp(app: INestApplication): void {
   app.use(helmet());
   app.use(compression());
   app.use(cookieParser());
+  // CSV catalog imports arrive as raw text (JSON is parsed by Nest's default body parser).
+  app.use(text({ type: 'text/csv', limit: '1mb' }));
 
   const rawOrigins = config.get('CORS_ORIGINS', { infer: true }) || config.get('APP_URL', { infer: true });
   const origins = String(rawOrigins)

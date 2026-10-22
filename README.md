@@ -10,6 +10,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 
 - Phase 0 (Foundation): done.
 - Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
+- Phase 2 (Vendor onboarding, approval, catalog): backend done. Signed-download links for vendor documents follow Cloudinary's documented scheme but have not been tried against a live Cloudinary account yet.
 
 ### API so far (`/api/v1`)
 
@@ -18,10 +19,18 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Auth | `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/admin/login` |
 | Profile | `GET/PATCH /me`, `POST/DELETE /me/devices` |
 | Addresses | `GET/POST /me/addresses`, `PATCH/DELETE /me/addresses/:id` |
+| Media | `POST /media/sign` (vendor owners; private uploads for CNIC and shop photos) |
+| Vendor | `POST /vendor/register`, `GET/PATCH /vendor/profile`, `GET/PUT /vendor/hours`, `PATCH /vendor/availability`, `GET/POST /vendor/staff`, `DELETE /vendor/staff/:userId` |
+| Catalog | `GET /service-categories` (public), `GET/POST /vendor/catalog/items`, `PATCH/DELETE /vendor/catalog/items/:id`, `POST /vendor/catalog/import` (JSON or CSV) |
+| Admin | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
-Every route needs a bearer token unless marked `@Public()`. Roles are enforced with `@Roles()`, resource ownership with `@OwnedBy()`.
+Every route needs a bearer token unless marked `@Public()`. Roles are enforced with `@Roles()`, resource ownership with `@OwnedBy()`, and vendor-panel routes by vendor status with `@RequireVendorStatus()`.
 Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYPASS=true` (dev only; the app refuses to boot with it in production).
+
+**Demo data** (development only, created by `npx prisma db seed`): vendor owners `+923000000011`, `+923000000012`, `+923000000013` (approved, with hours and a catalog in Lahore, Karachi and Islamabad) and `+923000000019` (pending, for the admin review queue). Sign in with the bypass code. The admin is `admin@dhoblio.local`.
+
+**Cloudinary setup** (needed for vendor registration): create an upload preset that allows only `jpg`, `png` and `webp` up to 5 MB, set `CLOUDINARY_UPLOAD_PRESET` and the three Cloudinary keys in `.env`. Vendor documents are uploaded as `authenticated` assets, so they never have a public URL.
 
 | Done | Where |
 |---|---|
@@ -31,13 +40,14 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Response envelope, error codes and exception filter, validation pipe, request IDs, pino logging with PII redaction | `src/common` |
 | Redis, BullMQ (all 8 queues from the TRD), Bull Board (dev only, flag-controlled) | `src/infra` |
 | Mail (Nodemailer: MailHog locally, Google SMTP in prod) with a dev-only test endpoint | `src/infra/mail` |
-| Cloudinary upload signing and asset verification (service only, no public endpoint until auth exists) | `src/infra/cloudinary` |
+| Cloudinary upload signing, asset verification and short-lived private download links | `src/infra/cloudinary` |
+| Field encryption (AES-256-GCM with key ids for rotation, keyed hashes) | `src/common/crypto` |
 | `@Audit()` decorator and interceptor writing `AuditLog` | `src/modules/audit` |
 | `/health/live` and `/health/ready` (Postgres + Redis) | `src/modules/health` |
 | Swagger UI at `/api/v1/docs`, OpenAPI JSON at `/api/v1/docs-json` | `src/bootstrap.ts` |
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 
-Next: Phase 2 (vendor onboarding, approval, catalog). See the [tracker](docs/Dhoblio-TRACKER.md).
+Next: Phase 3 (discovery, cart, order placement). See the [tracker](docs/Dhoblio-TRACKER.md).
 
 ## Stack
 
@@ -79,7 +89,7 @@ Development default: `admin@dhoblio.local` / `ChangeMe!12345`. Override with `SE
 | `npm run build` | Compile to `dist/` |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Unit tests |
-| `npm run test:e2e` | E2E tests (needs the Postgres and Redis containers) |
+| `npm run test:e2e` | E2E tests. Needs the Postgres and Redis containers; runs against a separate `dhoblio_test` database and Redis db 1, which are created, migrated and wiped at the start of every run (your dev data is never touched) |
 | `npm run openapi` | Write `openapi.json` for client generation |
 
 ## Layout

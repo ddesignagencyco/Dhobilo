@@ -20,6 +20,11 @@ const STATUS_CODES: Record<number, string> = {
   429: ErrorCode.RATE_LIMITED,
 };
 
+const MIDDLEWARE_CODES: Record<number, string> = {
+  413: 'PAYLOAD_TOO_LARGE',
+  415: 'UNSUPPORTED_MEDIA_TYPE',
+};
+
 export function resolveError(exception: unknown): ResolvedError {
   if (exception instanceof AppException) {
     return {
@@ -44,6 +49,17 @@ export function resolveError(exception: unknown): ResolvedError {
       code: STATUS_CODES[status] ?? ErrorCode.INTERNAL,
       message,
       details: typeof body === 'object' ? (body as { message?: unknown }).message : undefined,
+    };
+  }
+
+  // http-errors style errors from Express middleware (body-parser: 413 too large, 415 wrong type, ...).
+  const httpLike = exception as { status?: unknown; statusCode?: unknown; expose?: unknown; message?: unknown } | null;
+  const clientStatus = Number(httpLike?.statusCode ?? httpLike?.status);
+  if (httpLike && httpLike.expose === true && clientStatus >= 400 && clientStatus < 500) {
+    return {
+      status: clientStatus,
+      code: MIDDLEWARE_CODES[clientStatus] ?? STATUS_CODES[clientStatus] ?? 'BAD_REQUEST',
+      message: typeof httpLike.message === 'string' ? httpLike.message : 'Bad request',
     };
   }
 

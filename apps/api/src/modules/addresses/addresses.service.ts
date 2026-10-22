@@ -2,13 +2,12 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { Address, Prisma } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
+import { isInPakistan } from '../../common/geo/pakistan';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CitiesService } from '../cities/cities.service';
 import { CreateAddressDto, UpdateAddressDto } from './dto/addresses.dto';
 
 export const MAX_ADDRESSES_PER_USER = 20;
-/** Rough bounding box of Pakistan; catches swapped lat/lng and pins dropped on the wrong continent. */
-export const PAKISTAN_BOUNDS = { minLat: 23.5, maxLat: 37.2, minLng: 60.8, maxLng: 77.9 } as const;
 
 const publicFields = {
   id: true,
@@ -126,8 +125,7 @@ export class AddressesService {
     if (!(await this.cities.findActive(cityId))) {
       throw new AppException('CITY_NOT_AVAILABLE', 'We do not serve this city yet.', HttpStatus.BAD_REQUEST);
     }
-    const b = PAKISTAN_BOUNDS;
-    if (lat < b.minLat || lat > b.maxLat || lng < b.minLng || lng > b.maxLng) {
+    if (!isInPakistan(lat, lng)) {
       throw new AppException('LOCATION_OUT_OF_RANGE', 'The map pin must be inside Pakistan.', HttpStatus.BAD_REQUEST);
     }
   }

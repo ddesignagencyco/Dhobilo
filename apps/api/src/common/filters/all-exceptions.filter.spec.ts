@@ -22,6 +22,16 @@ describe('resolveError', () => {
     expect(resolveError(missing).status).toBe(404);
   });
 
+  it('maps exposed http-errors from middleware (body-parser) instead of calling them 500s', () => {
+    const tooLarge = Object.assign(new Error('request entity too large'), { status: 413, statusCode: 413, expose: true });
+    expect(resolveError(tooLarge)).toMatchObject({ status: 413, code: 'PAYLOAD_TOO_LARGE' });
+    const wrongType = Object.assign(new Error('unsupported'), { status: 415, expose: true });
+    expect(resolveError(wrongType)).toMatchObject({ status: 415, code: 'UNSUPPORTED_MEDIA_TYPE' });
+    // Anything not explicitly safe to expose stays an opaque 500.
+    expect(resolveError(Object.assign(new Error('secret'), { status: 400, expose: false })).status).toBe(500);
+    expect(resolveError(Object.assign(new Error('boom'), { status: 502, expose: true })).status).toBe(500);
+  });
+
   it('hides internals for unknown errors', () => {
     const r = resolveError(new Error('db password is hunter2'));
     expect(r.status).toBe(500);

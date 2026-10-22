@@ -120,17 +120,17 @@
 **Refs:** FR-V1–V4, FR-V7, FR-A1, FR-A2 · TRD §15
 
 ### BE
-- [ ] **BE-2.1** Media signing: `POST /media/sign` (folder per entity, preset, type/size limits); private delivery for CNIC (TRD §15)
-- [ ] **BE-2.2** Field encryption util (AES-256-GCM + key-id) and HMAC hash for CNIC; unit tests incl. key rotation
-- [ ] **BE-2.3** `POST /vendor/register`: business, address/geo, CNIC (encrypted), documents (verify Cloudinary publicIds) → status `PENDING` (FR-V1)
-- [ ] **BE-2.4** Admin vendor review: list/filter by status, detail with signed doc URLs, approve/reject with reason, audit entries (FR-V2, FR-A1)
-- [ ] **BE-2.5** Decision notifications to vendor (email via SMTP + SMS) through the notifications queue
-- [ ] **BE-2.6** Admin suspend/reactivate vendor; suspended vendors vanish from discovery and cannot accept orders (FR-A2)
-- [ ] **BE-2.7** Service categories (read) + vendor catalog CRUD: item name (en/ur), service type, price, turnaround, active flag, soft delete (FR-V3)
-- [ ] **BE-2.8** Bulk catalog import (JSON/CSV) for quick vendor setup
-- [ ] **BE-2.9** Vendor hours + service radius + availability toggle (open/closed/busy) (FR-V4, FR-V7)
-- [ ] **BE-2.10** Vendor staff accounts (owner invites by phone; role `VENDOR_STAFF`)
-- [ ] **BE-2.11** Tests: only `APPROVED` vendors are live; vendor can only edit own data; price validation
+- [x] **BE-2.1** Media signing: `POST /media/sign` (folder per entity, preset, type/size limits); private delivery for CNIC (TRD §15)
+- [x] **BE-2.2** Field encryption util (AES-256-GCM + key-id) and HMAC hash for CNIC; unit tests incl. key rotation
+- [x] **BE-2.3** `POST /vendor/register`: business, address/geo, CNIC (encrypted), documents (verify Cloudinary publicIds) → status `PENDING` (FR-V1)
+- [x] **BE-2.4** Admin vendor review: list/filter by status, detail with signed doc URLs, approve/reject with reason, audit entries (FR-V2, FR-A1)
+- [x] **BE-2.5** Decision notifications to vendor (email via SMTP + SMS) through the notifications queue
+- [x] **BE-2.6** Admin suspend/reactivate vendor; suspended vendors vanish from discovery and cannot accept orders (FR-A2)
+- [x] **BE-2.7** Service categories (read) + vendor catalog CRUD: item name (en/ur), service type, price, turnaround, active flag, soft delete (FR-V3)
+- [x] **BE-2.8** Bulk catalog import (JSON/CSV) for quick vendor setup
+- [x] **BE-2.9** Vendor hours + service radius + availability toggle (open/closed/busy) (FR-V4, FR-V7)
+- [x] **BE-2.10** Vendor staff accounts (owner invites by phone; role `VENDOR_STAFF`)
+- [x] **BE-2.11** Tests: only `APPROVED` vendors are live; vendor can only edit own data; price validation
 
 ### FE
 - [ ] **FE-2.1** Vendor registration wizard (business info → map location → CNIC → photos → review/submit) with image compression before upload and resumable draft

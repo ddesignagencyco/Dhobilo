@@ -15,7 +15,13 @@ import { PrismaModule } from './infra/prisma/prisma.module';
 import { bullBoardImports } from './infra/queue/bull-board.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
+import { CryptoModule } from './common/crypto/crypto.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
+import { MediaModule } from './modules/media/media.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { VendorsModule } from './modules/vendors/vendors.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CitiesModule } from './modules/cities/cities.module';
@@ -37,12 +43,18 @@ import { UsersModule } from './modules/users/users.module';
     ...bullBoardImports(),
     MailModule,
     CloudinaryModule,
+    CryptoModule,
+    NotificationsModule,
     AuditModule,
     HealthModule,
     AuthModule,
     UsersModule,
     CitiesModule,
     AddressesModule,
+    MediaModule,
+    VendorsModule,
+    CatalogModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

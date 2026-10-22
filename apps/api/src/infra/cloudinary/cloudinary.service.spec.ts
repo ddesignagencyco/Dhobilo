@@ -41,6 +41,16 @@ describe('CloudinaryService', () => {
     );
   });
 
+  it('builds an expiring, signed private download URL', () => {
+    const url = new URL(service(cfg).privateDownloadUrl('dhoblio/x/doc1', 'jpg', 600));
+    expect(url.origin + url.pathname).toBe('https://api.cloudinary.com/v1_1/demo/image/download');
+    const q = Object.fromEntries(url.searchParams);
+    expect(q).toMatchObject({ public_id: 'dhoblio/x/doc1', format: 'jpg', type: 'authenticated', api_key: 'key' });
+    expect(Number(q.expires_at) - Number(q.timestamp)).toBe(600);
+    const { api_key, signature, ...signed } = q;
+    expect(signature).toBe(signParams(signed, 'secret'));
+  });
+
   it('refuses to sign when Cloudinary is not configured', () => {
     expect(() => service({ ...cfg, CLOUDINARY_API_SECRET: '' }).signUpload('catalog', 'v1')).toThrow(/not configured/);
   });

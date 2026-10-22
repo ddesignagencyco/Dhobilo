@@ -78,6 +78,23 @@ describe('API core (e2e)', () => {
     expect(res.body.error.details.map((d: { field: string }) => d.field).sort()).toEqual(['extra', 'to']);
   });
 
+  it('answers malformed JSON and oversized bodies with the standard error envelope, not a 500 or HTML', async () => {
+    const bad = await request(app.getHttpServer())
+      .post('/api/v1/dev/test-email')
+      .set('Content-Type', 'application/json')
+      .send('{"to": ')
+      .expect(400);
+    expect(bad.body.error.code).toBe('VALIDATION_FAILED');
+    expect(bad.body.error.requestId).toEqual(expect.any(String));
+
+    const big = await request(app.getHttpServer())
+      .post('/api/v1/dev/test-email')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ to: 'a@b.co', subject: 'x'.repeat(200_000) }))
+      .expect(413);
+    expect(big.body.error.code).toBe('PAYLOAD_TOO_LARGE');
+  });
+
   it('writes an AuditLog row for @Audit() handlers', async () => {
     const entityId = `probe-${Date.now()}`;
     await request(app.getHttpServer()).post(`/api/v1/e2e-probe/${entityId}/audited`).expect(201);

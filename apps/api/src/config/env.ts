@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseKeyList } from '../common/crypto/field-crypto';
 
 const bool = z
   .enum(['true', 'false'])
@@ -30,6 +31,8 @@ export const envSchema = z
 
     ENC_KEY_ID: z.string().min(1).default('k1'),
     ENC_KEY_BASE64: z.string().min(1),
+    /** Retired keys still needed to read old ciphertext: "k0=<base64>,k-1=<base64>". */
+    ENC_PREVIOUS_KEYS: z.string().optional(),
     HMAC_KEY_BASE64: z.string().min(1),
 
     CLOUDINARY_CLOUD_NAME: z.string().default(''),
@@ -64,6 +67,14 @@ export const envSchema = z
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
       });
+    }
+    if (!/^[A-Za-z0-9_-]+$/.test(env.ENC_KEY_ID)) {
+      ctx.addIssue({ code: 'custom', path: ['ENC_KEY_ID'], message: 'ENC_KEY_ID may only contain letters, digits, _ and -' });
+    }
+    try {
+      parseKeyList(env.ENC_PREVIOUS_KEYS);
+    } catch (err) {
+      ctx.addIssue({ code: 'custom', path: ['ENC_PREVIOUS_KEYS'], message: (err as Error).message });
     }
     for (const key of ['ENC_KEY_BASE64', 'HMAC_KEY_BASE64'] as const) {
       if (Buffer.from(env[key], 'base64').length !== 32) {

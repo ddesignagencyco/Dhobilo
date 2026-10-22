@@ -6,6 +6,9 @@ import type { Env } from '../../config/env';
 
 export type UploadKind = 'vendor-docs' | 'rider' | 'proof' | 'complaint' | 'catalog';
 
+/** Enforced by the Cloudinary upload preset; echoed to clients so they can pre-check files (TRD §15). */
+export const MEDIA_LIMITS = { maxBytes: 5 * 1024 * 1024, formats: ['jpg', 'png', 'webp'] } as const;
+
 export interface SignedUpload {
   timestamp: number;
   signature: string;
@@ -70,6 +73,26 @@ export class CloudinaryService {
     const type = opts.sensitive ? 'authenticated' : 'upload';
     const signature = signParams({ folder, timestamp, type, upload_preset }, this.apiSecret);
     return { timestamp, signature, folder, upload_preset, api_key: this.apiKey, cloud_name: this.cloudName, type };
+  }
+
+  /**
+   * Short-lived signed download link for an `authenticated` asset (CNIC and shop documents are never public).
+   * Built with Cloudinary's signed private-download API; the link stops working after `ttlSec`.
+   * NOTE: signing follows Cloudinary's documented scheme but has not been exercised against a live account yet.
+   */
+  privateDownloadUrl(publicId: string, format: string, ttlSec = 600): string {
+    if (!this.cloudName || !this.apiKey || !this.apiSecret) {
+      throw new AppException('MEDIA_NOT_CONFIGURED', 'Media uploads are not configured', HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    const now = Math.floor(Date.now() / 1000);
+    const params = { expires_at: now + ttlSec, format, public_id: publicId, timestamp: now, type: 'authenticated' };
+    const signature = signParams(params, this.apiSecret);
+    const query = new URLSearchParams({
+      ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])),
+      api_key: this.apiKey,
+      signature,
+    });
+    return `https://api.cloudinary.com/v1_1/${this.cloudName}/image/download?${query.toString()}`;
   }
 
   /**
