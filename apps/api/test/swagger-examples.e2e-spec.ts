@@ -269,7 +269,7 @@ describe('Swagger examples match the real API (e2e)', () => {
 
     // — the dispatch board —
     await adminCall('get', `/admin/delivery/summary?cityId=${basics.cityId}`).expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/summary', r.body));
-    await adminCall('get', '/admin/delivery/jobs?status=UNASSIGNED,FAILED').expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/jobs', r.body));
+    await adminCall('get', `/admin/delivery/jobs?riderId=${r1.rider.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/jobs', r.body));
     await adminCall('get', `/admin/delivery/jobs/${jobC.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/delivery/jobs/{id}', r.body));
     await adminCall('post', `/admin/delivery/jobs/${jobC.id}/redispatch`).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/redispatch', r.body));
     await adminCall('post', `/admin/delivery/jobs/${jobC.id}/assign`, { riderId: r2.rider.id }).expect(200).then((r) => expectMatchesDocs('POST /admin/delivery/jobs/{id}/assign', r.body));

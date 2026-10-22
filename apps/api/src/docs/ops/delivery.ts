@@ -431,7 +431,7 @@ export const adminDeliveryDocs: OperationDocs = {
       orderNo: { example: 'LHR-000123' },
       scheduledBefore: { example: '2026-10-24T12:00:00.000Z', description: 'Only jobs whose window starts before this time.' },
     },
-    response: { example: page([ADMIN_JOB], null) },
+    response: { example: page([{ ...ADMIN_JOB, status: 'ACCEPTED', rider: { id: RIDER_ID, name: 'Bilal Ahmed', phone: '+923001112233' }, assignedAt: '2026-10-24T03:00:00.000Z', nextActions: ['UNASSIGNED', 'IN_TRANSIT', 'FAILED', 'CANCELLED'] }], null) },
   },
   'GET /admin/delivery/jobs/{id}': {
     summary: 'One delivery job',

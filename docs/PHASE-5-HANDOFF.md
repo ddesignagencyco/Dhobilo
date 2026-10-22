@@ -16,9 +16,10 @@ Branch: `phase-5-rider-delivery` (stacked on `phase-4-order-lifecycle-notificati
 
 ## Still to do
 
-1. **Flaky e2e test.** `test/swagger-examples.e2e-spec.ts` > "delivery: the rider app, ..." passed on its own and in most
-   full runs, but failed once in a full `npx jest --config jest.e2e.config.js` run. I did not see why. Rerun the full
-   suite a few times and fix it (suspect leftover riders, jobs or Redis keys from earlier specs; reset them at the start of that test).
+1. **Flaky e2e test: cause found and fixed, not yet re-verified.** The delivery example in
+   `test/swagger-examples.e2e-spec.ts` failed in about two of three full runs because the job list's first item depended on
+   leftover jobs from other specs. The docs example now shows a job with a rider and the test queries one rider's jobs.
+   Run the full e2e suite three times to confirm it is green.
 2. **Run the full regression** (`npx tsc -p tsconfig.json --noEmit`, `npx jest`, `npx jest --config jest.e2e.config.js`).
    Last full run before the flake: 218 unit tests and 479 of 480 e2e tests passed.
 3. **Docker smoke test.** Rebuild (`docker compose up -d --build`; stop any local dev server on port 4000 first) and walk
