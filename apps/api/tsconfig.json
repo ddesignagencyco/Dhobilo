@@ -1,0 +1,13 @@
+{
+  "extends": "../../packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "types": ["node", "jest"],
+    "incremental": true,
+    "isolatedModules": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+  },
+  "include": ["src/**/*", "test/**/*", "prisma/seed.ts", "scripts/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

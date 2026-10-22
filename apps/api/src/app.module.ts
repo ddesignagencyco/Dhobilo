@@ -1,0 +1,45 @@
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { LoggerModule } from 'nestjs-pino';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
+import { loggerConfig } from './common/logging/logger.config';
+import { createValidationPipe } from './common/pipes/validation.pipe';
+import { AppConfigModule } from './config/app-config.module';
+import type { Env } from './config/env';
+import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
+import { MailModule } from './infra/mail/mail.module';
+import { PrismaModule } from './infra/prisma/prisma.module';
+import { bullBoardImports } from './infra/queue/bull-board.module';
+import { QueueModule } from './infra/queue/queue.module';
+import { RedisModule } from './infra/redis/redis.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { HealthModule } from './modules/health/health.module';
+
+@Module({
+  imports: [
+    AppConfigModule,
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) =>
+        loggerConfig({ NODE_ENV: config.get('NODE_ENV', { infer: true }), LOG_LEVEL: config.get('LOG_LEVEL', { infer: true }) }),
+    }),
+    EventEmitterModule.forRoot(),
+    PrismaModule,
+    RedisModule,
+    QueueModule,
+    ...bullBoardImports(),
+    MailModule,
+    CloudinaryModule,
+    AuditModule,
+    HealthModule,
+  ],
+  providers: [
+    { provide: APP_PIPE, useFactory: createValidationPipe },
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: ResponseEnvelopeInterceptor },
+  ],
+})
+export class AppModule {}

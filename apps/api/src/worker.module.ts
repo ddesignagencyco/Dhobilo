@@ -1,0 +1,36 @@
+import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { LoggerModule } from 'nestjs-pino';
+import { loggerConfig } from './common/logging/logger.config';
+import { AppConfigModule } from './config/app-config.module';
+import type { Env } from './config/env';
+import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
+import { MailModule } from './infra/mail/mail.module';
+import { PrismaModule } from './infra/prisma/prisma.module';
+import { QueueModule } from './infra/queue/queue.module';
+import { RedisModule } from './infra/redis/redis.module';
+import { AuditModule } from './modules/audit/audit.module';
+
+/**
+ * Same codebase as the API, BullMQ processors only (TRD §3). No HTTP listener; module processors are
+ * added here as they are built (notifications, order-timers, dispatch, ...).
+ */
+@Module({
+  imports: [
+    AppConfigModule,
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) =>
+        loggerConfig({ NODE_ENV: config.get('NODE_ENV', { infer: true }), LOG_LEVEL: config.get('LOG_LEVEL', { infer: true }) }),
+    }),
+    EventEmitterModule.forRoot(),
+    PrismaModule,
+    RedisModule,
+    QueueModule,
+    MailModule,
+    CloudinaryModule,
+    AuditModule,
+  ],
+})
+export class WorkerModule {}

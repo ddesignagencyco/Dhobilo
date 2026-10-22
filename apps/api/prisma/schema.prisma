@@ -1,0 +1,852 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── ENUMS ─────────────
+enum Role {
+  CUSTOMER
+  VENDOR_OWNER
+  VENDOR_STAFF
+  RIDER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum Locale {
+  EN
+  UR
+}
+
+enum OtpPurpose {
+  LOGIN
+  DELIVERY_PROOF
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum Availability {
+  OPEN
+  CLOSED
+  BUSY
+}
+
+enum RiderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum DocType {
+  CNIC_FRONT
+  CNIC_BACK
+  SHOP_PHOTO
+  BUSINESS_REG
+  RIDER_PHOTO
+}
+
+enum ServiceType {
+  WASH_FOLD
+  WASH_IRON
+  DRY_CLEAN
+  IRON_ONLY
+  OTHER
+}
+
+enum OrderStatus {
+  PLACED
+  ACCEPTED
+  REJECTED
+  PICKED_UP
+  IN_PROCESS
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  CARD
+  JAZZCASH
+  EASYPAISA
+  RAAST
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  COD_PENDING
+  COD_COLLECTED
+}
+
+enum JobType {
+  PICKUP
+  DROP
+}
+
+enum JobStatus {
+  UNASSIGNED
+  ASSIGNED
+  ACCEPTED
+  IN_TRANSIT
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ProofType {
+  PHOTO
+  OTP
+}
+
+enum ReviewTarget {
+  VENDOR
+  RIDER
+}
+
+enum ComplaintType {
+  COMPLAINT
+  REDO
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_REVIEW
+  VENDOR_RESPONDED
+  RESOLVED
+  REJECTED
+}
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum CommissionScope {
+  GLOBAL
+  CATEGORY
+  VENDOR
+}
+
+enum PayoutMethod {
+  BANK
+  WALLET
+}
+
+enum PayoutStatus {
+  REQUESTED
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum LedgerType {
+  ORDER_EARNING
+  COMMISSION
+  PAYOUT
+  ADJUSTMENT
+  REFUND
+}
+
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+  PUSH
+  EMAIL
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum ReferralStatus {
+  PENDING
+  REWARDED
+}
+
+// ───────────── IDENTITY ─────────────
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  nameUr    String?
+  timezone  String   @default("Asia/Karachi")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  vendors   Vendor[]
+  riders    Rider[]
+  orders    Order[]
+  addresses Address[]
+}
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  phone           String     @unique
+  email           String?    @unique
+  passwordHash    String? // admin accounts only
+  name            String?
+  role            Role
+  status          UserStatus @default(ACTIVE)
+  locale          Locale     @default(EN)
+  referralCode    String?    @unique
+  phoneVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  addresses     Address[]
+  sessions      Session[]
+  deviceTokens  DeviceToken[]
+  notifications Notification[]
+  vendorOwned   Vendor?
+  vendorStaff   VendorStaff[]
+  rider         Rider?
+  orders        Order[]            @relation("CustomerOrders")
+  carts         Cart[]
+  reviews       Review[]
+  complaints    Complaint[]
+  complaintMsgs ComplaintMessage[]
+  redemptions   PromoRedemption[]
+  referralsMade Referral[]         @relation("Referrer")
+  referredBy    Referral?          @relation("Referee")
+  auditLogs     AuditLog[]
+
+  @@index([role, status])
+}
+
+model OtpCode {
+  id         String     @id @default(uuid()) @db.Uuid
+  phone      String
+  purpose    OtpPurpose
+  codeHash   String
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([phone, purpose, createdAt])
+}
+
+model Session {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  refreshHash String    @unique
+  deviceInfo  String?
+  ip          String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique
+  platform  String // android | ios | web
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Address {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  label     String? // Home, Office
+  line1     String
+  line2     String?
+  area      String?
+  cityId    Int
+  lat       Float
+  lng       Float
+  isDefault Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city   City    @relation(fields: [cityId], references: [id])
+  orders Order[]
+
+  @@index([userId, deletedAt])
+}
+
+// ───────────── VENDORS & CATALOG ─────────────
+model Vendor {
+  id               String       @id @default(uuid()) @db.Uuid
+  ownerId          String       @unique @db.Uuid
+  cityId           Int
+  businessName     String
+  description      String?
+  addressLine      String
+  lat              Float
+  lng              Float
+  cnicEnc          String // AES-256-GCM ciphertext
+  cnicHash         String       @unique // HMAC for dedupe
+  status           VendorStatus @default(PENDING)
+  rejectionReason  String?
+  approvedAt       DateTime?
+  approvedById     String?      @db.Uuid
+  availability     Availability @default(CLOSED)
+  serviceRadiusKm  Decimal      @default(5) @db.Decimal(5, 2)
+  respondWithinMin Int          @default(15)
+  ratingAvg        Decimal      @default(0) @db.Decimal(3, 2)
+  ratingCount      Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  owner       User             @relation(fields: [ownerId], references: [id])
+  city        City             @relation(fields: [cityId], references: [id])
+  staff       VendorStaff[]
+  documents   VendorDocument[]
+  hours       VendorHours[]
+  items       ServiceItem[]
+  carts       Cart[]
+  orders      Order[]
+  payouts     Payout[]
+  ledger      LedgerEntry[]
+  commissions CommissionRule[]
+  reviews     Review[]         @relation("VendorReviews")
+  complaints  Complaint[]
+
+  @@index([cityId, status, availability])
+  @@index([lat, lng])
+}
+
+model VendorStaff {
+  id       String @id @default(uuid()) @db.Uuid
+  vendorId String @db.Uuid
+  userId   String @db.Uuid
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, userId])
+}
+
+model VendorDocument {
+  id         String    @id @default(uuid()) @db.Uuid
+  vendorId   String    @db.Uuid
+  type       DocType
+  publicId   String // Cloudinary public_id
+  url        String
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId, type])
+}
+
+model VendorHours {
+  id        String @id @default(uuid()) @db.Uuid
+  vendorId  String @db.Uuid
+  dayOfWeek Int // 0 = Sunday
+  opensAt   Int // minutes from midnight
+  closesAt  Int
+
+  vendor Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, dayOfWeek])
+}
+
+model ServiceCategory {
+  id     Int    @id @default(autoincrement())
+  name   String @unique
+  nameUr String?
+
+  items       ServiceItem[]
+  commissions CommissionRule[]
+}
+
+model ServiceItem {
+  id              String      @id @default(uuid()) @db.Uuid
+  vendorId        String      @db.Uuid
+  categoryId      Int
+  itemName        String // Shirt, Trouser, Suit, Bedsheet
+  itemNameUr      String?
+  serviceType     ServiceType
+  price           Decimal     @db.Decimal(10, 2)
+  turnaroundHours Int
+  isActive        Boolean     @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  vendor     Vendor          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category   ServiceCategory @relation(fields: [categoryId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@unique([vendorId, itemName, serviceType])
+  @@index([vendorId, isActive])
+  @@index([categoryId])
+}
+
+// ───────────── CART & ORDER ─────────────
+model Cart {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @db.Uuid
+  vendorId   String   @db.Uuid
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  customer User       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vendor   Vendor     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  items    CartItem[]
+
+  @@unique([customerId, vendorId])
+}
+
+model CartItem {
+  id            String @id @default(uuid()) @db.Uuid
+  cartId        String @db.Uuid
+  serviceItemId String @db.Uuid
+  qty           Int
+
+  cart        Cart        @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  serviceItem ServiceItem @relation(fields: [serviceItemId], references: [id])
+
+  @@unique([cartId, serviceItemId])
+}
+
+model Order {
+  id                String        @id @default(uuid()) @db.Uuid
+  orderNo           String        @unique // DHB-LHR-000123
+  idempotencyKey    String?
+  customerId        String        @db.Uuid
+  vendorId          String        @db.Uuid
+  cityId            Int
+  addressId         String?       @db.Uuid
+  addressSnapshot   Json // frozen copy of address + lat/lng
+  status            OrderStatus   @default(PLACED)
+  pickupSlotStart   DateTime
+  pickupSlotEnd     DateTime
+  deliverySlotStart DateTime
+  deliverySlotEnd   DateTime
+  subtotal          Decimal       @db.Decimal(12, 2)
+  discountTotal     Decimal       @default(0) @db.Decimal(12, 2)
+  deliveryFee       Decimal       @default(0) @db.Decimal(12, 2)
+  total             Decimal       @db.Decimal(12, 2)
+  commissionRatePct Decimal       @db.Decimal(5, 2)
+  commissionAmount  Decimal       @db.Decimal(12, 2)
+  vendorEarning     Decimal       @db.Decimal(12, 2)
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+  promoId           String?       @db.Uuid
+  customerNote      String?
+  vendorRespondBy   DateTime
+  rejectionReason   String?
+  cancelReason      String?
+  placedAt          DateTime      @default(now())
+  acceptedAt        DateTime?
+  pickedUpAt        DateTime?
+  readyAt           DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  customer   User                 @relation("CustomerOrders", fields: [customerId], references: [id])
+  vendor     Vendor               @relation(fields: [vendorId], references: [id])
+  city       City                 @relation(fields: [cityId], references: [id])
+  address    Address?             @relation(fields: [addressId], references: [id])
+  promo      PromoCode?           @relation(fields: [promoId], references: [id])
+  items      OrderItem[]
+  history    OrderStatusHistory[]
+  jobs       DeliveryJob[]
+  payments   Payment[]
+  cod        CodCollection?
+  reviews    Review[]
+  complaints Complaint[]
+  ledger     LedgerEntry[]
+  redemption PromoRedemption[]
+
+  @@unique([customerId, idempotencyKey])
+  @@index([customerId, createdAt])
+  @@index([vendorId, status])
+  @@index([status, createdAt])
+  @@index([cityId, createdAt])
+}
+
+model OrderItem {
+  id            String      @id @default(uuid()) @db.Uuid
+  orderId       String      @db.Uuid
+  serviceItemId String?     @db.Uuid
+  name          String // snapshot
+  nameUr        String?
+  serviceType   ServiceType
+  unitPrice     Decimal     @db.Decimal(10, 2)
+  qty           Int
+  lineTotal     Decimal     @db.Decimal(12, 2)
+
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceItem ServiceItem? @relation(fields: [serviceItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model OrderStatusHistory {
+  id         String       @id @default(uuid()) @db.Uuid
+  orderId    String       @db.Uuid
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actorId    String?      @db.Uuid
+  actorRole  Role?
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+// ───────────── DELIVERY ─────────────
+model Rider {
+  id                 String      @id @default(uuid()) @db.Uuid
+  userId             String      @unique @db.Uuid
+  cityId             Int
+  status             RiderStatus @default(PENDING)
+  cnicEnc            String
+  cnicHash           String      @unique
+  photoUrl           String?
+  photoPublicId      String?
+  isOnline           Boolean     @default(false)
+  lastLat            Float?
+  lastLng            Float?
+  lastSeenAt         DateTime?
+  approvedAt         DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id])
+  city        City            @relation(fields: [cityId], references: [id])
+  jobs        DeliveryJob[]
+  collections CodCollection[]
+  settlements CodSettlement[]
+  reviews     Review[]        @relation("RiderReviews")
+
+  @@index([cityId, status, isOnline])
+}
+
+model CourierPartner {
+  id         String  @id @default(uuid()) @db.Uuid
+  code       String  @unique // e.g. "leopards", "trax"
+  name       String
+  isActive   Boolean @default(false)
+  configJson Json?
+
+  jobs DeliveryJob[]
+}
+
+model DeliveryJob {
+  id                 String    @id @default(uuid()) @db.Uuid
+  orderId            String    @db.Uuid
+  jobType            JobType
+  status             JobStatus @default(UNASSIGNED)
+  riderId            String?   @db.Uuid
+  partnerId          String?   @db.Uuid
+  partnerRef         String? // courier tracking id
+  scheduledStart     DateTime
+  scheduledEnd       DateTime
+  assignedAt         DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  proofType          ProofType?
+  proofPhotoUrl      String?
+  proofPhotoPublicId String?
+  proofOtpHash       String?
+  failureReason      String?
+  riderFee           Decimal?  @db.Decimal(10, 2)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rider   Rider?          @relation(fields: [riderId], references: [id])
+  partner CourierPartner? @relation(fields: [partnerId], references: [id])
+
+  @@unique([orderId, jobType])
+  @@index([riderId, status])
+  @@index([status, jobType])
+}
+
+// ───────────── MONEY ─────────────
+model Payment {
+  id         String        @id @default(uuid()) @db.Uuid
+  orderId    String        @db.Uuid
+  method     PaymentMethod
+  gateway    String // jazzcash | easypaisa | raast | payfast | cod
+  gatewayRef String?
+  amount     Decimal       @db.Decimal(12, 2)
+  status     PaymentStatus @default(PENDING)
+  rawPayload Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@unique([gateway, gatewayRef])
+  @@index([orderId])
+}
+
+model CodSettlement {
+  id        String   @id @default(uuid()) @db.Uuid
+  riderId   String   @db.Uuid
+  amount    Decimal  @db.Decimal(12, 2)
+  reference String?
+  settledAt DateTime @default(now())
+  settledBy String?  @db.Uuid
+
+  rider       Rider           @relation(fields: [riderId], references: [id])
+  collections CodCollection[]
+
+  @@index([riderId, settledAt])
+}
+
+model CodCollection {
+  id           String   @id @default(uuid()) @db.Uuid
+  orderId      String   @unique @db.Uuid
+  riderId      String   @db.Uuid
+  amount       Decimal  @db.Decimal(12, 2)
+  collectedAt  DateTime @default(now())
+  settlementId String?  @db.Uuid
+
+  order      Order          @relation(fields: [orderId], references: [id])
+  rider      Rider          @relation(fields: [riderId], references: [id])
+  settlement CodSettlement? @relation(fields: [settlementId], references: [id])
+
+  @@index([riderId, settlementId])
+}
+
+model CommissionRule {
+  id            String          @id @default(uuid()) @db.Uuid
+  scope         CommissionScope
+  vendorId      String?         @db.Uuid
+  categoryId    Int?
+  ratePct       Decimal         @db.Decimal(5, 2)
+  effectiveFrom DateTime        @default(now())
+  createdById   String?         @db.Uuid
+
+  vendor   Vendor?          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category ServiceCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([scope, vendorId, categoryId, effectiveFrom])
+}
+
+model Payout {
+  id          String       @id @default(uuid()) @db.Uuid
+  vendorId    String       @db.Uuid
+  amount      Decimal      @db.Decimal(12, 2)
+  method      PayoutMethod
+  accountRef  String // IBAN or wallet number (masked in UI)
+  status      PayoutStatus @default(REQUESTED)
+  requestedAt DateTime     @default(now())
+  processedAt DateTime?
+  processedBy String?      @db.Uuid
+  txnRef      String?
+  note        String?
+
+  vendor Vendor        @relation(fields: [vendorId], references: [id])
+  ledger LedgerEntry[]
+
+  @@index([vendorId, status])
+}
+
+model LedgerEntry {
+  id        String     @id @default(uuid()) @db.Uuid
+  vendorId  String     @db.Uuid
+  orderId   String?    @db.Uuid
+  payoutId  String?    @db.Uuid
+  type      LedgerType
+  amount    Decimal    @db.Decimal(12, 2) // signed: + credit, - debit
+  note      String?
+  createdAt DateTime   @default(now())
+
+  vendor Vendor  @relation(fields: [vendorId], references: [id])
+  order  Order?  @relation(fields: [orderId], references: [id])
+  payout Payout? @relation(fields: [payoutId], references: [id])
+
+  @@index([vendorId, createdAt])
+  @@index([orderId])
+}
+
+// ───────────── ENGAGEMENT & SUPPORT ─────────────
+model Review {
+  id         String       @id @default(uuid()) @db.Uuid
+  orderId    String       @db.Uuid
+  customerId String       @db.Uuid
+  targetType ReviewTarget
+  vendorId   String?      @db.Uuid
+  riderId    String?      @db.Uuid
+  rating     Int // 1..5 (CHECK constraint added in migration)
+  comment    String?
+  createdAt  DateTime     @default(now())
+
+  order    Order   @relation(fields: [orderId], references: [id])
+  customer User    @relation(fields: [customerId], references: [id])
+  vendor   Vendor? @relation("VendorReviews", fields: [vendorId], references: [id])
+  rider    Rider?  @relation("RiderReviews", fields: [riderId], references: [id])
+
+  @@unique([orderId, targetType])
+  @@index([vendorId, createdAt])
+}
+
+model Complaint {
+  id           String          @id @default(uuid()) @db.Uuid
+  orderId      String          @db.Uuid
+  customerId   String          @db.Uuid
+  vendorId     String          @db.Uuid
+  type         ComplaintType
+  status       ComplaintStatus @default(OPEN)
+  subject      String
+  description  String
+  attachments  Json? // [{publicId,url}]
+  resolution   String?
+  assignedToId String?         @db.Uuid
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  order    Order              @relation(fields: [orderId], references: [id])
+  customer User               @relation(fields: [customerId], references: [id])
+  vendor   Vendor             @relation(fields: [vendorId], references: [id])
+  messages ComplaintMessage[]
+
+  @@index([vendorId, status])
+  @@index([status, createdAt])
+}
+
+model ComplaintMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  complaintId String   @db.Uuid
+  authorId    String   @db.Uuid
+  authorRole  Role
+  body        String
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+
+  @@index([complaintId, createdAt])
+}
+
+model PromoCode {
+  id             String       @id @default(uuid()) @db.Uuid
+  code           String       @unique
+  discountType   DiscountType
+  value          Decimal      @db.Decimal(10, 2)
+  maxDiscount    Decimal?     @db.Decimal(10, 2)
+  minOrderAmount Decimal?     @db.Decimal(10, 2)
+  maxUses        Int?
+  perUserLimit   Int          @default(1)
+  validFrom      DateTime
+  validTo        DateTime
+  cityId         Int? // null = all cities
+  isActive       Boolean      @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  orders      Order[]
+  redemptions PromoRedemption[]
+}
+
+model PromoRedemption {
+  id        String   @id @default(uuid()) @db.Uuid
+  promoId   String   @db.Uuid
+  userId    String   @db.Uuid
+  orderId   String   @db.Uuid
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  promo PromoCode @relation(fields: [promoId], references: [id])
+  user  User      @relation(fields: [userId], references: [id])
+  order Order     @relation(fields: [orderId], references: [id])
+
+  @@unique([promoId, orderId])
+  @@index([promoId, userId])
+}
+
+model Referral {
+  id         String         @id @default(uuid()) @db.Uuid
+  referrerId String         @db.Uuid
+  refereeId  String         @unique @db.Uuid
+  status     ReferralStatus @default(PENDING)
+  rewardedAt DateTime?
+  createdAt  DateTime       @default(now())
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id])
+  referee  User @relation("Referee", fields: [refereeId], references: [id])
+
+  @@index([referrerId])
+}
+
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @db.Uuid
+  channel   NotificationChannel
+  template  String
+  payload   Json
+  status    NotificationStatus  @default(QUEUED)
+  attempts  Int                 @default(0)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, channel])
+}
+
+model Announcement {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String
+  body      String
+  segment   Json // {role?, cityId?, ...}
+  sentById  String   @db.Uuid
+  sentCount Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @db.Uuid
+  actorRole Role?
+  action    String // e.g. VENDOR_APPROVED
+  entity    String // table/aggregate name
+  entityId  String
+  before    Json?
+  after     Json?
+  ip        String?
+  requestId String?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
