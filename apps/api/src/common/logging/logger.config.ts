@@ -20,6 +20,17 @@ export const REDACT_PATHS = [
   '*.token',
   '*.cardNumber',
   '*.cvv',
+  // Payments and payouts (Phase 6): gateway credentials and signatures, checkout forms, and where money is sent.
+  '*.pp_Password',
+  '*.pp_SecureHash',
+  '*.*.pp_Password',
+  '*.*.pp_SecureHash',
+  '*.formFields',
+  '*.account',
+  '*.accountRef',
+  '*.iban',
+  'req.headers["x-mock-signature"]',
+  'req.headers["x-courier-signature"]',
 ];
 
 export function loggerConfig(env: Pick<Env, 'NODE_ENV' | 'LOG_LEVEL'>): Params {

@@ -11,6 +11,8 @@ export const jobInclude = {
       orderNo: true,
       status: true,
       cityId: true,
+      paymentMethod: true,
+      total: true,
       addressSnapshot: true,
       customer: { select: { name: true, phone: true } },
       vendor: { select: { businessName: true, addressLine: true, lat: true, lng: true, owner: { select: { phone: true } } } },
@@ -63,6 +65,8 @@ export function toRiderJobView(job: JobRow, extra: { offerExpiresAt?: Date | nul
     to,
     ...(extra.distanceKm !== undefined ? { distanceKm: extra.distanceKm } : {}),
     offerExpiresAt: extra.offerExpiresAt ?? null,
+    // Cash to take from the customer at the door (cash-on-delivery deliveries only).
+    cod: job.jobType === 'DROP' && job.order.paymentMethod === 'COD' ? { collect: fmt(money(job.order.total)), currency: 'PKR' as const } : null,
     proof: { required: job.jobType === 'DROP', types: job.jobType === 'DROP' ? ['OTP', 'PHOTO'] : ['PHOTO'], used: job.proofType },
     failureReason: job.failureReason,
     startedAt: job.startedAt,
