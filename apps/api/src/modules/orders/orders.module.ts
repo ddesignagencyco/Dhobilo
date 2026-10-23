@@ -7,6 +7,7 @@ import { AdminOrdersService } from './admin-orders.service';
 import { OrderEventsHub } from './lifecycle/order-events.hub';
 import { OrderLifecycleModule } from './lifecycle/order-lifecycle.module';
 import { OrderAccessService } from './order-access.service';
+import { PaymentsCoreModule } from '../payments/payments-core.module';
 import { OrderOwnership } from './order-ownership';
 import { OrderStreamService } from './order-stream.service';
 import { OrderViewerGuard } from './order-viewer.guard';
@@ -17,7 +18,7 @@ import { VendorOrdersController } from './vendor-orders.controller';
 import { VendorOrdersService } from './vendor-orders.service';
 
 @Module({
-  imports: [CartModule, FinanceModule, SlotsModule, VendorsModule, OrderLifecycleModule],
+  imports: [PaymentsCoreModule, CartModule, FinanceModule, SlotsModule, VendorsModule, OrderLifecycleModule],
   controllers: [OrdersController, VendorOrdersController],
   providers: [OrdersService, VendorOrdersService, AdminOrdersService, OrderOwnership, OrderAccessService, OrderViewerGuard, OrderStreamService, OrderEventsHub, OrderTimersScheduler],
   exports: [OrdersService, VendorOrdersService, AdminOrdersService, OrderLifecycleModule],

@@ -15,6 +15,8 @@ import { RateLimiter } from '../../infra/redis/rate-limiter.service';
 import { CartService } from '../cart/cart.service';
 import { PricingService, QuotedVendor, mergeLines } from '../cart/pricing.service';
 import { CommissionService } from '../finance/commission.service';
+import { GatewayRegistry } from '../payments/gateway/gateway.registry';
+import { PaymentsService } from '../payments/payments.service';
 import { SlotsService } from '../slots/slots.service';
 import { ListOrdersQueryDto, PlaceOrderDto } from './dto/orders.dto';
 import { OrderLifecycleService } from './lifecycle/order-lifecycle.service';
@@ -59,6 +61,8 @@ export class OrdersService {
     private readonly lifecycle: OrderLifecycleService,
     private readonly access: OrderAccessService,
     private readonly cart: CartService,
+    private readonly payments: PaymentsService,
+    private readonly gateways: GatewayRegistry,
   ) {}
 
   /**
@@ -67,7 +71,7 @@ export class OrdersService {
    */
   async place(user: AuthUser, idempotencyKey: string, dto: PlaceOrderDto, requestId?: string) {
     const replay = await this.findReplay(user.id, idempotencyKey, dto);
-    if (replay) return { order: replay, replayed: true };
+    if (replay) return { order: await this.withPayment(replay), replayed: true };
 
     await this.limiter.consume(`rl:order-place:user:${user.id}`, PLACE_LIMIT.limit, PLACE_LIMIT.windowSec);
     this.assertAcceptedRequest(dto);
@@ -104,6 +108,7 @@ export class OrdersService {
       });
     }
 
+    const online = dto.paymentMethod !== PaymentMethod.COD;
     const pickupStart = new Date(dto.pickupSlotStart);
     const deliveryStart = new Date(dto.deliverySlotStart);
 
@@ -161,8 +166,10 @@ export class OrdersService {
             commissionRatePct: commission.ratePct,
             commissionAmount: commission.amount,
             vendorEarning: commission.vendorEarning,
-            paymentMethod: PaymentMethod.COD,
-            paymentStatus: PaymentStatus.COD_PENDING,
+            paymentMethod: dto.paymentMethod,
+            paymentStatus: online ? PaymentStatus.PENDING : PaymentStatus.COD_PENDING,
+            // Cash orders reach the vendor at once; online orders only once they are paid.
+            vendorVisibleAt: online ? null : now,
             customerNote: dto.customerNote,
             vendorRespondBy: new Date(now.getTime() + vendor.respondWithinMin * 60_000),
             items: {
@@ -177,7 +184,11 @@ export class OrdersService {
               })),
             },
             history: { create: { fromStatus: null, toStatus: OrderStatus.PLACED, actorId: user.id, actorRole: Role.CUSTOMER } },
-            payments: { create: { method: PaymentMethod.COD, gateway: 'cod', amount: quote.total, status: PaymentStatus.COD_PENDING } },
+            payments: {
+              create: online
+                ? this.payments.newAttempt(dto.paymentMethod, quote.total)
+                : { method: PaymentMethod.COD, gateway: 'cod', amount: quote.total, status: PaymentStatus.COD_PENDING },
+            },
           },
         });
       });
@@ -185,25 +196,36 @@ export class OrdersService {
       // Two simultaneous requests with the same key: the loser gets the winner's order.
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002' && String(err.meta?.target).includes('idempotencyKey')) {
         const winner = await this.findReplay(user.id, idempotencyKey, dto);
-        if (winner) return { order: winner, replayed: true };
+        if (winner) return { order: await this.withPayment(winner), replayed: true };
       }
       throw err;
     }
 
     if (created.replayed) {
       const winner = await this.findReplay(user.id, idempotencyKey, dto);
-      if (winner) return { order: winner, replayed: true };
+      if (winner) return { order: await this.withPayment(winner), replayed: true };
     }
 
     await this.prisma.cart.deleteMany({ where: { customerId: user.id, vendorId: vendor.id } });
-    await this.events.emitAsync(DomainEvent.ORDER_PLACED, {
-      orderId: created.id,
-      vendorId: vendor.id,
-      customerId: user.id,
-      requestId,
-    } satisfies OrderPlacedEvent);
+    if (online) {
+      // The vendor hears about it when it is paid. First get the customer's checkout from the gateway.
+      const attempt = await this.prisma.payment.findFirstOrThrow({ where: { orderId: created.id }, orderBy: { attempt: 'desc' }, select: { id: true } });
+      try {
+        await this.payments.initiate(attempt.id);
+      } catch (err) {
+        await this.lifecycle.transition(created.id, OrderStatus.CANCELLED, { kind: 'SYSTEM' }, { reason: 'The payment could not be started.', requestId }).catch(() => undefined);
+        throw err;
+      }
+    } else {
+      await this.events.emitAsync(DomainEvent.ORDER_PLACED, {
+        orderId: created.id,
+        vendorId: vendor.id,
+        customerId: user.id,
+        requestId,
+      } satisfies OrderPlacedEvent);
+    }
 
-    return { order: await this.getOwn(user.id, created.id), replayed: false };
+    return { order: await this.withPayment(await this.getOwn(user.id, created.id)), replayed: false };
   }
 
   async list(customerId: string, q: ListOrdersQueryDto) {
@@ -283,12 +305,16 @@ export class OrdersService {
     return { cart, unavailable, priceChanges };
   }
 
-  /** Only COD exists until Phase 6, and promo codes until Phase 7: refuse rather than silently ignore. */
+  /** The order together with how it is to be paid (and, for a pending online payment, where to pay). */
+  private async withPayment<T extends { id: string }>(order: T) {
+    return { ...order, payment: await this.payments.latestView(order.id) };
+  }
+
+  /** Only methods something can serve, and no promo codes until Phase 7: refuse rather than silently ignore. */
   private assertAcceptedRequest(dto: PlaceOrderDto): void {
-    if (dto.paymentMethod !== PaymentMethod.COD) {
-      throw new AppException('PAYMENT_METHOD_UNAVAILABLE', 'Only cash on delivery is available right now.', HttpStatus.BAD_REQUEST, {
-        available: [PaymentMethod.COD],
-      });
+    const available = this.gateways.enabledMethods();
+    if (!available.includes(dto.paymentMethod)) {
+      throw new AppException('PAYMENT_METHOD_UNAVAILABLE', 'That payment method is not available right now.', HttpStatus.BAD_REQUEST, { available });
     }
     if (dto.promoCode) throw new AppException('PROMO_UNAVAILABLE', 'Promo codes are not available yet.', HttpStatus.BAD_REQUEST);
   }

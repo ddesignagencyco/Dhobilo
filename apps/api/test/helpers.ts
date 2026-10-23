@@ -32,7 +32,7 @@ export async function createTestApp(
   });
   if (opts.customize) builder = opts.customize(builder);
   const moduleRef = await builder.compile();
-  const app = moduleRef.createNestApplication({ bufferLogs: true });
+  const app = moduleRef.createNestApplication({ bufferLogs: true, rawBody: true });
   configureApp(app);
   setupSwagger(app);
   await app.init();

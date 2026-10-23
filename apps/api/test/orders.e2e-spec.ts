@@ -272,12 +272,8 @@ describe('Orders (e2e)', () => {
       await http.post('/api/v1/orders').set('Idempotency-Key', randomUUID()).send(body(s)).expect(401);
     });
 
-    it('only cash on delivery for now, and no promo codes', async () => {
+    it('unknown payment methods are refused, and so are promo codes (not yet available)', async () => {
       const s = await scenario();
-      for (const method of ['CARD', 'JAZZCASH', 'EASYPAISA', 'RAAST']) {
-        const res = await place(s, { paymentMethod: method }).expect(400);
-        expect(res.body.error).toMatchObject({ code: 'PAYMENT_METHOD_UNAVAILABLE', details: { available: ['COD'] } });
-      }
       expect((await place(s, { paymentMethod: 'BITCOIN' }).expect(400)).body.error.code).toBe('VALIDATION_FAILED');
       expect((await place(s, { promoCode: 'SAVE10' }).expect(400)).body.error.code).toBe('PROMO_UNAVAILABLE');
     });

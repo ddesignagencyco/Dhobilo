@@ -17,7 +17,8 @@ export type TemplateName =
   | 'delivery_code'
   | 'rider_job_offer'
   | 'rider_job_assigned'
-  | 'rider_job_cancelled';
+  | 'rider_job_cancelled'
+  | 'order_refunded';
 
 export interface TemplateParams {
   orderNo: string;
@@ -112,6 +113,10 @@ export const ORDER_TEMPLATES: Record<TemplateName, Record<TemplateLocale, Text>>
   rider_job_assigned: {
     en: { title: 'Job assigned to you', body: 'You were given the {jobType} job for order {orderNo}.' },
     ur: { title: 'آپ کو کام سونپا گیا', body: 'آپ کو آرڈر {orderNo} کی {jobType} سونپی گئی ہے۔' },
+  },
+  order_refunded: {
+    en: { title: 'Refund on its way', body: 'Rs {total} for order {orderNo} is being refunded to your payment method.' },
+    ur: { title: 'رقم کی واپسی', body: 'آرڈر {orderNo} کے Rs {total} آپ کے ادائیگی کے طریقے پر واپس کیے جا رہے ہیں۔' },
   },
   rider_job_cancelled: {
     en: { title: 'Job cancelled', body: 'The {jobType} job for order {orderNo} is no longer yours. {reason}' },

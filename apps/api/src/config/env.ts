@@ -80,6 +80,23 @@ export const envSchema = z
     RIDER_TRACKING_ENABLED: bool.default(true),
     DELIVERY_OTP_TTL_HOURS: z.coerce.number().int().min(1).default(24),
     DELIVERY_OTP_MAX_ATTEMPTS: z.coerce.number().int().min(1).default(5),
+    /** Payments (Phase 6). */
+    /** Lets every online method run against a built-in fake gateway. For development and tests only; refused in production. */
+    PAYMENT_MOCK_GATEWAY: bool.default(false),
+    /** Signs the fake gateway's notifications. */
+    PAYMENT_MOCK_SECRET: z.string().default(''),
+    /** An online order that is still unpaid after this long is cancelled. */
+    PAYMENT_TIMEOUT_MIN: z.coerce.number().int().min(1).default(15),
+    /** Payments still pending after this long are checked with the gateway directly. */
+    PAYMENT_RECONCILE_AFTER_MIN: z.coerce.number().int().min(1).default(10),
+    /** Smallest payout a vendor may ask for, in PKR. */
+    PAYOUT_MIN_PKR: z.coerce.number().min(1).default(500),
+    /** JazzCash merchant credentials. Leave empty to keep JazzCash switched off. */
+    JAZZCASH_MERCHANT_ID: z.string().default(''),
+    JAZZCASH_PASSWORD: z.string().default(''),
+    JAZZCASH_INTEGRITY_SALT: z.string().default(''),
+    JAZZCASH_BASE_URL: z.string().url().default('https://sandbox.jazzcash.com.pk'),
+
     /** Where to email when a job cannot be assigned to anyone (optional). */
     OPS_ALERT_EMAIL: z.string().default(''),
     /** Shared secret the mock courier partner signs its webhooks with (testing). */
@@ -95,6 +112,16 @@ export const envSchema = z
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
       });
+    }
+    if (env.NODE_ENV === 'production' && env.PAYMENT_MOCK_GATEWAY) {
+      ctx.addIssue({ code: 'custom', path: ['PAYMENT_MOCK_GATEWAY'], message: 'PAYMENT_MOCK_GATEWAY must not be true in production' });
+    }
+    if (env.PAYMENT_MOCK_GATEWAY && env.PAYMENT_MOCK_SECRET.length < 16) {
+      ctx.addIssue({ code: 'custom', path: ['PAYMENT_MOCK_SECRET'], message: 'PAYMENT_MOCK_SECRET (16+ characters) is required when PAYMENT_MOCK_GATEWAY=true' });
+    }
+    const jazz = [env.JAZZCASH_MERCHANT_ID, env.JAZZCASH_PASSWORD, env.JAZZCASH_INTEGRITY_SALT];
+    if (jazz.some(Boolean) && !jazz.every(Boolean)) {
+      ctx.addIssue({ code: 'custom', path: ['JAZZCASH_MERCHANT_ID'], message: 'Set all of JAZZCASH_MERCHANT_ID, JAZZCASH_PASSWORD and JAZZCASH_INTEGRITY_SALT, or none' });
     }
     if (env.PUSH_PROVIDER === 'fcm') {
       for (const key of ['FCM_PROJECT_ID', 'FCM_CLIENT_EMAIL', 'FCM_PRIVATE_KEY'] as const) {

@@ -7,7 +7,7 @@ import { configureApp, setupSwagger } from './bootstrap';
 import type { Env } from './config/env';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   configureApp(app);
   setupSwagger(app);
 

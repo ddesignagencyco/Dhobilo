@@ -14,6 +14,7 @@ import { NotificationOrchestrator } from '../notifications/notification-orchestr
 import { OrderLifecycleService } from '../orders/lifecycle/order-lifecycle.service';
 import { DeliveryOtpService } from './delivery-otp.service';
 import { CompleteJobDto } from './dto/rider.dto';
+import { CodService } from '../finance/cod.service';
 import { DispatchScheduler } from './dispatch.scheduler';
 import { JobActor, OPEN_JOB_STATUSES, canMoveJob } from './job-state-machine';
 import { OpsAlertService } from './ops-alert.service';
@@ -59,6 +60,7 @@ export class DeliveryJobsService {
     private readonly notifier: NotificationOrchestrator,
     private readonly ops: OpsAlertService,
     private readonly limiter: RateLimiter,
+    private readonly cod: CodService,
   ) {}
 
   // ───────────────────────── creation & order sync ─────────────────────────
@@ -222,6 +224,8 @@ export class DeliveryJobsService {
       requestId,
     });
     await this.advanceOrder(held.orderId, finish, rider, requestId);
+    // Delivering a cash order means the rider now holds the customer's money.
+    if (held.jobType === JobType.DROP) await this.cod.recordCollection(this.prisma, held.orderId, rider.id);
     return updated;
   }
 
@@ -367,6 +371,12 @@ export class DeliveryJobsService {
       if (job.status === J.ACCEPTED) await this.applyPartnerProgress(job, 'IN_TRANSIT');
       await this.move(job.id, J.IN_TRANSIT, J.COMPLETED, 'PARTNER', { data: { completedAt: this.clock.now() } });
       await this.advanceOrder(job.orderId, ORDER_AFTER[job.jobType].finish, null);
+      if (job.jobType === JobType.DROP) {
+        const cash = await this.prisma.order.findUnique({ where: { id: job.orderId }, select: { orderNo: true, paymentMethod: true } });
+        if (cash?.paymentMethod === 'COD') {
+          await this.ops.alert('A courier delivered a cash-on-delivery order', `Order ${cash.orderNo}: reconcile the cash with the courier, then credit the vendor with a ledger adjustment.`, { jobId: job.id, orderId: job.orderId });
+        }
+      }
     } else {
       await this.move(job.id, [J.ACCEPTED, J.IN_TRANSIT], J.FAILED, 'PARTNER', { data: { failureReason: reason ?? 'The courier could not complete it.' } });
       await this.ops.alert('A courier partner job failed', `Order ${job.orderId} (${job.jobType}): ${reason ?? 'no reason given'}`, { jobId: job.id });

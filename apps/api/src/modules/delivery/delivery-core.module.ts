@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CryptoModule } from '../../common/crypto/crypto.module';
+import { FinanceModule } from '../finance/finance.module';
 import { NotificationOrchestratorModule } from '../notifications/notification-orchestrator.module';
 import { OrderLifecycleModule } from '../orders/lifecycle/order-lifecycle.module';
 import { CourierService } from './courier/courier.service';
@@ -18,7 +19,7 @@ import { RiderPresenceService } from './rider-presence.service';
  * controllers) and by the worker (which adds the queue consumer), because orders change in both and jobs follow them.
  */
 @Module({
-  imports: [OrderLifecycleModule, NotificationOrchestratorModule, CryptoModule],
+  imports: [OrderLifecycleModule, NotificationOrchestratorModule, CryptoModule, FinanceModule],
   providers: [
     DeliveryJobsService,
     DeliveryOtpService,

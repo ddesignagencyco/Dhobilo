@@ -82,6 +82,15 @@ export class NotificationsService {
     }
   }
 
+  /** A plain SMS to one number (payout updates and the like). Never throws. */
+  async sendSms(to: string, message: string, requestId?: string) {
+    try {
+      await this.queue.add(SEND_SMS_JOB, { to, message, requestId } satisfies SendSmsJob);
+    } catch (err) {
+      this.logger.error({ err, requestId }, 'Could not enqueue an SMS');
+    }
+  }
+
   /** Tells a rider about an admin decision by SMS. Never throws, for the same reason as notifyVendorDecision. */
   async notifyRiderDecision(to: Recipient, decision: VendorDecision, reason?: string, requestId?: string) {
     try {

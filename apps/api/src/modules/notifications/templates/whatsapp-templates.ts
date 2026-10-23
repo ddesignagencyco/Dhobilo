@@ -22,6 +22,7 @@ export const WHATSAPP_TEMPLATES: Record<TemplateName, { bspId: string; paramOrde
   delivery_code: { bspId: 'dhoblio_delivery_code', paramOrder: ['orderNo', 'code'] },
   rider_job_offer: { bspId: 'dhoblio_rider_job_offer', paramOrder: ['orderNo', 'jobType', 'minutes'] },
   rider_job_assigned: { bspId: 'dhoblio_rider_job_assigned', paramOrder: ['orderNo', 'jobType'] },
+  order_refunded: { bspId: 'dhoblio_order_refunded', paramOrder: ['orderNo', 'total'] },
   rider_job_cancelled: { bspId: 'dhoblio_rider_job_cancelled', paramOrder: ['orderNo', 'jobType', 'reason'] },
 };
 

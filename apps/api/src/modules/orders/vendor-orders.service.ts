@@ -11,6 +11,9 @@ import { OrderLifecycleService } from './lifecycle/order-lifecycle.service';
 import { actorKindOf, nextStatuses } from './lifecycle/order-state-machine';
 
 /** "+923001234567" -> "+92300***4567": enough to recognise, not enough to misuse. */
+/** Online orders stay hidden from the vendor until they are paid. */
+const VISIBLE: Prisma.OrderWhereInput = { vendorVisibleAt: { not: null } };
+
 export const maskPhone = (phone: string) => (phone.length > 8 ? `${phone.slice(0, 6)}***${phone.slice(-4)}` : '***');
 
 const boardSelect = {
@@ -76,7 +79,7 @@ export class VendorOrdersService {
   async list(vendorId: string, q: VendorOrdersQueryDto) {
     const limit = Math.min(q.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const onlyWaiting = q.status?.length === 1 && q.status[0] === OrderStatus.PLACED;
-    const where: Prisma.OrderWhereInput = { vendorId, ...(q.status?.length ? { status: { in: q.status } } : {}) };
+    const where: Prisma.OrderWhereInput = { vendorId, ...VISIBLE, ...(q.status?.length ? { status: { in: q.status } } : {}) };
 
     if (onlyWaiting) {
       const rows = await this.prisma.order.findMany({ where, orderBy: [{ vendorRespondBy: 'asc' }, { id: 'asc' }], take: 100, select: boardSelect });
@@ -94,7 +97,7 @@ export class VendorOrdersService {
 
   /** Orders per status, for the tabs on the board. Every status is present, zero or not. */
   async counts(vendorId: string) {
-    const groups = await this.prisma.order.groupBy({ by: ['status'], where: { vendorId }, _count: { _all: true } });
+    const groups = await this.prisma.order.groupBy({ by: ['status'], where: { vendorId, ...VISIBLE }, _count: { _all: true } });
     const counts = Object.fromEntries(Object.values(OrderStatus).map((s) => [s, 0])) as Record<OrderStatus, number>;
     for (const g of groups) counts[g.status] = g._count._all;
     return counts;
@@ -142,7 +145,7 @@ export class VendorOrdersService {
 
   /** The order, only if it belongs to this vendor; otherwise 404 (never confirm other vendors' orders exist). */
   private async owned<S extends Prisma.OrderSelect>(vendorId: string, orderId: string, select: S) {
-    const order = /^[0-9a-f-]{36}$/i.test(orderId) ? await this.prisma.order.findFirst({ where: { id: orderId, vendorId }, select }) : null;
+    const order = /^[0-9a-f-]{36}$/i.test(orderId) ? await this.prisma.order.findFirst({ where: { id: orderId, vendorId, ...VISIBLE }, select }) : null;
     if (!order) throw new AppException(ErrorCode.NOT_FOUND, 'Order not found.', HttpStatus.NOT_FOUND);
     return order;
   }

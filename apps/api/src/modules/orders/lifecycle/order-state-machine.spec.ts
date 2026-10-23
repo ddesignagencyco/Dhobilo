@@ -8,7 +8,7 @@ const ACTORS: ActorKind[] = ['CUSTOMER', 'VENDOR', 'RIDER', 'ADMIN', 'SYSTEM'];
 const ALLOWED: [OrderStatus, OrderStatus, ActorKind[]][] = [
   ['PLACED', 'ACCEPTED', ['VENDOR', 'ADMIN']],
   ['PLACED', 'REJECTED', ['VENDOR', 'SYSTEM', 'ADMIN']],
-  ['PLACED', 'CANCELLED', ['CUSTOMER', 'ADMIN']],
+  ['PLACED', 'CANCELLED', ['CUSTOMER', 'ADMIN', 'SYSTEM']],
   ['ACCEPTED', 'CANCELLED', ['CUSTOMER', 'ADMIN']],
   ['ACCEPTED', 'PICKED_UP', ['VENDOR', 'RIDER', 'ADMIN']],
   ['PICKED_UP', 'IN_PROCESS', ['VENDOR', 'ADMIN']],

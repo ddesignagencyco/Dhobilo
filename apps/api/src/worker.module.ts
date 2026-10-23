@@ -16,6 +16,8 @@ import { DispatchBootstrap } from './modules/delivery/dispatch.processor';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
 import { OrderLifecycleModule } from './modules/orders/lifecycle/order-lifecycle.module';
+import { FinanceBootstrap, FinanceWorkerModule } from './modules/finance/finance-worker.module';
+import { PaymentsBootstrap, PaymentsWorkerModule } from './modules/payments/payments-worker.module';
 import { OrderTimersBootstrap } from './modules/orders/timers/order-timers.bootstrap';
 import { OrderTimersModule } from './modules/orders/timers/order-timers.module';
 import { TimeModule } from './common/time/clock';
@@ -46,7 +48,9 @@ import { TimeModule } from './common/time/clock';
     NotificationOrchestratorModule,
     NotificationsWorkerModule,
     DeliveryWorkerModule,
+    PaymentsWorkerModule,
+    FinanceWorkerModule,
   ],
-  providers: [OrderTimersBootstrap, DispatchBootstrap],
+  providers: [OrderTimersBootstrap, DispatchBootstrap, PaymentsBootstrap, FinanceBootstrap],
 })
 export class WorkerModule {}

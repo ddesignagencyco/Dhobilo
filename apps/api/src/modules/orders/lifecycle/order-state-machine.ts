@@ -38,7 +38,8 @@ export const TRANSITIONS: Readonly<Partial<Record<OrderStatus, Readonly<Partial<
   [S.PLACED]: {
     [S.ACCEPTED]: { actors: ['VENDOR', 'ADMIN'] },
     [S.REJECTED]: { actors: ['VENDOR', 'SYSTEM', 'ADMIN'], reasonRequired: true },
-    [S.CANCELLED]: { actors: ['CUSTOMER', 'ADMIN'], reasonRequired: ['ADMIN'] },
+    // SYSTEM: an online order that was never paid for is cancelled automatically.
+    [S.CANCELLED]: { actors: ['CUSTOMER', 'ADMIN', 'SYSTEM'], reasonRequired: ['ADMIN', 'SYSTEM'] },
   },
   [S.ACCEPTED]: {
     // "Customer before pickup": an ACCEPTED order has not been picked up yet, so this is exactly that window.

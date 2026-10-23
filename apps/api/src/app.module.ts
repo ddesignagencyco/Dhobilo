@@ -23,11 +23,13 @@ import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
+import { FinanceApiModule } from './modules/finance/finance-api.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { MediaModule } from './modules/media/media.module';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { SlotsModule } from './modules/slots/slots.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -69,8 +71,10 @@ import { UsersModule } from './modules/users/users.module';
     SlotsModule,
     CartModule,
     FinanceModule,
+    FinanceApiModule,
     OrdersModule,
     DeliveryModule,
+    PaymentsModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },
