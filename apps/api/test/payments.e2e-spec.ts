@@ -470,14 +470,18 @@ describe('Online payments (e2e)', () => {
   });
 
   describe('after paying', () => {
-    it('the browser coming back from the gateway only forwards to the order page; it never decides the result', async () => {
+    it('the browser coming back from the gateway is only forwarded to the order page; it never decides the result', async () => {
       const s = await scenario();
       const order = await placeOnline(s);
-      const get = await http.get(`/api/v1/payments/return/mock?order=${order.id}&status=PAID`).redirects(0).expect(303);
-      expect(get.headers.location).toBe(`http://localhost:3000/orders/${order.id}?payment=returned`);
-      const post = await http.post(`/api/v1/payments/return/mock?order=${order.id}`).type('form').send({ pp_ResponseCode: '000' }).redirects(0).expect(303);
-      expect(post.headers.location).toBe(`http://localhost:3000/orders/${order.id}?payment=returned`);
-      expect((await http.get('/api/v1/payments/return/mock?order=not-a-uuid').redirects(0).expect(303)).headers.location).toBe('http://localhost:3000/orders');
+      const target = `http://localhost:3000/orders/${order.id}?payment=returned`;
+      const get = await http.get(`/api/v1/payments/return/mock?order=${order.id}&status=PAID`).expect(200);
+      expect(get.headers['content-type']).toContain('text/html');
+      expect(get.text).toContain(`content="0;url=${target}"`);
+      const post = await http.post(`/api/v1/payments/return/mock?order=${order.id}`).type('form').send({ pp_ResponseCode: '000' }).expect(200);
+      expect(post.text).toContain(target);
+      const junk = await http.get('/api/v1/payments/return/mock?order=%3Cscript%3Ealert(1)%3C/script%3E').expect(200);
+      expect(junk.text).toContain('url=http://localhost:3000/orders"'); // anything that is not an order id goes to the order list
+      expect(junk.text).not.toContain('<script>');
       expect((await latest(order.id)).status).toBe('PENDING');
     });
   });

@@ -21,6 +21,8 @@ Laundry & dry-cleaning marketplace for Pakistan. Customers order, vendors work t
 | The rider app | any new phone, choosing role \`RIDER\` when you sign in, then *Apply to ride* (an admin approves it) |
 | Admin | *Admin sign-in* with \`admin@dhoblio.local\` / \`ChangeMe!12345\` |
 
+**Try paying online:** place an order with \`paymentMethod\` \`CARD\` (or JazzCash, Easypaisa, Raast). The answer has a \`payment.checkout.redirectUrl\`: open **Fake payment: pay** with that reference to play the customer paying. In a few seconds the order is paid and the vendor sees it.
+
 A full customer journey: **Find vendors near me** → **Vendor price list** → **Available pickup / delivery windows** → **Price estimate** → **Place an order**.
 Then switch to the vendor account to **Accept** it and move it along.
 
@@ -38,11 +40,11 @@ Then switch to the vendor account to **Accept** it and move it along.
 
 | Role | Can |
 |---|---|
-| Customer | browse, build a cart, place and track orders, manage addresses |
-| Vendor owner | register the shop, set hours and prices, work orders, manage staff |
+| Customer | browse, build a cart, place and track orders (pay by cash or online), manage addresses |
+| Vendor owner | register the shop, set hours and prices, work orders, manage staff, see earnings and ask for payouts |
 | Vendor staff | work orders and switch Open / Busy / Closed |
 | Rider | apply, go online, take pickup and delivery jobs, prove delivery, see earnings |
-| Admin | review vendors and riders, run the dispatch board, support orders, set city fees and couriers |
+| Admin | review vendors and riders, run the dispatch board, support orders, refunds, payouts and cash settlements, commission, city fees and couriers |
 `;
 
 /** Tag order = section order in the UI. */
@@ -55,15 +57,19 @@ export const TAGS: [name: string, description: string][] = [
   ['slots', 'Pickup and delivery time windows. **Public**.'],
   ['cart', 'The customer’s saved carts and the instant price estimate.'],
   ['orders', 'Customer: place, track (live), cancel, reorder.'],
+  ['payments', 'Ways to pay, the gateways’ result notifications, and the fake payment page for development.'],
   ['vendor', 'Vendor onboarding and shop settings: registration, hours, availability, staff.'],
   ['media', 'Signed upload forms for direct-to-Cloudinary uploads: vendor documents and delivery proofs (private), rider photos.'],
   ['catalog', 'Service categories and each vendor’s price list, including bulk import.'],
   ['vendor-orders', 'The vendor’s order board: accept, reject and move orders through the workflow.'],
   ['rider', 'The rider app: apply, go online, take pickup and delivery jobs, prove delivery with the customer’s code, see earnings.'],
+  ['vendor-finance', 'The vendor’s money: earnings by period and by order, balance, and payout requests. Owners only.'],
   ['admin-vendors', 'Admin: review applications, approve / reject / suspend vendors, audited CNIC access.'],
   ['admin-orders', 'Admin: find any order, see everything, cancel with a reason.'],
   ['admin-riders', 'Admin: review rider applications, approve / reject / suspend, audited CNIC access.'],
   ['admin-delivery', 'Admin: the dispatch board (find, assign, take back, fail and re-send jobs) and courier partners.'],
+  ['admin-payments', 'Admin: payments, gateway notifications and refunds.'],
+  ['admin-finance', 'Admin: commission rules, cash-on-delivery deposits, payouts and vendor ledgers.'],
   ['admin-cities', 'Admin: delivery fee, active switch, order-number code and courier partner per city.'],
   ['webhooks', 'Calls made **to** us by partners (courier status updates). Signed, not logged-in.'],
   ['health', 'Liveness and readiness probes.'],

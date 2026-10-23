@@ -5,6 +5,9 @@ import { Clock } from '../src/common/time/clock';
 import { Role } from '@prisma/client';
 import { CloudinaryService, uploadFolder } from '../src/infra/cloudinary/cloudinary.service';
 import { DispatchService } from '../src/modules/delivery/dispatch.service';
+import { EarningsPosterService } from '../src/modules/finance/earnings-poster.service';
+import { MOCK_SIGNATURE_HEADER, mockSignature } from '../src/modules/payments/gateway/mock.gateway';
+import { PaymentsService } from '../src/modules/payments/payments.service';
 import { mockWebhookSignature } from '../src/modules/delivery/courier/mock-courier.provider';
 import { NotificationOrchestrator } from '../src/modules/notifications/notification-orchestrator';
 import { acceptedOrder, createRider, jobOf } from './delivery-helpers';
@@ -43,6 +46,12 @@ function expectMatchesDocs(key: string, body: unknown) {
      documented but not returned: ${inDocsOnly.join(', ') || '-'}
      returned but not documented: ${inRealOnly.join(', ') || '-'}`);
   }
+}
+
+/** A valid-looking Pakistani IBAN (check digits worked out here). */
+function bankAccount(bank = 'HABB', account = '0012345678901234'): string {
+  const digits = [...`${bank}${account}PK00`].map((c) => (/[A-Z]/.test(c) ? String(c.charCodeAt(0) - 55) : c)).join('');
+  return `PK${String(98n - (BigInt(digits) % 97n)).padStart(2, '0')}${bank}${account}`;
 }
 
 describe('Swagger examples match the real API (e2e)', () => {
@@ -286,6 +295,102 @@ describe('Swagger examples match the real API (e2e)', () => {
     await http.post('/api/v1/webhooks/courier/mock').set('x-courier-signature', mockWebhookSignature('test-courier-secret', event)).send(event).expect(200).then((r) => expectMatchesDocs('POST /webhooks/courier/{code}', r.body));
     await adminCall('patch', `/admin/cities/${basics.cityId}`, { courierPartnerId: null }).expect(200);
     await t.prisma.courierPartner.update({ where: { id: partner.id }, data: { isActive: false } });
+  });
+
+  it('money: paying online, cash on delivery, earnings, payouts, commission and refunds', async () => {
+    const payments = t.app.get(PaymentsService);
+    const poster = t.app.get(EarningsPosterService);
+    const notify = jest.spyOn(t.app.get(NotificationOrchestrator), 'notifyUser');
+    const code = () => [...notify.mock.calls].reverse().find((c) => c[1] === 'delivery_code')![2].code as string;
+    const rider = (r: { auth: Record<string, string> }, method: 'post' | 'get', path: string, body: object = {}) => http[method]('/api/v1/rider' + path).set(r.auth).send(method === 'post' ? body : undefined);
+    const adminCall = (method: 'post' | 'get' | 'patch' | 'delete', path: string, body: object = {}) => http[method]('/api/v1' + path).set(admin.auth).send(method === 'get' || method === 'delete' ? undefined : body);
+    const processAll = async () => {
+      for (const e of await t.prisma.paymentEvent.findMany({ where: { processedAt: null } })) await payments.processEvent(e.id);
+    };
+    const paymentOf = (orderId: string) => t.prisma.payment.findFirstOrThrow({ where: { orderId }, orderBy: { attempt: 'desc' } });
+    const signedWebhook = (gatewayRef: string, status: 'PAID' | 'FAILED', amount?: string) => {
+      const body = JSON.stringify({ eventId: 'evt-' + Math.random().toString(16).slice(2), gatewayRef, status, ...(amount ? { amount } : {}) });
+      return http.post('/api/v1/payments/webhooks/mock').set('content-type', 'application/json').set(MOCK_SIGNATURE_HEADER, mockSignature('test-payment-mock-secret', body)).send(body);
+    };
+
+    await t.prisma.rider.updateMany({ data: { isOnline: false } });
+    await t.redis.del(`rider:geo:${basics.cityId}`);
+    const s = await orderScenario(t, basics);
+    const r1 = await createRider(t, basics, { name: 'Bilal Ahmed' });
+    const deliver = async (orderId: string) => {
+      await http.post(`/api/v1/vendor/orders/${orderId}/accept`).set(s.vendor.owner.auth).send({}).expect(200);
+      const pickup = await jobOf(t, orderId, 'PICKUP');
+      for (const step of ['claim', 'start', 'complete']) await rider(r1, 'post', `/jobs/${pickup.id}/${step}`).expect(200);
+      for (const status of ['IN_PROCESS', 'READY']) await http.post(`/api/v1/vendor/orders/${orderId}/status`).set(s.vendor.owner.auth).send({ status }).expect(200);
+      const drop = await jobOf(t, orderId, 'DROP');
+      await rider(r1, 'post', `/jobs/${drop.id}/claim`).expect(200);
+      await rider(r1, 'post', `/jobs/${drop.id}/start`).expect(200);
+      await rider(r1, 'post', `/jobs/${drop.id}/complete`, { otp: code() }).expect(200);
+      await poster.postIfDue(orderId);
+    };
+
+    // — choosing and paying online —
+    await http.get('/api/v1/payments/methods').expect(200).then((r) => expectMatchesDocs('GET /payments/methods', r.body));
+    const card = await placeOrder(http, s, { paymentMethod: 'CARD' });
+    const cardPayment = await paymentOf(card.id);
+    await http.get(`/api/v1/orders/${card.id}/payment`).set(s.customer.auth).expect(200).then((r) => expectMatchesDocs('GET /orders/{id}/payment', r.body));
+    await http.get(`/api/v1/dev/mock-gateway/${cardPayment.gatewayRef}`).expect(200).then((r) => expectMatchesDocs('GET /dev/mock-gateway/{ref}', r.body));
+    await http.post(`/api/v1/dev/mock-gateway/${cardPayment.gatewayRef}/pay`).expect(200).then((r) => expectMatchesDocs('POST /dev/mock-gateway/{ref}/pay', r.body));
+    await processAll();
+
+    const declined = await placeOrder(http, s, { paymentMethod: 'JAZZCASH' });
+    await http.post(`/api/v1/dev/mock-gateway/${(await paymentOf(declined.id)).gatewayRef}/decline`).expect(200).then((r) => expectMatchesDocs('POST /dev/mock-gateway/{ref}/decline', r.body));
+    await processAll();
+    await http.post(`/api/v1/orders/${declined.id}/pay`).set(s.customer.auth).send({ method: 'RAAST' }).expect(200).then((r) => expectMatchesDocs('POST /orders/{id}/pay', r.body));
+
+    const webhooked = await placeOrder(http, s, { paymentMethod: 'EASYPAISA' });
+    await signedWebhook((await paymentOf(webhooked.id)).gatewayRef!, 'PAID', '350.00').expect(200).then((r) => expectMatchesDocs('POST /payments/webhooks/{gateway}', r.body));
+    await processAll();
+    await http.get(`/api/v1/payments/return/mock?order=${card.id}`).expect(200).then((r) => expectMatchesDocs('GET /payments/return/{gateway}', r.body));
+    await http.post(`/api/v1/payments/return/jazzcash?order=${card.id}`).type('form').send({}).expect(200).then((r) => expectMatchesDocs('POST /payments/return/{gateway}', r.body));
+
+    // — cash orders the rider delivers: the first is settled by the admin, the second is still with the rider —
+    await deliver(card.id);
+    const cash = await placeOrder(http, s);
+    await deliver(cash.id);
+    await adminCall('post', '/admin/cod/settlements', { riderId: r1.rider.id, amount: '350.00', reference: 'DEP-0042' }).expect(201).then((r) => expectMatchesDocs('POST /admin/cod/settlements', r.body));
+    const cash2 = await placeOrder(http, s);
+    await deliver(cash2.id);
+    await rider(r1, 'get', '/cod').expect(200).then((r) => expectMatchesDocs('GET /rider/cod', r.body));
+    await adminCall('get', '/admin/cod/riders').expect(200).then((r) => expectMatchesDocs('GET /admin/cod/riders', r.body));
+    await adminCall('get', `/admin/cod/riders/${r1.rider.id}/collections`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/riders/{id}/collections', r.body));
+    await adminCall('post', '/admin/cod/settlements', { riderId: r1.rider.id, amount: '350.00' }).expect(201);
+    await adminCall('get', `/admin/cod/settlements?riderId=${r1.rider.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/settlements', r.body));
+
+    // — what the vendor sees of their money —
+    const owner = s.vendor.owner.auth;
+    await http.get('/api/v1/vendor/earnings?period=week&date=2026-10-23').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/earnings', r.body));
+    await http.get('/api/v1/vendor/earnings/orders').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/earnings/orders', r.body));
+    await http.get('/api/v1/vendor/balance').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/balance', r.body));
+
+    // — ledger, payouts —
+    await adminCall('post', '/admin/ledger/adjustments', { vendorId: s.vendor.vendor.id, amount: 5000, note: 'Test funds' }).expect(201).then((r) => expectMatchesDocs('POST /admin/ledger/adjustments', r.body));
+    const payout = await http.post('/api/v1/vendor/payouts').set(owner).send({ amount: '2000.00', method: 'BANK', account: bankAccount() }).expect(201);
+    expectMatchesDocs('POST /vendor/payouts', payout.body);
+    await http.get('/api/v1/vendor/payouts').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/payouts', r.body));
+    await adminCall('get', `/admin/payouts?vendorId=${s.vendor.vendor.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/payouts', r.body));
+    await adminCall('get', `/admin/payouts/${payout.body.data.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/payouts/{id}', r.body));
+    await adminCall('post', `/admin/payouts/${payout.body.data.id}/approve`).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/approve', r.body));
+    await adminCall('post', `/admin/payouts/${payout.body.data.id}/pay`, { txnRef: 'TXN-20261023-77', note: 'Sent via 1LINK' }).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/pay', r.body));
+    const second = await http.post('/api/v1/vendor/payouts').set(owner).send({ amount: '1000', method: 'WALLET', account: '03001234567' }).expect(201);
+    await adminCall('post', `/admin/payouts/${second.body.data.id}/reject`, { reason: 'Account details do not match your registration' }).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/reject', r.body));
+    await adminCall('get', `/admin/vendors/${s.vendor.vendor.id}/ledger`).expect(200).then((r) => expectMatchesDocs('GET /admin/vendors/{id}/ledger', r.body));
+
+    // — commission —
+    const rule = await adminCall('post', '/admin/commission-rules', { scope: 'VENDOR', vendorId: s.vendor.vendor.id, ratePct: 12.5, effectiveFrom: new Date(NOW.getTime() + 86_400_000).toISOString() }).expect(201);
+    expectMatchesDocs('POST /admin/commission-rules', rule.body);
+    await adminCall('get', `/admin/commission-rules?vendorId=${s.vendor.vendor.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/commission-rules', r.body));
+    await adminCall('delete', `/admin/commission-rules/${rule.body.data.id}`).expect(204);
+
+    // — support's view of payments, and a refund —
+    await adminCall('get', `/admin/payments?orderNo=${card.orderNo}`).expect(200).then((r) => expectMatchesDocs('GET /admin/payments', r.body));
+    await adminCall('get', `/admin/payments/${cardPayment.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/payments/{id}', r.body));
+    await adminCall('post', `/admin/payments/${cardPayment.id}/refund`, { reason: 'Clothes were damaged' }).expect(200).then((r) => expectMatchesDocs('POST /admin/payments/{id}/refund', r.body));
   });
 
   it('health checks', async () => {

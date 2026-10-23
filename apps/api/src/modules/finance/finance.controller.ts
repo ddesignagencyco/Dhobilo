@@ -23,6 +23,7 @@ import {
   ListPayoutsQueryDto,
   ListSettlementsQueryDto,
   PayPayoutDto,
+  PayoutsPageQueryDto,
   RejectPayoutDto,
   RequestPayoutDto,
   SettleCodDto,
@@ -71,7 +72,7 @@ export class VendorFinanceController {
 
   /** Your withdrawal requests, newest first. The account is always shown masked. */
   @Get('payouts')
-  async list(@CurrentVendor() vendor: VendorContext, @Query() q: ListPayoutsQueryDto) {
+  async list(@CurrentVendor() vendor: VendorContext, @Query() q: PayoutsPageQueryDto) {
     const { items, nextCursor } = await this.payouts.listForVendor(vendor.id, q.cursor, q.limit);
     return new Paged(items, { nextCursor });
   }

@@ -18,6 +18,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 - Phase 4 (Order lifecycle, vendor operations, notifications): backend done. State machine, vendor accept/reject/advance, cancel, reorder, live tracking (SSE), vendor-timeout auto-cancel, and English/Urdu notifications over SMS, WhatsApp (SMS fallback), push and email. The real WhatsApp provider and SMS gateway adapters wait on choosing providers (mock providers work); the FCM client is unit-tested but not yet run against live Firebase.
 - Phase 5 (Riders and delivery): backend done. Rider registration and admin review, online/location tracking, delivery jobs that follow the order (pickup when accepted, delivery when ready), auto-dispatch to the nearest free rider with manual claim as a fallback, proof of delivery by the customer's 4-digit code or a photo, rider earnings, customer rider-tracking, an admin dispatch board, and a courier-partner adapter (mock partner only; a real partner needs choosing). Cash collection at delivery belongs to Phase 6. Settings are in `.env.example` under "Delivery and dispatch".
 - Phase 5 (Riders and delivery): backend done. Rider registration and admin review, Redis presence/location, delivery jobs created from order events, auto-dispatch with widening radius plus race-safe manual claim, proof of delivery by code or photo, rider earnings, customer delivery view and live rider position, admin dispatch board, and a courier-partner adapter with a mock partner. Only the mock partner exists; a real one waits on choosing a provider. Rider position is polled (no SSE yet), and COD collection/settlement is Phase 6.
+- Phase 6 (Payments, cash, commission, payouts): backend done except the real gateway adapters. Online orders (card, JazzCash, Easypaisa, Raast) are created unpaid and stay hidden from the vendor until a signed gateway notification says they are paid; notifications are stored once, applied by the worker, and survive duplicates, wrong order and wrong amounts. Unpaid orders are cancelled after 15 minutes; lost notifications are found by asking the gateway. Refunds happen automatically on cancel/reject and by admin. Cash orders: the rider's cash is recorded on delivery and the admin's deposit settlement credits the vendor. An append-only vendor ledger drives earnings (day/week/month and per order), balance and payouts (request, approve, pay, reject); commission rules are dated and never edited. **Only the fake gateway (`PAYMENT_MOCK_GATEWAY=true`, dev/tests) and a JazzCash adapter are built; the JazzCash adapter follows JazzCash's published signing rule and is unit-tested, but has not been run against the JazzCash sandbox, and its refund/status calls are not done. Easypaisa, card and Raast adapters wait on merchant accounts.** Settings are in `.env.example` under "Payments".
 
 ### API so far (`/api/v1`)
 
@@ -46,6 +47,10 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Customer delivery | `GET /orders/:id/delivery`, `GET /orders/:id/rider-location`, `POST /orders/:id/delivery-code/resend` |
 | Admin delivery | `GET /admin/riders`, `GET /admin/riders/:id`, `GET /admin/riders/:id/cnic` (audited), `POST /admin/riders/:id/{approve,reject,suspend,reactivate}`, `GET /admin/delivery/{summary,jobs,jobs/:id}`, `POST /admin/delivery/jobs/:id/{assign,unassign,fail,redispatch}`, `GET/PATCH /admin/courier-partners` |
 | Courier partners | `POST /webhooks/courier/:code` (signed, idempotent); a city uses a partner via `PATCH /admin/cities/:id` (`courierPartnerId`) |
+| Payments | `GET /payments/methods` (public), `POST /orders` with an online `paymentMethod` returns a `payment.checkout`, `GET /orders/:id/payment`, `POST /orders/:id/pay` (try again / switch method), `POST /payments/webhooks/:gateway` (signed), `GET/POST /payments/return/:gateway`, dev only: `GET/POST /dev/mock-gateway/:ref[/pay,/decline]` |
+| Vendor money | `GET /vendor/earnings?period=day,week,month`, `GET /vendor/earnings/orders`, `GET /vendor/balance`, `POST/GET /vendor/payouts` (owners) |
+| Rider cash | `GET /rider/cod` |
+| Admin money | `GET /admin/payments`, `GET /admin/payments/:id`, `POST /admin/payments/:id/refund`, `GET/POST /admin/commission-rules`, `DELETE /admin/commission-rules/:id`, `GET /admin/cod/riders`, `GET /admin/cod/riders/:id/collections`, `GET/POST /admin/cod/settlements`, `GET /admin/payouts[/:id]`, `POST /admin/payouts/:id/{approve,pay,reject}`, `GET /admin/vendors/:id/ledger`, `POST /admin/ledger/adjustments` |
 | Admin | `PATCH /admin/cities/:id` (delivery fee, active flag, order code, `courierPartnerId`) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
@@ -81,7 +86,7 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 | CI: install, Prisma generate/validate, lint (when configured), typecheck, unit + e2e tests, API build, OpenAPI artifact | `.github/workflows/ci.yml` |
 
-Next: Phase 6 (payments, COD, commissions and payouts). See the [tracker](docs/Dhobilo-TRACKER.md).
+Next: Phase 7 (reviews, complaints, promo codes and referrals). See the [tracker](docs/Dhobilo-TRACKER.md).
 
 ## Stack
 

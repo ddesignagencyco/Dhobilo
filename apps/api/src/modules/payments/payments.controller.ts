@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query, Req, Res } from '@nestjs/common';
+import { ApiBody, ApiProperty, ApiPropertyOptional, ApiQuery } from '@nestjs/swagger';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
@@ -8,7 +9,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OwnedBy } from '../../common/decorators/owned-by.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { Paged } from '../../common/interceptors/response-envelope.interceptor';
+import { Paged, RawResponse } from '../../common/interceptors/response-envelope.interceptor';
 import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env';
 import { OrderOwnership } from '../orders/order-ownership';
@@ -26,6 +27,24 @@ const METHOD_INFO = {
   EASYPAISA: { label: 'Easypaisa', instructions: 'You will be taken to Easypaisa to pay from your mobile account or card.' },
   RAAST: { label: 'Raast', instructions: 'Pay by bank transfer or QR from your banking app.' },
 } as const;
+
+/** Only for the API docs: each gateway's real payload is checked by its own adapter, so the handler takes the raw bytes. */
+class PaymentNotificationBody {
+  @ApiProperty({ description: 'Unique id of this notification. Repeating it is safe.', example: 'evt-20261023-0001' })
+  eventId!: string;
+
+  @ApiProperty({ description: 'The reference the gateway gave the payment.', example: 'MOCKPAY-3F9A1C2B7D' })
+  gatewayRef!: string;
+
+  @ApiProperty({ enum: ['PAID', 'FAILED'] })
+  status!: 'PAID' | 'FAILED';
+
+  @ApiPropertyOptional({ description: 'What was paid, two decimals. Must match what we asked for.', example: '510.00' })
+  amount?: string;
+
+  @ApiPropertyOptional({ description: 'Why it failed.', example: 'Declined' })
+  reason?: string;
+}
 
 /** Methods, the gateways' notification address, and the page customers land on after paying. */
 @ApiTags('payments')
@@ -52,6 +71,7 @@ export class PaymentsController {
   @Public()
   @Post('webhooks/:gateway')
   @HttpCode(200)
+  @ApiBody({ type: PaymentNotificationBody })
   webhook(@Param('gateway') gateway: string, @Req() req: RawBodyRequest<Request>) {
     return this.payments.ingest(gateway, req.headers, req.rawBody ?? Buffer.alloc(0));
   }
@@ -61,16 +81,29 @@ export class PaymentsController {
    * payment worked is decided by the signed notification, never by this visit.
    */
   @Public()
+  @RawResponse()
   @Get('return/:gateway')
-  returnGet(@Query('order') order: string | undefined, @Res() res: Response) {
-    res.redirect(303, this.returnTarget(order));
+  @ApiQuery({ name: 'order', required: false })
+  returnGet(@Param('gateway') _gateway: string, @Query('order') order: string | undefined, @Res() res: Response) {
+    this.forward(res, order);
   }
 
   @Public()
+  @RawResponse()
   @Post('return/:gateway')
-  @HttpCode(303)
-  returnPost(@Query('order') order: string | undefined, @Res() res: Response) {
-    res.redirect(303, this.returnTarget(order));
+  @HttpCode(200)
+  @ApiQuery({ name: 'order', required: false })
+  returnPost(@Param('gateway') _gateway: string, @Query('order') order: string | undefined, @Res() res: Response) {
+    this.forward(res, order);
+  }
+
+  /** A tiny page that sends the browser on (works after a GET or a form post, unlike a redirect status in every browser). */
+  private forward(res: Response, order: string | undefined): void {
+    const url = this.returnTarget(order);
+    res
+      .status(200)
+      .type('html')
+      .send(`<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${url}"><title>Returning to Dhoblio</title></head><body><p>Returning to Dhoblio… <a href="${url}">Continue</a></p></body></html>`);
   }
 
   private returnTarget(order: string | undefined): string {

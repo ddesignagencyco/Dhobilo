@@ -266,21 +266,21 @@
 **Refs:** FR-C8, FR-V8, FR-V9, FR-A3, SRS §8.2 · TRD §13
 
 ### BE
-- [ ] **BE-6.1** `PaymentGateway` interface + registry + mock gateway; `Payment` lifecycle and `Order.paymentStatus` sync
-- [ ] **BE-6.2** JazzCash adapter: initiate, signature/hash verify, webhook, status inquiry, refund (FR-C8)
-- [ ] **BE-6.3** Easypaisa adapter (same scope) (FR-C8)
-- [ ] **BE-6.4** Card gateway adapter (PayFast/HBL) with hosted checkout — no PAN touches our systems (FR-C8)
-- [ ] **BE-6.5** Raast adapter (bank-to-bank/QR) (SRS §8.2)
-- [ ] **BE-6.6** Webhook controller: raw-body signature verification, idempotent upsert by `(gateway, gatewayRef)`, async processing (TRD §13.2)
-- [ ] **BE-6.7** Payment timeout + reconciliation cron (poll pending > 10 min); auto-cancel unpaid orders
-- [ ] **BE-6.8** Refunds on cancel/reject/dispute; refund ledger entries
-- [ ] **BE-6.9** COD: `CodCollection` on delivery, rider COD balance, admin records `CodSettlement` (SRS §8.2)
-- [ ] **BE-6.10** Commission rules CRUD (global/category/vendor) + effective-dating; admin endpoints (FR-A3)
-- [ ] **BE-6.11** Finance queue: on `DELIVERED` post `ORDER_EARNING` / `COMMISSION` ledger entries idempotently (per agreed COD rule, TRD §20 #6)
-- [ ] **BE-6.12** Vendor earnings API: day/week/month totals, commission deducted, per-order lines (FR-V8)
-- [ ] **BE-6.13** Payout request (balance check under row lock), admin approve/pay/reject, ledger `PAYOUT` entry (FR-V9)
-- [ ] **BE-6.14** Tests: duplicate webhooks, out-of-order webhooks, partial failures, ledger sums equal order math, payout can't exceed balance
-- [ ] **BE-6.15** Log-scrubbing test: no card/wallet secrets or full payloads with PII in logs
+- [x] **BE-6.1** `PaymentGateway` interface + registry + mock gateway; `Payment` lifecycle and `Order.paymentStatus` sync
+- [ ] **BE-6.2** JazzCash adapter: initiate, signature/hash verify, webhook, status inquiry, refund (FR-C8) (PARTLY DONE: initiate, hash signing and webhook verification are built to JazzCash's published rule and unit-tested; not run against the sandbox; status inquiry and refund are not implemented)
+- [ ] **BE-6.3** Easypaisa adapter (same scope) (FR-C8) (NOT STARTED: waiting on merchant account and provider choice; the fake gateway serves this method meanwhile)
+- [ ] **BE-6.4** Card gateway adapter (PayFast/HBL) with hosted checkout — no PAN touches our systems (FR-C8) (NOT STARTED: waiting on merchant account and provider choice; the fake gateway serves this method meanwhile)
+- [ ] **BE-6.5** Raast adapter (bank-to-bank/QR) (SRS §8.2) (NOT STARTED: waiting on merchant account and provider choice; the fake gateway serves this method meanwhile)
+- [x] **BE-6.6** Webhook controller: raw-body signature verification, idempotent upsert by `(gateway, gatewayRef)`, async processing (TRD §13.2)
+- [x] **BE-6.7** Payment timeout + reconciliation cron (poll pending > 10 min); auto-cancel unpaid orders
+- [x] **BE-6.8** Refunds on cancel/reject/dispute; refund ledger entries
+- [x] **BE-6.9** COD: `CodCollection` on delivery, rider COD balance, admin records `CodSettlement` (SRS §8.2)
+- [x] **BE-6.10** Commission rules CRUD (global/category/vendor) + effective-dating; admin endpoints (FR-A3)
+- [x] **BE-6.11** Finance queue: on `DELIVERED` post `ORDER_EARNING` / `COMMISSION` ledger entries idempotently (per agreed COD rule, TRD §20 #6)
+- [x] **BE-6.12** Vendor earnings API: day/week/month totals, commission deducted, per-order lines (FR-V8)
+- [x] **BE-6.13** Payout request (balance check under row lock), admin approve/pay/reject, ledger `PAYOUT` entry (FR-V9)
+- [x] **BE-6.14** Tests: duplicate webhooks, out-of-order webhooks, partial failures, ledger sums equal order math, payout can't exceed balance
+- [x] **BE-6.15** Log-scrubbing test: no card/wallet secrets or full payloads with PII in logs
 
 ### FE
 - [ ] **FE-6.1** Checkout payment selector (COD, Card, JazzCash, Easypaisa, Raast) with clear fees/instructions (FR-C8)

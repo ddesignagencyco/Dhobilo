@@ -13,6 +13,7 @@ import { RedisModule } from './infra/redis/redis.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { DeliveryWorkerModule } from './modules/delivery/delivery-worker.module';
 import { DispatchBootstrap } from './modules/delivery/dispatch.processor';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
 import { OrderLifecycleModule } from './modules/orders/lifecycle/order-lifecycle.module';
@@ -45,6 +46,7 @@ import { TimeModule } from './common/time/clock';
     // Order events can start in the worker (timers), so live-update publishing and notifications run here too.
     OrderLifecycleModule,
     OrderTimersModule,
+    NotificationsModule,
     NotificationOrchestratorModule,
     NotificationsWorkerModule,
     DeliveryWorkerModule,

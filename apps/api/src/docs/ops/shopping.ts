@@ -1,3 +1,4 @@
+import { PAYMENT_VIEW } from './money';
 import { ID, SAMPLE_CART, SAMPLE_ORDER, SAMPLE_ORDER_SUMMARY, SAMPLE_QUOTE, SAMPLE_TIMELINE, SAMPLE_VENDOR_CARD, SLOT } from '../samples';
 import type { OperationDocs } from '../types';
 import { ok, page, PAGING_PARAMS } from './helpers';
@@ -164,7 +165,7 @@ export const orderDocs: OperationDocs = {
     summary: 'Place an order',
     who: ['CUSTOMER'],
     description:
-      'Creates an order (cash on delivery for now). **Required header:** `Idempotency-Key` — generate a fresh UUID per checkout and **reuse it if you retry** after a network failure: ' +
+      'Creates an order. **Cash on delivery** reaches the vendor at once. An **online** method (`CARD`, `JAZZCASH`, `EASYPAISA`, `RAAST`; see `GET /payments/methods`) gives you a `payment.checkout` to send the customer to: the vendor only hears about the order once it is paid, and an order unpaid after 15 minutes is cancelled. **Required header:** `Idempotency-Key` — generate a fresh UUID per checkout and **reuse it if you retry** after a network failure: ' +
       'you get the original order back (`200`, header `Idempotent-Replay: true`) instead of a duplicate. `201` means newly created.\n\n' +
       'Before placing: pick an address (inside the vendor’s radius), get an estimate, and choose slots from `GET /vendors/{id}/slots`.\n\n' +
       '**Price protection:** send the `expectedTotal` you showed the customer. If prices changed meanwhile you get `409 PRICE_CHANGED` with the new total; nothing is charged.',
@@ -175,10 +176,11 @@ export const orderDocs: OperationDocs = {
         value: { vendorId: ID.vendor, addressId: ID.address, items: [{ serviceItemId: ID.item, qty: 3 }], pickupSlotStart: SLOT.pickupStart, deliverySlotStart: SLOT.deliveryStart, paymentMethod: 'COD', expectedTotal: '510.00', customerNote: 'Please fold gently' },
       },
     },
-    response: { status: 201, description: 'Order created (200 when it is a retry of an earlier request)', example: ok(SAMPLE_ORDER) },
+    response: { status: 201, description: 'Order created (200 when it is a retry of an earlier request)', example: ok({ ...SAMPLE_ORDER, payment: { ...PAYMENT_VIEW, method: 'COD', status: 'COD_PENDING', expiresAt: null, checkout: null } }) },
     errors: [
       { status: 400, code: 'IDEMPOTENCY_KEY_REQUIRED', when: 'The Idempotency-Key header is required to place an order.' },
-      { status: 400, code: 'PAYMENT_METHOD_UNAVAILABLE', when: 'Only cash on delivery is available right now.' },
+      { status: 400, code: 'PAYMENT_METHOD_UNAVAILABLE', when: 'That payment method is not available right now.' },
+      { status: 502, code: 'PAYMENT_GATEWAY_ERROR', when: 'We could not start the payment. Please try again.' },
       { status: 409, code: 'PRICE_CHANGED', when: 'Prices changed since your estimate. Please review the new total.' },
       { status: 409, code: 'VENDOR_UNAVAILABLE', when: 'This vendor is not taking orders right now.' },
       { status: 409, code: 'SLOT_FULL', when: 'That time slot is full. Please pick another.' },

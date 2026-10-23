@@ -128,8 +128,9 @@ export class PayoutsService {
       take: take + 1,
       select: { ...select, vendor: { select: { businessName: true } } },
     });
-    const page = this.page(rows, take);
-    return { items: page.items.map((p, i) => ({ ...p, vendorName: rows[i].vendor.businessName })), nextCursor: page.nextCursor };
+    const names = new Map(rows.map((r) => [r.id, r.vendor.businessName]));
+    const page = this.page(rows.map(({ vendor: _vendor, ...r }) => r), take);
+    return { items: page.items.map((p) => ({ ...p, vendorName: names.get(p.id) ?? null })), nextCursor: page.nextCursor };
   }
 
   /** The full payout including the real account number, which only an admin who is about to pay it may see. Every view is audited. */

@@ -1,5 +1,6 @@
 import { adminDocs, systemDocs } from './ops/admin';
 import { accountDocs, authDocs } from './ops/auth';
+import { financeDocs, paymentDocs } from './ops/money';
 import { adminDeliveryDocs, customerDeliveryDocs, riderDocs, webhookDocs } from './ops/delivery';
 import { cartDocs, discoveryDocs, orderDocs } from './ops/shopping';
 import { catalogDocs, vendorDocs, vendorOrderDocs } from './ops/vendor';
@@ -17,6 +18,8 @@ export const OPERATION_DOCS: OperationDocs = {
   ...vendorDocs,
   ...catalogDocs,
   ...vendorOrderDocs,
+  ...paymentDocs,
+  ...financeDocs,
   ...adminDocs,
   ...adminDeliveryDocs,
   ...webhookDocs,

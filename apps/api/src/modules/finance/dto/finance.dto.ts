@@ -75,6 +75,19 @@ export class ListPayoutsQueryDto {
   limit?: number;
 }
 
+export class PayoutsPageQueryDto {
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+}
+
 export class PayPayoutDto {
   /** The bank or wallet transfer reference, for the records. */
   @Transform(trim)
