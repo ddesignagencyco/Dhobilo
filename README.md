@@ -16,6 +16,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 
 - Phase 3 (Discovery, cart, order placement): backend done. Cash on delivery only until Phase 6; promo codes are refused until Phase 7.
 - Phase 4 (Order lifecycle, vendor operations, notifications): backend done. State machine, vendor accept/reject/advance, cancel, reorder, live tracking (SSE), vendor-timeout auto-cancel, and English/Urdu notifications over SMS, WhatsApp (SMS fallback), push and email. The real WhatsApp provider and SMS gateway adapters wait on choosing providers (mock providers work); the FCM client is unit-tested but not yet run against live Firebase.
+- Phase 5 (Riders and delivery): backend done. Rider registration and admin review, online/location tracking, delivery jobs that follow the order (pickup when accepted, delivery when ready), auto-dispatch to the nearest free rider with manual claim as a fallback, proof of delivery by the customer's 4-digit code or a photo, rider earnings, customer rider-tracking, an admin dispatch board, and a courier-partner adapter (mock partner only; a real partner needs choosing). Cash collection at delivery belongs to Phase 6. Settings are in `.env.example` under "Delivery and dispatch".
 - Phase 5 (Riders and delivery): backend done. Rider registration and admin review, Redis presence/location, delivery jobs created from order events, auto-dispatch with widening radius plus race-safe manual claim, proof of delivery by code or photo, rider earnings, customer delivery view and live rider position, admin dispatch board, and a courier-partner adapter with a mock partner. Only the mock partner exists; a real one waits on choosing a provider. Rider position is polled (no SSE yet), and COD collection/settlement is Phase 6.
 
 ### API so far (`/api/v1`)
@@ -41,6 +42,10 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Courier partners | `GET /admin/courier-partners`, `PATCH /admin/courier-partners/:id` |
 | Webhook | `POST /webhooks/courier/:code` (public; the partner signs each call, `eventId` makes retries safe) |
 | Notifications | `GET/PATCH /me/notification-preferences` (language and per-channel opt-outs) |
+| Rider app | `POST /rider/register`, `GET /rider/status`, `GET /rider/me`, `POST /rider/{online,offline,location}`, `GET /rider/jobs/available`, `GET /rider/jobs`, `GET /rider/jobs/:id`, `POST /rider/jobs/:id/{claim,accept,decline,release,start,complete,fail}`, `GET /rider/earnings` |
+| Customer delivery | `GET /orders/:id/delivery`, `GET /orders/:id/rider-location`, `POST /orders/:id/delivery-code/resend` |
+| Admin delivery | `GET /admin/riders`, `GET /admin/riders/:id`, `GET /admin/riders/:id/cnic` (audited), `POST /admin/riders/:id/{approve,reject,suspend,reactivate}`, `GET /admin/delivery/{summary,jobs,jobs/:id}`, `POST /admin/delivery/jobs/:id/{assign,unassign,fail,redispatch}`, `GET/PATCH /admin/courier-partners` |
+| Courier partners | `POST /webhooks/courier/:code` (signed, idempotent); a city uses a partner via `PATCH /admin/cities/:id` (`courierPartnerId`) |
 | Admin | `PATCH /admin/cities/:id` (delivery fee, active flag, order code, `courierPartnerId`) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 

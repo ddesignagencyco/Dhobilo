@@ -225,6 +225,16 @@ describe('Rider job flow, proof of delivery and earnings (e2e)', () => {
       expect(after.body.error.code).toBe('NO_DELIVERY_IN_PROGRESS');
     });
 
+    it('setting out on a delivery that was only offered (not accepted) changes nothing, including the order', async () => {
+      const r = await createRider(t, basics);
+      const { drop, order } = await readyForDelivery(r);
+      await t.prisma.deliveryJob.update({ where: { id: drop.id }, data: { status: 'ASSIGNED', riderId: r.rider.id, assignedAt: NOW } });
+      const res = await rider(r, 'post', `/jobs/${drop.id}/start`).expect(409);
+      expect(res.body.error.code).toBe('JOB_INVALID_TRANSITION');
+      expect(await statusOf(order.id)).toBe('READY');
+      expect((await reload(drop.id)).status).toBe('ASSIGNED');
+    });
+
     it('a wrong-rider or too-early completion changes nothing', async () => {
       const r = await createRider(t, basics);
       const other = await createRider(t, basics, { lat: 31.6 });

@@ -176,6 +176,10 @@ export class DeliveryJobsService {
   /** Setting out. For a delivery this is the moment the order becomes OUT_FOR_DELIVERY and the customer gets their code. */
   async start(rider: RiderContext, jobId: string, requestId?: string) {
     const held = await this.assertHeldBy(rider, jobId);
+    // Check the job first: moving the order for a job the rider has only been offered would leave them out of step.
+    if (held.status !== J.ACCEPTED) {
+      throw new AppException('JOB_INVALID_TRANSITION', `A ${held.status.toLowerCase()} job cannot be started.`, HttpStatus.CONFLICT, { status: held.status });
+    }
     if (held.jobType === JobType.DROP) {
       await this.advanceOrder(held.orderId, ORDER_AFTER.DROP.start, rider, requestId);
     }

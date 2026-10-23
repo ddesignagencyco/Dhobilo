@@ -240,7 +240,7 @@
 - [x] **BE-5.8** Rider earnings: per-job fee record, daily summary, completed count (FR-R6)
 - [x] **BE-5.9** `CourierPartner` adapter interface (create job, cancel, webhook status, tracking ref) + mock partner; switchable per city (FR-R7)
 - [x] **BE-5.10** Admin dispatch endpoints: reassign, force-assign, mark failed
-- [ ] **BE-5.11** Tests: two riders accept same job (one wins), OTP brute force limits, illegal rider transitions, partner webhook idempotency
+- [x] **BE-5.11** Tests: two riders accept same job (one wins), OTP brute force limits, illegal rider transitions, partner webhook idempotency
 
 ### FE
 - [ ] **FE-5.1** Rider registration + verification status screens (FR-R1)
