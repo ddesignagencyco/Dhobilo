@@ -27,7 +27,7 @@ export class PlaceOrderDto {
   @IsISO8601()
   deliverySlotStart!: string;
 
-  /** Only COD is accepted for now. */
+  /** `COD`, or an online method (`CARD`, `JAZZCASH`, `EASYPAISA`, `RAAST`) paid after placing the order. */
   @IsEnum(PaymentMethod)
   paymentMethod!: PaymentMethod;
 

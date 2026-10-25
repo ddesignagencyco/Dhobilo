@@ -46,6 +46,22 @@ export function orderNumber(city: { code: string | null; name: string }, seq: nu
   return `DHB-${code}-${String(seq).padStart(6, '0')}`;
 }
 
+/** Payment.gateway value for each method (card uses PayFast's hosted page). */
+export function gatewayCodeFor(method: PaymentMethod): string {
+  switch (method) {
+    case PaymentMethod.CARD:
+      return 'payfast';
+    case PaymentMethod.JAZZCASH:
+      return 'jazzcash';
+    case PaymentMethod.EASYPAISA:
+      return 'easypaisa';
+    case PaymentMethod.RAAST:
+      return 'raast';
+    default:
+      return 'cod';
+  }
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -108,6 +124,8 @@ export class OrdersService {
     const deliveryStart = new Date(dto.deliverySlotStart);
 
     let created: { id: string; replayed?: boolean };
+    const online = dto.paymentMethod !== PaymentMethod.COD;
+    const gateway = gatewayCodeFor(dto.paymentMethod);
     try {
       created = await this.prisma.$transaction(async (tx) => {
         // One order at a time per vendor: slot capacity counts below stay correct under concurrency.
@@ -161,9 +179,10 @@ export class OrdersService {
             commissionRatePct: commission.ratePct,
             commissionAmount: commission.amount,
             vendorEarning: commission.vendorEarning,
-            paymentMethod: PaymentMethod.COD,
-            paymentStatus: PaymentStatus.COD_PENDING,
+            paymentMethod: dto.paymentMethod,
+            paymentStatus: online ? PaymentStatus.PENDING : PaymentStatus.COD_PENDING,
             customerNote: dto.customerNote,
+            // For online orders this is reset when the gateway confirms payment, so the vendor gets the full window.
             vendorRespondBy: new Date(now.getTime() + vendor.respondWithinMin * 60_000),
             items: {
               create: quote.lines.map((l) => ({
@@ -177,7 +196,14 @@ export class OrdersService {
               })),
             },
             history: { create: { fromStatus: null, toStatus: OrderStatus.PLACED, actorId: user.id, actorRole: Role.CUSTOMER } },
-            payments: { create: { method: PaymentMethod.COD, gateway: 'cod', amount: quote.total, status: PaymentStatus.COD_PENDING } },
+            payments: {
+              create: {
+                method: dto.paymentMethod,
+                gateway,
+                amount: quote.total,
+                status: online ? PaymentStatus.PENDING : PaymentStatus.COD_PENDING,
+              },
+            },
           },
         });
       });
@@ -196,12 +222,15 @@ export class OrdersService {
     }
 
     await this.prisma.cart.deleteMany({ where: { customerId: user.id, vendorId: vendor.id } });
-    await this.events.emitAsync(DomainEvent.ORDER_PLACED, {
-      orderId: created.id,
-      vendorId: vendor.id,
-      customerId: user.id,
-      requestId,
-    } satisfies OrderPlacedEvent);
+    // An online order reaches the vendor only after the gateway confirms the payment. COD needs no waiting.
+    if (!online) {
+      await this.events.emitAsync(DomainEvent.ORDER_PLACED, {
+        orderId: created.id,
+        vendorId: vendor.id,
+        customerId: user.id,
+        requestId,
+      } satisfies OrderPlacedEvent);
+    }
 
     return { order: await this.getOwn(user.id, created.id), replayed: false };
   }
@@ -283,13 +312,8 @@ export class OrdersService {
     return { cart, unavailable, priceChanges };
   }
 
-  /** Only COD exists until Phase 6, and promo codes until Phase 7: refuse rather than silently ignore. */
+  /** Promo codes arrive in Phase 7: refuse rather than silently ignore one. */
   private assertAcceptedRequest(dto: PlaceOrderDto): void {
-    if (dto.paymentMethod !== PaymentMethod.COD) {
-      throw new AppException('PAYMENT_METHOD_UNAVAILABLE', 'Only cash on delivery is available right now.', HttpStatus.BAD_REQUEST, {
-        available: [PaymentMethod.COD],
-      });
-    }
     if (dto.promoCode) throw new AppException('PROMO_UNAVAILABLE', 'Promo codes are not available yet.', HttpStatus.BAD_REQUEST);
   }
 
@@ -305,6 +329,7 @@ export class OrdersService {
     const sameItems = existing.items.length === wanted.size && existing.items.every((i) => i.serviceItemId && wanted.get(i.serviceItemId) === i.qty);
     const same =
       existing.vendorId === dto.vendorId &&
+      existing.paymentMethod === dto.paymentMethod &&
       existing.pickupSlotStart.getTime() === new Date(dto.pickupSlotStart).getTime() &&
       existing.deliverySlotStart.getTime() === new Date(dto.deliverySlotStart).getTime() &&
       sameItems;

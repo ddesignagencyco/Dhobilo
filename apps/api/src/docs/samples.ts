@@ -12,6 +12,11 @@ export const ID = {
   address: 'e1a7b3c9-4d2f-4b8a-9c6e-3f5d1a7b9c41',
   notification: 'f3b8c4d0-5e1a-4f9b-b3a7-0c6e2d4f8a52',
   request: 'b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60',
+  payment: 'a8c2e4f6-7b1d-4c3e-9a5f-2d8b0c6e4f73',
+  payout: 'c5e1a7b3-8d2f-4e6c-b0a4-7f3d9e1c5b84',
+  commissionRule: 'd7f3b9c5-1e4a-4b8d-a6c2-9e5f0d7a3c95',
+  settlement: 'e9a5c1d7-3f6b-4d2e-8c0a-1b7d5f9e3a06',
+  codCollection: 'f1b7d3e9-5a8c-4f0b-b2d6-3c9e7a1f5d17',
 } as const;
 
 export const PHONE = { local: '03001234567', e164: '+923001234567', vendor: '+923000000011' } as const;

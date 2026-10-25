@@ -52,8 +52,13 @@ export class OrderTimersProcessor extends WorkerHost {
 
   /** Rejects the order if it is still waiting and its deadline has passed. Returns whether it did. */
   async expireIfOverdue(orderId: string, requestId?: string): Promise<boolean> {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, select: { status: true, vendorRespondBy: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { status: true, vendorRespondBy: true, paymentMethod: true, paymentStatus: true },
+    });
     if (!order || order.status !== OrderStatus.PLACED) return false;
+    // Online orders are not the vendor's to answer until the money is confirmed.
+    if (order.paymentMethod !== 'COD' && order.paymentStatus !== 'PAID') return false;
     // A job that fires a moment early (clock skew) leaves the order for the sweeper instead of cutting the vendor short.
     if (order.vendorRespondBy.getTime() > this.clock.now().getTime() + 1000) return false;
 
@@ -69,7 +74,11 @@ export class OrderTimersProcessor extends WorkerHost {
   /** Safety net: catches orders whose delayed job was lost (Redis restart, flush, enqueue failure). */
   async sweep(): Promise<number> {
     const overdue = await this.prisma.order.findMany({
-      where: { status: OrderStatus.PLACED, vendorRespondBy: { lte: this.clock.now() } },
+      where: {
+        status: OrderStatus.PLACED,
+        vendorRespondBy: { lte: this.clock.now() },
+        OR: [{ paymentMethod: 'COD' }, { paymentStatus: 'PAID' }],
+      },
       orderBy: { vendorRespondBy: 'asc' },
       take: 100,
       select: { id: true },

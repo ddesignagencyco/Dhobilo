@@ -13,11 +13,14 @@ import { RedisModule } from './infra/redis/redis.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { DeliveryWorkerModule } from './modules/delivery/delivery-worker.module';
 import { DispatchBootstrap } from './modules/delivery/dispatch.processor';
+import { FinanceWorkerModule } from './modules/finance/finance-worker.module';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsWorkerModule } from './modules/notifications/notifications-worker.module';
 import { OrderLifecycleModule } from './modules/orders/lifecycle/order-lifecycle.module';
 import { OrderTimersBootstrap } from './modules/orders/timers/order-timers.bootstrap';
 import { OrderTimersModule } from './modules/orders/timers/order-timers.module';
+import { OrderTimersScheduler } from './modules/orders/timers/order-timers.scheduler';
+import { PaymentsWorkerModule } from './modules/payments/payments-worker.module';
 import { TimeModule } from './common/time/clock';
 
 /**
@@ -46,7 +49,10 @@ import { TimeModule } from './common/time/clock';
     NotificationOrchestratorModule,
     NotificationsWorkerModule,
     DeliveryWorkerModule,
+    FinanceWorkerModule,
+    PaymentsWorkerModule,
   ],
-  providers: [OrderTimersBootstrap, DispatchBootstrap],
+  // Payment success also happens in this process, so the vendor timer must be scheduled here too.
+  providers: [OrderTimersBootstrap, DispatchBootstrap, OrderTimersScheduler],
 })
 export class WorkerModule {}

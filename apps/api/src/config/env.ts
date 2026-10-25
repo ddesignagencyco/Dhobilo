@@ -85,6 +85,32 @@ export const envSchema = z
     /** Shared secret the mock courier partner signs its webhooks with (testing). */
     COURIER_MOCK_WEBHOOK_SECRET: z.string().default(''),
 
+    /** Online payments (Phase 6). `mock` returns a stand-in checkout and accepts signed test webhooks. */
+    PAYMENTS_MODE: z.enum(['mock', 'live']).default('mock'),
+    /** How long a customer has to finish an online payment before the order is cancelled. */
+    PAYMENT_TIMEOUT_MIN: z.coerce.number().int().min(1).default(10),
+    /** How often the worker asks gateways about payments whose webhook never arrived. */
+    PAYMENT_RECONCILE_INTERVAL_SEC: z.coerce.number().int().min(30).default(600),
+    /** Signs mock gateway webhooks (HMAC-SHA256 of the raw body). */
+    PAYMENT_MOCK_WEBHOOK_SECRET: z.string().default(''),
+    JAZZCASH_MERCHANT_ID: z.string().default(''),
+    JAZZCASH_PASSWORD: z.string().default(''),
+    JAZZCASH_INTEGRITY_SALT: z.string().default(''),
+    JAZZCASH_API_URL: z.string().default(''),
+    JAZZCASH_RETURN_URL: z.string().default(''),
+    EASYPAISA_STORE_ID: z.string().default(''),
+    EASYPAISA_HASH_KEY: z.string().default(''),
+    EASYPAISA_API_URL: z.string().default(''),
+    EASYPAISA_RETURN_URL: z.string().default(''),
+    PAYFAST_MERCHANT_ID: z.string().default(''),
+    PAYFAST_SECURE_KEY: z.string().default(''),
+    PAYFAST_API_URL: z.string().default(''),
+    PAYFAST_RETURN_URL: z.string().default(''),
+    RAAST_MERCHANT_ID: z.string().default(''),
+    RAAST_SECRET_KEY: z.string().default(''),
+    RAAST_API_URL: z.string().default(''),
+    RAAST_RETURN_URL: z.string().default(''),
+
     BULL_BOARD_ENABLED: bool.default(false),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   })
@@ -94,6 +120,13 @@ export const envSchema = z
         code: 'custom',
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.PAYMENTS_MODE === 'mock') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['PAYMENTS_MODE'],
+        message: 'PAYMENTS_MODE must be live in production',
       });
     }
     if (env.PUSH_PROVIDER === 'fcm') {
