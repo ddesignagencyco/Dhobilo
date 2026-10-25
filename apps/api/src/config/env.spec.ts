@@ -28,11 +28,17 @@ describe('validateEnv', () => {
   });
 
   it('refuses OTP_BYPASS=true in production', () => {
-    expect(() => validateEnv({ ...base, NODE_ENV: 'production', OTP_BYPASS: 'true' })).toThrow(/OTP_BYPASS/);
+    expect(() => validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live', OTP_BYPASS: 'true' })).toThrow(
+      /OTP_BYPASS/,
+    );
   });
 
   it('allows OTP_BYPASS=false in production', () => {
-    expect(validateEnv({ ...base, NODE_ENV: 'production' }).NODE_ENV).toBe('production');
+    expect(validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live' }).NODE_ENV).toBe('production');
+  });
+
+  it('refuses mock payments in production', () => {
+    expect(() => validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'mock' })).toThrow(/PAYMENTS_MODE/);
   });
 
   it('rejects short JWT secrets and missing required values', () => {

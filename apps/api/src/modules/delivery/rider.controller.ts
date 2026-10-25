@@ -5,6 +5,7 @@ import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
+import { CodService } from '../finance/cod.service';
 import { DeliveryJobsService } from './delivery-jobs.service';
 import {
   CompleteJobDto,
@@ -33,6 +34,7 @@ export class RiderController {
     private readonly registration: RiderRegistrationService,
     private readonly app: RiderAppService,
     private readonly jobs: DeliveryJobsService,
+    private readonly cod: CodService,
   ) {}
 
   /**
@@ -169,5 +171,13 @@ export class RiderController {
   @RequireRiderStatus('APPROVED', 'SUSPENDED')
   earnings(@CurrentRider() rider: RiderContext, @Query() q: EarningsQueryDto) {
     return this.app.earnings(rider, q);
+  }
+
+  /** Cash the rider has collected on COD orders and still has to hand over. */
+  @Get('cod')
+  @UseGuards(RiderContextGuard)
+  @RequireRiderStatus('APPROVED', 'SUSPENDED')
+  codCash(@CurrentRider() rider: RiderContext) {
+    return this.cod.riderSummary(rider.id);
   }
 }

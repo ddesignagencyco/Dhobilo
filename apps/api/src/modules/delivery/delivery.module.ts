@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CitiesModule } from '../cities/cities.module';
+import { FinanceModule } from '../finance/finance.module';
 import { OrderOwnership } from '../orders/order-ownership';
 import { AdminDeliveryController } from './admin-delivery.controller';
 import { AdminDeliveryService } from './admin-delivery.service';
@@ -15,7 +16,7 @@ import { RiderReviewService } from './rider-review.service';
 
 /** API side of delivery: the rider app, the admin dispatch board, the customer's tracking, and the courier webhook. */
 @Module({
-  imports: [DeliveryCoreModule, CitiesModule],
+  imports: [DeliveryCoreModule, CitiesModule, FinanceModule],
   controllers: [RiderController, AdminDeliveryController, OrderDeliveryController, CourierWebhookController],
   providers: [RiderRegistrationService, RiderReviewService, RiderAppService, AdminDeliveryService, OrderDeliveryService, RiderContextGuard, OrderOwnership],
 })

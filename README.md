@@ -14,10 +14,10 @@ Backend only; the frontend (`apps/web`) has not been started.
 - Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
 - Phase 2 (Vendor onboarding, approval, catalog): backend done. Uploads, verification and the short-lived signed document links were checked end to end against a live Cloudinary account (private files, not publicly reachable).
 
-- Phase 3 (Discovery, cart, order placement): backend done. Cash on delivery only until Phase 6; promo codes are refused until Phase 7.
+- Phase 3 (Discovery, cart, order placement): backend done. COD and online payment methods are accepted; promo codes are refused until Phase 7.
 - Phase 4 (Order lifecycle, vendor operations, notifications): backend done. State machine, vendor accept/reject/advance, cancel, reorder, live tracking (SSE), vendor-timeout auto-cancel, and English/Urdu notifications over SMS, WhatsApp (SMS fallback), push and email. The real WhatsApp provider and SMS gateway adapters wait on choosing providers (mock providers work); the FCM client is unit-tested but not yet run against live Firebase.
-- Phase 5 (Riders and delivery): backend done. Rider registration and admin review, online/location tracking, delivery jobs that follow the order (pickup when accepted, delivery when ready), auto-dispatch to the nearest free rider with manual claim as a fallback, proof of delivery by the customer's 4-digit code or a photo, rider earnings, customer rider-tracking, an admin dispatch board, and a courier-partner adapter (mock partner only; a real partner needs choosing). Cash collection at delivery belongs to Phase 6. Settings are in `.env.example` under "Delivery and dispatch".
-- Phase 5 (Riders and delivery): backend done. Rider registration and admin review, Redis presence/location, delivery jobs created from order events, auto-dispatch with widening radius plus race-safe manual claim, proof of delivery by code or photo, rider earnings, customer delivery view and live rider position, admin dispatch board, and a courier-partner adapter with a mock partner. Only the mock partner exists; a real one waits on choosing a provider. Rider position is polled (no SSE yet), and COD collection/settlement is Phase 6.
+- Phase 5 (Riders and delivery): backend done. Rider registration and admin review, Redis presence/location, delivery jobs created from order events, auto-dispatch with widening radius plus race-safe manual claim, proof of delivery by code or photo, rider earnings, customer delivery view and polled rider position, admin dispatch board, and a courier-partner adapter with a mock partner. Only the mock partner exists; a real one waits on choosing a provider.
+- Phase 6 (Payments, COD, commission and payouts): backend done. Hosted checkout and signed raw-body webhooks for card, JazzCash, Easypaisa and Raast, payment reconciliation/timeout cancellation/refunds, COD collection and rider settlement, commission rules, vendor ledger/earnings, payout requests with admin approval, and Swagger docs for every route. Gateways run in validated mock mode; real merchant credentials and sandbox runs are still pending. Settings are in `.env.example` under "Online payments".
 
 ### API so far (`/api/v1`)
 
@@ -29,7 +29,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Media | `POST /media/sign` for `vendor-docs` (vendor owners; private), `rider-photo` (riders; public, customers see it) and `delivery-proof` (riders; private) |
 | Vendor | `POST /vendor/register`, `GET/PATCH /vendor/profile`, `GET/PUT /vendor/hours`, `PATCH /vendor/availability`, `GET/POST /vendor/staff`, `DELETE /vendor/staff/:userId` |
 | Catalog | `GET /service-categories` (public), `GET/POST /vendor/catalog/items`, `PATCH/DELETE /vendor/catalog/items/:id`, `POST /vendor/catalog/import` (JSON or CSV) |
-| Admin | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
+| Admin vendors | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
 | Discovery (public) | `GET /vendors` (geo search: `lat`, `lng`, `q`, `serviceType`, `minRating`, `maxPrice`, `sort=distance, rating or price`, cursor), `GET /vendors/:id`, `GET /vendors/:id/catalog`, `GET /vendors/:id/slots` |
 | Cart | `GET/PUT/DELETE /cart`, `POST /cart/estimate` (customers) |
 | Orders | `POST /orders` (needs an `Idempotency-Key` header), `GET /orders` (filters: status, vendor, dates), `GET /orders/:id`, `POST /orders/:id/cancel`, `POST /orders/:id/reorder`, `GET /orders/:id/timeline`, `GET /orders/:id/events` (live SSE; customer, vendor or admin) |
@@ -40,13 +40,13 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Admin riders | `GET /admin/riders`, `GET /admin/riders/:id`, `GET /admin/riders/:id/cnic` (audited), `POST /admin/riders/:id/{approve,reject,suspend,reactivate}` |
 | Admin delivery | `GET /admin/delivery/summary`, `GET /admin/delivery/jobs` (board), `GET /admin/delivery/jobs/:id`, `POST /admin/delivery/jobs/:id/{assign,unassign,fail,redispatch}` |
 | Courier partners | `GET /admin/courier-partners`, `PATCH /admin/courier-partners/:id` |
-| Webhook | `POST /webhooks/courier/:code` (public; the partner signs each call, `eventId` makes retries safe) |
+| Webhooks | `POST /webhooks/courier/:code` (public; the partner signs each call, `eventId` makes retries safe), `POST /webhooks/{gateway}` (public; raw-body signature, idempotent payment updates) |
 | Notifications | `GET/PATCH /me/notification-preferences` (language and per-channel opt-outs) |
-| Rider app | `POST /rider/register`, `GET /rider/status`, `GET /rider/me`, `POST /rider/{online,offline,location}`, `GET /rider/jobs/available`, `GET /rider/jobs`, `GET /rider/jobs/:id`, `POST /rider/jobs/:id/{claim,accept,decline,release,start,complete,fail}`, `GET /rider/earnings` |
-| Customer delivery | `GET /orders/:id/delivery`, `GET /orders/:id/rider-location`, `POST /orders/:id/delivery-code/resend` |
-| Admin delivery | `GET /admin/riders`, `GET /admin/riders/:id`, `GET /admin/riders/:id/cnic` (audited), `POST /admin/riders/:id/{approve,reject,suspend,reactivate}`, `GET /admin/delivery/{summary,jobs,jobs/:id}`, `POST /admin/delivery/jobs/:id/{assign,unassign,fail,redispatch}`, `GET/PATCH /admin/courier-partners` |
-| Courier partners | `POST /webhooks/courier/:code` (signed, idempotent); a city uses a partner via `PATCH /admin/cities/:id` (`courierPartnerId`) |
-| Admin | `PATCH /admin/cities/:id` (delivery fee, active flag, order code, `courierPartnerId`) |
+| Payments | `POST /payments/initiate` (customers; returns a hosted-checkout redirect/form, or 409 when already paid) |
+| Vendor finance | `GET /vendor/earnings` (`range=day, week or month`), `GET /vendor/ledger`, `GET/POST /vendor/payouts` |
+| Admin finance | `GET/POST /admin/commission-rules`, `PATCH/DELETE /admin/commission-rules/:id`, `GET /admin/payouts`, `POST /admin/payouts/:id/{approve,reject,pay}`, `GET /admin/cod/{balances,collections}`, `POST /admin/cod/settlements` |
+| Rider COD | `GET /rider/cod` (cash to deposit and history) |
+| Admin cities | `PATCH /admin/cities/:id` (delivery fee, active flag, order code, `courierPartnerId`) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
 Every route needs a bearer token unless marked `@Public()`. Roles are enforced with `@Roles()`, resource ownership with `@OwnedBy()`, and vendor-panel routes by vendor status with `@RequireVendorStatus()`.
@@ -57,6 +57,8 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 **How ordering works:** a vendor shows up in discovery only when it is approved, set to Open, inside today's opening hours (in the city's timezone), has at least one active item and its own service radius reaches the customer. Pickup and delivery are hourly windows inside the vendor's hours (default capacity 10 orders per window, 1 hour minimum notice, up to 7 days ahead); delivery cannot be earlier than pickup end plus the longest item turnaround. To place an order the client sends the total it was shown (`expectedTotal`); if prices moved, the API answers `409 PRICE_CHANGED` with the new total instead of charging it. Retrying with the same `Idempotency-Key` returns the original order. Commission (vendor rule, else category rule, else global) is fixed on the order at placement and never shown to customers. Order numbers look like `DHB-LHR-000123`.
 
 **How delivery works:** accepting an order creates a pickup job; reaching `READY` creates the drop job. Dispatch starts `DISPATCH_LEAD_MIN` (60) minutes before the window, offering the job to the nearest online approved rider, widening the radius and retrying until someone accepts or the attempts run out (then ops is alerted, if `OPS_ALERT_EMAIL` is set). Riders can also claim unassigned jobs manually; two riders racing for one job means one wins and the other gets `409 JOB_ALREADY_TAKEN`. A completed pickup/drop moves the order to `PICKED_UP`/`OUT_FOR_DELIVERY`/`DELIVERED`. A delivery needs the customer's 4-digit code or a proof photo. If a vendor or admin advances the order themselves, the matching open job is cancelled so nobody is sent for work already done. Cities with a courier partner switch to that partner instead of the in-house dispatch flow.
+
+**How payments work:** customers choose COD or an online method at checkout. Online orders start as `PENDING` and stay invisible to vendors until the gateway webhook marks them paid; a signed raw-body webhook applies each event once, ignores out-of-order failures after success, and the worker reconciles stale payments. Unpaid online orders are cancelled after `PAYMENT_TIMEOUT_MIN` (default 10). A payment that arrives after cancellation is refunded automatically. COD orders are visible immediately; the collecting rider's cash is tracked and admins record settlements. On delivery the finance worker posts the vendor earning and commission to an append-only ledger, and vendors can request a payout only up to their available balance; admins approve and pay it. All gateways support a validated mock mode for local/testing use, signed with `PAYMENT_MOCK_WEBHOOK_SECRET`; production refuses `PAYMENTS_MODE=mock`.
 
 **Cloudinary setup** (needed for vendor registration, rider photos and delivery proof): set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `CLOUDINARY_UPLOAD_PRESET` in `.env`. Vendor documents and delivery proofs are uploaded as `authenticated` assets, so they never have a public URL; rider profile photos are public because customers see them. The API itself enforces JPG/PNG/WebP and 5 MB when it verifies an upload (presets cannot cap file size).
 
@@ -78,10 +80,12 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Rider registration/review, Redis presence and location, delivery jobs from order events, dispatch (auto + manual claim), proof of delivery, earnings | `src/modules/delivery` |
 | Notification orchestration and bilingual templates (order, delivery and rider events) | `src/modules/notifications` |
 | Courier-partner adapter, signed idempotent webhook and per-city switch (mock partner only) | `src/modules/delivery/courier` |
+| Payment gateway registry/adapters (card, JazzCash, Easypaisa, Raast, mock), hosted checkout, signed raw-body webhooks, reconciliation, timeout cancellation and refunds | `src/modules/payments` |
+| Commission rules, ledger, vendor earnings, COD collection/settlement and payouts | `src/modules/finance` |
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 | CI: install, Prisma generate/validate, lint (when configured), typecheck, unit + e2e tests, API build, OpenAPI artifact | `.github/workflows/ci.yml` |
 
-Next: Phase 6 (payments, COD, commissions and payouts). See the [tracker](docs/Dhobilo-TRACKER.md).
+Next: Phase 7 (reviews, complaints, promos and referrals). See the [tracker](docs/Dhobilo-TRACKER.md).
 
 ## Stack
 

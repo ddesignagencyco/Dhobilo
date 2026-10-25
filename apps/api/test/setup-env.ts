@@ -23,6 +23,8 @@ const defaults: Record<string, string> = {
   CLOUDINARY_API_SECRET: 'test-secret',
   CLOUDINARY_UPLOAD_PRESET: 'test-preset',
   COURIER_MOCK_WEBHOOK_SECRET: 'test-courier-secret',
+  PAYMENTS_MODE: 'mock',
+  PAYMENT_MOCK_WEBHOOK_SECRET: 'test-payment-secret',
 };
 
 for (const [key, value] of Object.entries(defaults)) {

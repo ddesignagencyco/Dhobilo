@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { text } from 'express';
-import type { Express } from 'express';
+import { raw, text } from 'express';
+import type { Express, Request } from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { requestId } from './common/middleware/request-id.middleware';
@@ -30,6 +30,18 @@ export function configureApp(app: INestApplication): void {
   app.use(cookieParser());
   // CSV catalog imports arrive as raw text (JSON is parsed by Nest's default body parser).
   app.use(text({ type: 'text/csv', limit: '1mb' }));
+  // Payment signatures are computed over the exact bytes received, so these routes get the raw Buffer instead of
+  // Nest's parsed JSON. body-parser marks the request handled, so the default JSON parser leaves it alone.
+  const rawWebhook = raw({
+    type: '*/*',
+    limit: '1mb',
+    verify: (req, _res, buf) => {
+      (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buf);
+    },
+  });
+  for (const gateway of ['jazzcash', 'easypaisa', 'payfast', 'card', 'raast']) {
+    app.use(`/api/v1/webhooks/${gateway}`, rawWebhook);
+  }
 
   const rawOrigins = config.get('CORS_ORIGINS', { infer: true }) || config.get('APP_URL', { infer: true });
   const origins = String(rawOrigins)

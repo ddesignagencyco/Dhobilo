@@ -272,11 +272,17 @@ describe('Orders (e2e)', () => {
       await http.post('/api/v1/orders').set('Idempotency-Key', randomUUID()).send(body(s)).expect(401);
     });
 
-    it('only cash on delivery for now, and no promo codes', async () => {
+    it('accepts online methods but hides the order from the vendor until it is paid, and no promo codes', async () => {
       const s = await scenario();
-      for (const method of ['CARD', 'JAZZCASH', 'EASYPAISA', 'RAAST']) {
-        const res = await place(s, { paymentMethod: method }).expect(400);
-        expect(res.body.error).toMatchObject({ code: 'PAYMENT_METHOD_UNAVAILABLE', details: { available: ['COD'] } });
+      const gateways: Record<string, string> = { CARD: 'payfast', JAZZCASH: 'jazzcash', EASYPAISA: 'easypaisa', RAAST: 'raast' };
+      for (const method of Object.keys(gateways)) {
+        const before = placed.length;
+        const res = await place(s, { paymentMethod: method }).expect(201);
+        expect(res.body.data).toMatchObject({ paymentMethod: method, paymentStatus: 'PENDING' });
+        const payment = await t.prisma.payment.findFirstOrThrow({ where: { orderId: res.body.data.id } });
+        expect(payment).toMatchObject({ method, gateway: gateways[method], status: 'PENDING' });
+        await http.get(`/api/v1/vendor/orders/${res.body.data.id}`).set(s.vendor.owner.auth).expect(404);
+        expect(placed.slice(before)).toHaveLength(0);
       }
       expect((await place(s, { paymentMethod: 'BITCOIN' }).expect(400)).body.error.code).toBe('VALIDATION_FAILED');
       expect((await place(s, { promoCode: 'SAVE10' }).expect(400)).body.error.code).toBe('PROMO_UNAVAILABLE');

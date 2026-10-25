@@ -27,9 +27,15 @@ const boardSelect = {
   total: true,
   vendorEarning: true,
   paymentMethod: true,
+  paymentStatus: true,
   customer: { select: { name: true } },
   _count: { select: { items: true } },
 } satisfies Prisma.OrderSelect;
+
+/** Online orders stay invisible (and un-actionable) until the gateway confirms the money. */
+const visibleToVendor: Prisma.OrderWhereInput = {
+  OR: [{ paymentMethod: 'COD' }, { paymentStatus: 'PAID' }],
+};
 
 const detailSelect = {
   id: true,
@@ -76,14 +82,14 @@ export class VendorOrdersService {
   async list(vendorId: string, q: VendorOrdersQueryDto) {
     const limit = Math.min(q.limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const onlyWaiting = q.status?.length === 1 && q.status[0] === OrderStatus.PLACED;
-    const where: Prisma.OrderWhereInput = { vendorId, ...(q.status?.length ? { status: { in: q.status } } : {}) };
+    const where: Prisma.OrderWhereInput = { vendorId, ...visibleToVendor, ...(q.status?.length ? { status: { in: q.status } } : {}) };
 
     if (onlyWaiting) {
       const rows = await this.prisma.order.findMany({ where, orderBy: [{ vendorRespondBy: 'asc' }, { id: 'asc' }], take: 100, select: boardSelect });
       return { items: rows.map(toBoardRow), nextCursor: null };
     }
     const rows = await this.prisma.order.findMany({
-      where: { ...where, ...beforeCursor(q.cursor) },
+      where: { AND: [where, beforeCursor(q.cursor)] },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       select: boardSelect,
@@ -94,7 +100,7 @@ export class VendorOrdersService {
 
   /** Orders per status, for the tabs on the board. Every status is present, zero or not. */
   async counts(vendorId: string) {
-    const groups = await this.prisma.order.groupBy({ by: ['status'], where: { vendorId }, _count: { _all: true } });
+    const groups = await this.prisma.order.groupBy({ by: ['status'], where: { vendorId, ...visibleToVendor }, _count: { _all: true } });
     const counts = Object.fromEntries(Object.values(OrderStatus).map((s) => [s, 0])) as Record<OrderStatus, number>;
     for (const g of groups) counts[g.status] = g._count._all;
     return counts;
@@ -142,7 +148,9 @@ export class VendorOrdersService {
 
   /** The order, only if it belongs to this vendor; otherwise 404 (never confirm other vendors' orders exist). */
   private async owned<S extends Prisma.OrderSelect>(vendorId: string, orderId: string, select: S) {
-    const order = /^[0-9a-f-]{36}$/i.test(orderId) ? await this.prisma.order.findFirst({ where: { id: orderId, vendorId }, select }) : null;
+    const order = /^[0-9a-f-]{36}$/i.test(orderId)
+      ? await this.prisma.order.findFirst({ where: { id: orderId, vendorId, ...visibleToVendor }, select })
+      : null;
     if (!order) throw new AppException(ErrorCode.NOT_FOUND, 'Order not found.', HttpStatus.NOT_FOUND);
     return order;
   }
