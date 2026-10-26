@@ -5561,16 +5561,16 @@
                   "data": [
                     {
                       "id": "d7f3b9c5-1e4a-4b8d-a6c2-9e5f0d7a3c95",
-                      "scope": "CATEGORY",
-                      "vendorId": null,
-                      "categoryId": 2,
+                      "scope": "VENDOR",
+                      "vendorId": "7b0f2d9a-5d61-4a0b-9d0e-2f6a3c5e8b11",
+                      "categoryId": null,
                       "ratePct": "15.00",
                       "effectiveFrom": "2026-10-01T00:00:00.000Z",
                       "createdById": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
-                      "vendor": null,
-                      "category": {
-                        "name": "Wash & Iron"
-                      }
+                      "vendor": {
+                        "businessName": "Sparkle Laundry"
+                      },
+                      "category": null
                     }
                   ]
                 }
@@ -5688,11 +5688,7 @@
                     "categoryId": 2,
                     "ratePct": "15.00",
                     "effectiveFrom": "2026-10-01T00:00:00.000Z",
-                    "createdById": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
-                    "vendor": null,
-                    "category": {
-                      "name": "Wash & Iron"
-                    }
+                    "createdById": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01"
                   }
                 }
               }
@@ -5856,11 +5852,7 @@
                     "categoryId": 2,
                     "ratePct": "12.50",
                     "effectiveFrom": "2026-10-01T00:00:00.000Z",
-                    "createdById": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
-                    "vendor": null,
-                    "category": {
-                      "name": "Wash & Iron"
-                    }
+                    "createdById": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01"
                   }
                 }
               }
@@ -8118,6 +8110,7 @@
                       "total": "510.00",
                       "vendorEarning": "306.00",
                       "paymentMethod": "COD",
+                      "paymentStatus": "COD_PENDING",
                       "customerName": "Ayesha Khan",
                       "itemCount": 1
                     }
@@ -10231,7 +10224,7 @@
           "vendor-finance"
         ],
         "summary": "Request a payout",
-        "description": "**Who can use this:** signed-in vendor owners or vendor staff.\n\nOwner only. The amount cannot exceed the available ledger balance; the check runs under a lock so simultaneous requests cannot overspend. An admin approves and marks it paid."
+        "description": "**Who can use this:** signed-in vendor owners.\n\nOwner only. The amount cannot exceed the available ledger balance; the check runs under a lock so simultaneous requests cannot overspend. An admin approves and marks it paid."
       }
     },
     "/api/v1/vendors/{id}/slots": {
