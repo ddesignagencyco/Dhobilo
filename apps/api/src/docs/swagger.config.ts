@@ -65,6 +65,7 @@ export const TAGS: [name: string, description: string][] = [
   ['vendor-orders', 'The vendor’s order board: accept, reject and move orders through the workflow.'],
   ['vendor-complaints', 'Vendor: read customer complaints for the shop and reply to the thread.'],
   ['vendor-finance', 'Vendor: delivered-order earnings, ledger movements, and payout requests.'],
+  ['vendor-analytics', 'Vendor: the shop’s own orders, sales, earnings, best sellers and rating trend.'],
   ['rider', 'The rider app: apply, go online, take pickup and delivery jobs, prove delivery with the customer’s code, see earnings and COD cash.'],
   ['admin-vendors', 'Admin: review applications, approve / reject / suspend vendors, audited CNIC access.'],
   ['admin-orders', 'Admin: find any order, see everything, cancel with a reason.'],
@@ -74,6 +75,10 @@ export const TAGS: [name: string, description: string][] = [
   ['admin-delivery', 'Admin: the dispatch board (find, assign, take back, fail and re-send jobs) and courier partners.'],
   ['admin-cities', 'Admin: delivery fee, active switch, order-number code and courier partner per city.'],
   ['admin-finance', 'Admin: commission rules, payout approval and payment, and cash-on-delivery settlement.'],
+  ['admin-analytics', 'Admin: platform orders, sales, revenue, active customers and top vendors by city and date range.'],
+  ['admin-reports', 'Admin: build CSV / Excel reports in the background and download them with a short-lived signed link.'],
+  ['admin-announcements', 'Admin: preview an audience, send an announcement by push, SMS or email, and follow its delivery.'],
+  ['admin-audit', 'Admin: search the audit trail of who did what to which record.'],
   ['webhooks', 'Calls made **to** us by partners (courier and payment status updates). Signed, not logged-in.'],
   ['health', 'Liveness and readiness probes.'],
 ];

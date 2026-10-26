@@ -337,13 +337,13 @@
 **Refs:** FR-A4, FR-A7, FR-A8, SRS §7 Auditability
 
 ### BE
-- [ ] **BE-8.1** Analytics aggregates: orders, GMV, revenue (commission), active users, top vendors, by city/date range (FR-A4)
-- [ ] **BE-8.2** Nightly `analytics` rollup job into summary tables to keep dashboards fast
-- [ ] **BE-8.3** Vendor-facing analytics (own orders/earnings summary) (SRS §9.1 "View analytics")
-- [ ] **BE-8.4** Async report generation (`exports` queue): CSV and XLSX for orders, payments, payouts, COD, vendors; delivered via signed link (FR-A8)
-- [ ] **BE-8.5** Announcements: segment by role/city/activity; fan-out via notifications queue with batching + rate limits (FR-A7)
-- [ ] **BE-8.6** Audit log query API with filters (entity, actor, date)
-- [ ] **BE-8.7** Tests: report totals match source tables; announcement batching respects provider limits
+- [x] **BE-8.1** Analytics aggregates: orders, GMV, revenue (commission), active users, top vendors, by city/date range (FR-A4) (overview, orders, revenue and top vendors by city/date range; days are Pakistan business days)
+- [x] **BE-8.2** Nightly `analytics` rollup job into summary tables to keep dashboards fast (DailyCityStat / DailyVendorStat filled by a nightly 00:10 PKT job; gaps are filled on demand, today is computed live)
+- [x] **BE-8.3** Vendor-facing analytics (own orders/earnings summary) (SRS §9.1 "View analytics") (GET /vendor/analytics: today, 7/30/90 days, in progress, best sellers, rating trend)
+- [x] **BE-8.4** Async report generation (`exports` queue): CSV and XLSX for orders, payments, payouts, COD, vendors; delivered via signed link (FR-A8) (CSV and XLSX for orders, payments, payouts, COD, vendors; the file is stored in Postgres and served through an HMAC-signed 10-minute link instead of a private Cloudinary asset; nobody is emailed when it is ready)
+- [x] **BE-8.5** Announcements: segment by role/city/activity; fan-out via notifications queue with batching + rate limits (FR-A7) (segments by role, city and activity; push/SMS/email; staggered over time to stay under provider rates)
+- [x] **BE-8.6** Audit log query API with filters (entity, actor, date) (GET /admin/audit-logs with entity, entityId, action, actor, role and time filters; cursor paging)
+- [x] **BE-8.7** Tests: report totals match source tables; announcement batching respects provider limits (totals checked against the tables; 100,000-row CSV and XLSX; stagger and retry behaviour)
 
 ### FE
 - [ ] **FE-8.1** Admin dashboard: KPI cards + charts (orders, revenue, active users, top vendors), city/date filters (FR-A4)
@@ -353,8 +353,8 @@
 - [ ] **FE-8.5** Vendor dashboard: today's orders, earnings summary, rating trend
 
 ### QA
-- [ ] **QA-8.1** Cross-check analytics numbers against SQL on a seeded dataset
-- [ ] **QA-8.2** Large export (100 k rows) completes without blocking the API
+- [x] **QA-8.1** Cross-check analytics numbers against SQL on a seeded dataset (analytics.e2e-spec.ts)
+- [x] **QA-8.2** Large export (100 k rows) completes without blocking the API (about 33 s for CSV and 34 s for XLSX, longest event-loop stall under 0.5 s)
 
 **Exit criteria:** admin can answer "how many orders/revenue today by city" from the dashboard and export the data.
 
@@ -473,3 +473,4 @@
 | 1 | 0 | | | | TRD §20 items 1–3 |
 | 2 | | | | | |
 | 21-22 | 7 | Reviews, complaints with redo, promos and referrals; full unit and e2e suites green | Phase 8 | Real payment credentials and live Cloudinary checks pending; redo rider compensation not automated | Redo compensation policy |
+| 23 | 8 | Admin analytics with nightly rollup, vendor analytics, CSV/XLSX reports, announcements with rate-limited fan-out, audit-log search; full unit and e2e suites green | Phase 9 | Report files live in Postgres (move to object storage before large scale); no email when a report is ready; admin frontend not started | Where report files should live |

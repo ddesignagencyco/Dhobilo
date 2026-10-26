@@ -209,9 +209,9 @@ Run in the `worker` service. Bull Board mounted at `/admin/queues` (admin-only, 
 | `dispatch` | `assign-rider`, `reassign-rider` | order → `ACCEPTED` / `READY` | re-queue with widening radius until assigned or ops alerted |
 | `payments` | `process-webhook`, `reconcile-pending`, `refund` | gateway webhook, cron every 10 min | 8 attempts, exponential |
 | `finance` | `post-ledger`, `calc-earnings`, `process-payout` | on `DELIVERED`, admin approval | idempotent by `(orderId,type)` |
-| `exports` | `generate-report` (CSV/XLSX) | admin request (A8) | result uploaded to Cloudinary (raw, private) and link emailed/notified |
+| `exports` | `generate-report` (CSV/XLSX), `purge-reports` (hourly) | admin request (A8) | **As built:** the file is stored in Postgres (`ReportFile`, kept 7 days, 250,000-row cap) and downloaded through an HMAC-signed 10-minute link; moving it to private Cloudinary raw storage and emailing the link is a later change |
 | `media` | `cleanup-orphans` | nightly cron | |
-| `analytics` | `rollup-daily` | nightly cron | |
+| `analytics` | `rollup-daily` | nightly cron 00:10 Asia/Karachi (and `POST /admin/analytics/rollup` for backfills) | idempotent: recomputing a day replaces its rows |
 
 **Rules:** every job payload carries `requestId`; handlers are **idempotent**; failed-after-retries jobs land in the failed set and trigger a Sentry/log alert; `removeOnComplete` keeps the last 1000.
 
@@ -322,13 +322,14 @@ Base: `/api/v1`. All authenticated unless marked public. Full OpenAPI generated 
 | GET/POST | `/admin/vendors` · `/:id/approve` · `/:id/reject` · `/:id/suspend` | A1, A2 |
 | GET/POST | `/admin/riders` · `/:id/approve` · `/:id/suspend` | R1, A2 |
 | CRUD | `/admin/commission-rules` | A3 |
-| GET | `/admin/analytics/{overview|orders|revenue|vendors}` | A4 |
+| GET | `/admin/analytics/{overview|orders|revenue|vendors}` · POST `/rollup` | A4 |
+| GET | `/vendor/analytics` | V (view analytics) |
 | GET/POST | `/admin/complaints` · `/:id/resolve` | A5 |
 | CRUD | `/admin/promos` | A6 |
-| POST | `/admin/announcements` | A7 |
-| POST/GET | `/admin/reports` | A8 (async via `exports` queue) |
+| GET/POST | `/admin/announcements` · `/preview` · `/:id` | A7 |
+| POST/GET | `/admin/reports` · `/:id` · public signed `/reports/:id/download` | A8 (async via `exports` queue) |
 | GET/POST | `/admin/payouts` · `/:id/approve` · `/:id/pay` | V9 |
-| GET | `/admin/audit?entity&entityId&actor` | §7 |
+| GET | `/admin/audit-logs?entity&entityId&action&actorId&actorRole&from&to` | §7 |
 
 ---
 

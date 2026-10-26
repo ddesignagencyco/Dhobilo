@@ -10,47 +10,12 @@ import { QUEUES } from '../../infra/queue/queues';
 import { SMS_PROVIDER } from '../../infra/sms/sms.provider';
 import type { SmsProvider } from '../../infra/sms/sms.provider';
 import { WHATSAPP_PROVIDER } from '../../infra/whatsapp/whatsapp.provider';
+import { AnnouncementFanoutService, FANOUT_ANNOUNCEMENT_JOB, FanoutAnnouncementJob } from '../announcements/announcement-fanout.service';
 import type { WhatsAppProvider } from '../../infra/whatsapp/whatsapp.provider';
+import { SEND_EMAIL_JOB, SEND_PUSH_JOB, SEND_SMS_JOB, SEND_WHATSAPP_JOB, SendEmailJob, SendPushJob, SendSmsJob, SendWhatsAppJob } from './notifications.jobs';
 
-export const SEND_SMS_JOB = 'send-sms';
-export const SEND_EMAIL_JOB = 'send-email';
-export const SEND_WHATSAPP_JOB = 'send-whatsapp';
-export const SEND_PUSH_JOB = 'send-push';
-
-/** Present on jobs created by the orchestrator; lets delivery update the user's Notification log row. */
-interface Logged {
-  notificationId?: string;
-  requestId?: string;
-}
-
-export interface SendSmsJob extends Logged {
-  to: string;
-  message: string;
-}
-
-export interface SendEmailJob extends Logged {
-  to: string;
-  subject: string;
-  text: string;
-}
-
-export interface SendWhatsAppJob extends Logged {
-  to: string;
-  templateName: string;
-  language: 'en' | 'ur';
-  params: string[];
-  fallbackText: string;
-  /** On final failure, send fallbackText by SMS instead (TRD §9), if the user allows SMS. */
-  fallbackSms?: boolean;
-  userId?: string;
-}
-
-export interface SendPushJob extends Logged {
-  tokens: string[];
-  title: string;
-  body: string;
-  data?: Record<string, string>;
-}
+// Existing imports of the job names keep working.
+export * from './notifications.jobs';
 
 type AnyJob = SendSmsJob | SendEmailJob | SendWhatsAppJob | SendPushJob;
 
@@ -69,11 +34,21 @@ export class NotificationsProcessor extends WorkerHost {
     @Inject(PUSH_PROVIDER) private readonly push: PushProvider,
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUES.NOTIFICATIONS) private readonly queue: Queue,
+    private readonly announcements: AnnouncementFanoutService,
   ) {
     super();
   }
 
-  async process(job: Job<AnyJob>): Promise<void> {
+  async process(job: Job<AnyJob | FanoutAnnouncementJob>): Promise<void> {
+    // An admin announcement is not a message itself: it expands into one message per person (and has no log row).
+    if (job.name === FANOUT_ANNOUNCEMENT_JOB) {
+      await this.announcements.run((job.data as FanoutAnnouncementJob).announcementId);
+      return;
+    }
+    return this.deliver(job as Job<AnyJob>);
+  }
+
+  private async deliver(job: Job<AnyJob>): Promise<void> {
     const attempt = job.attemptsMade + 1;
     const maxAttempts = job.opts.attempts ?? 1;
     try {

@@ -18,6 +18,10 @@ import { RedisModule } from './infra/redis/redis.module';
 import { CryptoModule } from './common/crypto/crypto.module';
 import { TimeModule } from './common/time/clock';
 import { AddressesModule } from './modules/addresses/addresses.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { AuditQueryModule } from './modules/audit/audit-query.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { CartModule } from './modules/cart/cart.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
@@ -79,6 +83,10 @@ import { UsersModule } from './modules/users/users.module';
     PromotionsHttpModule,
     ReviewsModule,
     ComplaintsModule,
+    AnalyticsModule,
+    ReportsModule,
+    AnnouncementsModule,
+    AuditQueryModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

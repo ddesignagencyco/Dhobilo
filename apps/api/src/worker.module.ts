@@ -10,7 +10,9 @@ import { MailModule } from './infra/mail/mail.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { QueueModule } from './infra/queue/queue.module';
 import { RedisModule } from './infra/redis/redis.module';
+import { AnalyticsWorkerModule } from './modules/analytics/analytics-worker.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { ReportsWorkerModule } from './modules/reports/reports-worker.module';
 import { DeliveryWorkerModule } from './modules/delivery/delivery-worker.module';
 import { DispatchBootstrap } from './modules/delivery/dispatch.processor';
 import { FinanceWorkerModule } from './modules/finance/finance-worker.module';
@@ -56,6 +58,8 @@ import { TimeModule } from './common/time/clock';
     DeliveryWorkerModule,
     FinanceWorkerModule,
     PaymentsWorkerModule,
+    AnalyticsWorkerModule,
+    ReportsWorkerModule,
   ],
   // Payment success also happens in this process, so the vendor timer must be scheduled here too.
   providers: [OrderTimersBootstrap, DispatchBootstrap, OrderTimersScheduler],

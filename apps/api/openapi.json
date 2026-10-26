@@ -20500,6 +20500,2172 @@
         "summary": "Resolve a complaint",
         "description": "**Who can use this:** signed-in admins.\n\nClose the complaint with one outcome. `REFUND` refunds every successful online payment for the order (COD refunds are handled manually and only recorded); `REDO` adds a fresh pickup and delivery attempt to the delivered order and dispatches them; `REJECT` closes it without further work. The customer is notified by SMS. Audited."
       }
+    },
+    "/api/v1/admin/analytics/overview": {
+      "get": {
+        "operationId": "AdminAnalyticsController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "range": {
+                      "from": "2026-10-20",
+                      "to": "2026-10-26",
+                      "cityId": null
+                    },
+                    "totals": {
+                      "ordersPlaced": 282,
+                      "ordersDelivered": 241,
+                      "ordersCancelled": 19,
+                      "gmv": "212400.00",
+                      "revenue": "31860.00",
+                      "vendorEarnings": "180540.00",
+                      "deliveryFees": "12050.00",
+                      "discounts": "4100.00",
+                      "averageOrderValue": "881.33",
+                      "activeCustomers": 190,
+                      "newCustomers": 47,
+                      "approvedVendors": 23
+                    },
+                    "series": [
+                      {
+                        "day": "2026-10-25",
+                        "ordersPlaced": 42,
+                        "ordersDelivered": 35,
+                        "ordersCancelled": 3,
+                        "gmv": "31250.00",
+                        "revenue": "4687.50",
+                        "vendorEarnings": "26562.50",
+                        "deliveryFees": "1750.00",
+                        "discounts": "600.00",
+                        "averageOrderValue": "892.86"
+                      },
+                      {
+                        "day": "2026-10-26",
+                        "ordersPlaced": 42,
+                        "ordersDelivered": 35,
+                        "ordersCancelled": 3,
+                        "gmv": "31250.00",
+                        "revenue": "4687.50",
+                        "vendorEarnings": "26562.50",
+                        "deliveryFees": "1750.00",
+                        "discounts": "600.00",
+                        "averageOrderValue": "892.86"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-analytics"
+        ],
+        "summary": "Platform overview",
+        "description": "**Who can use this:** signed-in admins.\n\nThe headline numbers for a date range, with one entry per day. Days are Pakistan business days, and every figure belongs to the day it happened: **orders placed** by the day they were created, **delivered, sales (`gmv`), `revenue` (our commission), vendor earnings, delivery fees and discounts** by the day the order was delivered, and **cancelled** by the day an order was cancelled or rejected. `activeCustomers` is the number of different customers who ordered in the whole range; `newCustomers` counts customers whose first-ever order falls in it. Finished days come from the nightly summary tables, today is always live."
+      }
+    },
+    "/api/v1/admin/analytics/orders": {
+      "get": {
+        "operationId": "AdminAnalyticsController_orders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "range": {
+                      "from": "2026-10-20",
+                      "to": "2026-10-26",
+                      "cityId": null
+                    },
+                    "totals": {
+                      "ordersPlaced": 282,
+                      "ordersDelivered": 241,
+                      "ordersCancelled": 19
+                    },
+                    "byStatus": [
+                      {
+                        "status": "DELIVERED",
+                        "orders": 241
+                      },
+                      {
+                        "status": "CANCELLED",
+                        "orders": 12
+                      },
+                      {
+                        "status": "IN_PROCESS",
+                        "orders": 20
+                      }
+                    ],
+                    "byPaymentMethod": [
+                      {
+                        "method": "COD",
+                        "orders": 180
+                      },
+                      {
+                        "method": "JAZZCASH",
+                        "orders": 70
+                      }
+                    ],
+                    "byCity": [
+                      {
+                        "cityId": 1,
+                        "city": "Lahore",
+                        "ordersPlaced": 150,
+                        "ordersDelivered": 130,
+                        "ordersCancelled": 9
+                      }
+                    ],
+                    "series": [
+                      {
+                        "day": "2026-10-26",
+                        "ordersPlaced": 42,
+                        "ordersDelivered": 35,
+                        "ordersCancelled": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-analytics"
+        ],
+        "summary": "Order counts",
+        "description": "**Who can use this:** signed-in admins.\n\nHow many orders were placed, delivered and cancelled in the range, per day and per city. `byStatus` and `byPaymentMethod` describe the orders **placed in the range** as they stand right now."
+      }
+    },
+    "/api/v1/admin/analytics/revenue": {
+      "get": {
+        "operationId": "AdminAnalyticsController_revenue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "range": {
+                      "from": "2026-10-20",
+                      "to": "2026-10-26",
+                      "cityId": null
+                    },
+                    "totals": {
+                      "ordersPlaced": 42,
+                      "ordersDelivered": 35,
+                      "ordersCancelled": 3,
+                      "gmv": "31250.00",
+                      "revenue": "4687.50",
+                      "vendorEarnings": "26562.50",
+                      "deliveryFees": "1750.00",
+                      "discounts": "600.00",
+                      "averageOrderValue": "892.86",
+                      "cashGmv": "150100.00",
+                      "prepaidGmv": "62300.00"
+                    },
+                    "byCity": [
+                      {
+                        "cityId": 1,
+                        "city": "Lahore",
+                        "ordersPlaced": 42,
+                        "ordersDelivered": 35,
+                        "ordersCancelled": 3,
+                        "gmv": "31250.00",
+                        "revenue": "4687.50",
+                        "vendorEarnings": "26562.50",
+                        "deliveryFees": "1750.00",
+                        "discounts": "600.00",
+                        "averageOrderValue": "892.86"
+                      }
+                    ],
+                    "series": [
+                      {
+                        "day": "2026-10-26",
+                        "gmv": "31250.00",
+                        "revenue": "4687.50",
+                        "vendorEarnings": "26562.50",
+                        "deliveryFees": "1750.00",
+                        "discounts": "600.00"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-analytics"
+        ],
+        "summary": "Sales and revenue",
+        "description": "**Who can use this:** signed-in admins.\n\n`gmv` is the value of orders delivered in the range, `revenue` is the commission the platform earned on them. `cashGmv` is the part paid in cash on delivery, which reaches us only when the rider’s deposit is recorded; `prepaidGmv` was paid online. Refunds are not netted off."
+      }
+    },
+    "/api/v1/admin/analytics/vendors": {
+      "get": {
+        "operationId": "AdminAnalyticsController_vendors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "range": {
+                      "from": "2026-10-20",
+                      "to": "2026-10-26",
+                      "cityId": null
+                    },
+                    "vendors": [
+                      {
+                        "rank": 1,
+                        "vendorId": "7b0f2d9a-5d61-4a0b-9d0e-2f6a3c5e8b11",
+                        "businessName": "Sparkle Laundry",
+                        "cityId": 1,
+                        "city": "Lahore",
+                        "ordersDelivered": 64,
+                        "gmv": "58200.00",
+                        "revenue": "8730.00",
+                        "vendorEarnings": "49470.00",
+                        "ratingAvg": "4.70",
+                        "ratingCount": 112
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-analytics"
+        ],
+        "summary": "Top vendors",
+        "description": "**Who can use this:** signed-in admins.\n\nVendors ranked by sales (`gmv`) of orders delivered in the range. Vendors with no delivered order are left out."
+      }
+    },
+    "/api/v1/admin/analytics/rollup": {
+      "post": {
+        "operationId": "AdminAnalyticsController_rollup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollupDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Rebuild a week",
+                  "value": {
+                    "from": "2026-10-19",
+                    "to": "2026-10-25"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "queued": [
+                      "2026-10-19",
+                      "2026-10-20",
+                      "2026-10-21"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-analytics"
+        ],
+        "summary": "Recompute daily numbers",
+        "description": "**Who can use this:** signed-in admins.\n\nRebuilds the stored daily summary for finished days (never today). The nightly job does yesterday by itself and a dashboard fills any missing day on demand, so this is only for backfills or after fixing data. It runs in the background and is safe to repeat."
+      }
+    },
+    "/api/v1/vendor/analytics": {
+      "get": {
+        "operationId": "VendorAnalyticsController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "range": {
+                      "from": "2026-10-20",
+                      "to": "2026-10-26",
+                      "days": 7
+                    },
+                    "today": {
+                      "ordersPlaced": 6,
+                      "ordersDelivered": 4,
+                      "ordersRejected": 0,
+                      "ordersCancelled": 1,
+                      "sales": "3600.00",
+                      "earnings": "3060.00"
+                    },
+                    "totals": {
+                      "ordersPlaced": 40,
+                      "ordersDelivered": 33,
+                      "ordersCancelled": 2,
+                      "ordersRejected": 1,
+                      "sales": "29700.00",
+                      "commission": "4455.00",
+                      "earnings": "25245.00",
+                      "averageOrderValue": "900.00",
+                      "acceptanceRate": 97.5
+                    },
+                    "inProgress": [
+                      {
+                        "status": "IN_PROCESS",
+                        "orders": 5
+                      }
+                    ],
+                    "series": [
+                      {
+                        "day": "2026-10-26",
+                        "ordersPlaced": 6,
+                        "ordersDelivered": 4,
+                        "sales": "3600.00",
+                        "earnings": "3060.00"
+                      }
+                    ],
+                    "topServices": [
+                      {
+                        "name": "Shalwar Kameez (wash & iron)",
+                        "quantity": 58,
+                        "revenue": "17400.00"
+                      }
+                    ],
+                    "ratingTrend": [
+                      {
+                        "weekStarting": "2026-10-19",
+                        "average": "4.70",
+                        "reviews": 9
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "VENDOR_NOT_ACTIVE": {
+                    "summary": "VENDOR_NOT_ACTIVE: The vendor account is not approved.",
+                    "value": {
+                      "error": {
+                        "code": "VENDOR_NOT_ACTIVE",
+                        "message": "The vendor account is not approved.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "vendor-analytics"
+        ],
+        "summary": "My shop’s analytics",
+        "description": "**Who can use this:** signed-in vendor owners or vendor staff.\n\nToday and the last 7, 30 or 90 days for your own shop: orders, sales, what you earned after commission, what is in progress now, best-selling services and the weekly rating trend. `acceptanceRate` is the share of orders placed in the range that you did not reject."
+      }
+    },
+    "/api/v1/admin/reports": {
+      "post": {
+        "operationId": "AdminReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Orders for a month, as Excel",
+                  "value": {
+                    "type": "ORDERS",
+                    "format": "XLSX",
+                    "from": "2026-10-01",
+                    "to": "2026-10-31",
+                    "cityId": 1
+                  }
+                },
+                "payouts": {
+                  "summary": "Payouts, CSV",
+                  "value": {
+                    "type": "PAYOUTS",
+                    "from": "2026-10-01",
+                    "to": "2026-10-31"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64",
+                    "type": "ORDERS",
+                    "format": "CSV",
+                    "params": {
+                      "from": "2026-10-01",
+                      "to": "2026-10-26",
+                      "cityId": 1
+                    },
+                    "status": "QUEUED",
+                    "rowCount": null,
+                    "byteSize": null,
+                    "fileName": null,
+                    "error": null,
+                    "createdAt": "2026-10-26T09:00:00.000Z",
+                    "completedAt": null,
+                    "expiresAt": null,
+                    "download": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`, a date is not real, or the range is longer than 366 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CITY_NOT_FOUND": {
+                    "summary": "CITY_NOT_FOUND: `cityId` does not exist.",
+                    "value": {
+                      "error": {
+                        "code": "CITY_NOT_FOUND",
+                        "message": "`cityId` does not exist.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "VENDOR_NOT_FOUND": {
+                    "summary": "VENDOR_NOT_FOUND: `vendorId` does not exist.",
+                    "value": {
+                      "error": {
+                        "code": "VENDOR_NOT_FOUND",
+                        "message": "`vendorId` does not exist.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "RATE_LIMITED: More than 20 reports were requested in an hour.",
+                    "value": {
+                      "error": {
+                        "code": "RATE_LIMITED",
+                        "message": "More than 20 reports were requested in an hour.",
+                        "details": {
+                          "retryAfterSec": 540
+                        },
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-reports"
+        ],
+        "summary": "Request a report",
+        "description": "**Who can use this:** signed-in admins.\n\nStarts building a CSV or Excel file in the background (orders, payments, payouts, cash collections or vendors) for a date range. Poll **Get a report** until `status` is `READY`; it then carries a short-lived `download` link. Customer and owner phone numbers are masked, and files are kept for 7 days. A report may not exceed 250,000 rows: narrow the range or pick a city. At most 20 reports per hour."
+      },
+      "get": {
+        "operationId": "AdminReportsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64",
+                      "type": "ORDERS",
+                      "format": "CSV",
+                      "params": {
+                        "from": "2026-10-01",
+                        "to": "2026-10-26",
+                        "cityId": 1
+                      },
+                      "status": "READY",
+                      "rowCount": 1280,
+                      "byteSize": 214530,
+                      "fileName": "dhoblio-orders-2026-10-01_to_2026-10-26.csv",
+                      "error": null,
+                      "createdAt": "2026-10-26T09:00:00.000Z",
+                      "completedAt": "2026-10-26T09:00:07.000Z",
+                      "expiresAt": "2026-11-02T09:00:07.000Z",
+                      "download": {
+                        "url": "/api/v1/reports/e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64/download?exp=1793006400&sig=4f9c1e7a2b8d0365f1a4c7e9b2d5083a6c1f4e7b9a2d5c8f0136b9e4a7d2c5f8",
+                        "expiresAt": "2026-10-26T09:10:00.000Z"
+                      }
+                    }
+                  ],
+                  "meta": {
+                    "nextCursor": null
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-reports"
+        ],
+        "summary": "My reports",
+        "description": "**Who can use this:** signed-in admins.\n\nThe reports you requested, newest first. Ready ones carry a fresh download link."
+      }
+    },
+    "/api/v1/admin/reports/{id}": {
+      "get": {
+        "operationId": "AdminReportsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64",
+                    "type": "ORDERS",
+                    "format": "CSV",
+                    "params": {
+                      "from": "2026-10-01",
+                      "to": "2026-10-26",
+                      "cityId": 1
+                    },
+                    "status": "READY",
+                    "rowCount": 1280,
+                    "byteSize": 214530,
+                    "fileName": "dhoblio-orders-2026-10-01_to_2026-10-26.csv",
+                    "error": null,
+                    "createdAt": "2026-10-26T09:00:00.000Z",
+                    "completedAt": "2026-10-26T09:00:07.000Z",
+                    "expiresAt": "2026-11-02T09:00:07.000Z",
+                    "download": {
+                      "url": "/api/v1/reports/e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64/download?exp=1793006400&sig=4f9c1e7a2b8d0365f1a4c7e9b2d5083a6c1f4e7b9a2d5c8f0136b9e4a7d2c5f8",
+                      "expiresAt": "2026-10-26T09:10:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "REPORT_NOT_FOUND": {
+                    "summary": "REPORT_NOT_FOUND: There is no such report among yours.",
+                    "value": {
+                      "error": {
+                        "code": "REPORT_NOT_FOUND",
+                        "message": "There is no such report among yours.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-reports"
+        ],
+        "summary": "Get a report",
+        "description": "**Who can use this:** signed-in admins.\n\nStatus and, once `READY`, a download link that works for 10 minutes. Ask again for a new link. After 7 days the file is removed and the status becomes `EXPIRED`."
+      }
+    },
+    "/api/v1/reports/{id}/download": {
+      "get": {
+        "operationId": "ReportDownloadController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file (CSV shown).",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": "Order no,Placed at (PKT),City,Vendor,Customer phone,Status,Payment method,Payment status,Subtotal,Discount,Delivery fee,Total,Commission,Vendor earning,Delivered at (PKT)\r\nDHB-LHR-000123,2026-10-22 18:05,Lahore,Sparkle Laundry,0300****567,DELIVERED,COD,COD_COLLECTED,360.00,0.00,50.00,410.00,54.00,306.00,2026-10-24 17:30\r\n"
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "LINK_INVALID": {
+                    "summary": "LINK_INVALID: The signature does not match.",
+                    "value": {
+                      "error": {
+                        "code": "LINK_INVALID",
+                        "message": "The signature does not match.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "REPORT_NOT_READY": {
+                    "summary": "REPORT_NOT_READY: The report has no file (still building, or it failed).",
+                    "value": {
+                      "error": {
+                        "code": "REPORT_NOT_READY",
+                        "message": "The report has no file (still building, or it failed).",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "LINK_EXPIRED": {
+                    "summary": "LINK_EXPIRED: The link is older than 10 minutes. Get the report again for a new one.",
+                    "value": {
+                      "error": {
+                        "code": "LINK_EXPIRED",
+                        "message": "The link is older than 10 minutes. Get the report again for a new one.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "REPORT_EXPIRED": {
+                    "summary": "REPORT_EXPIRED: The file was removed after 7 days.",
+                    "value": {
+                      "error": {
+                        "code": "REPORT_EXPIRED",
+                        "message": "The file was removed after 7 days.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-reports"
+        ],
+        "summary": "Download a report file",
+        "description": "**Who can use this:** anyone — no sign-in needed.\n\nThe file itself, as `text/csv` (with a byte-order mark, so Excel reads Urdu names) or an `.xlsx` workbook. Use the exact link from **Get a report**: it is signed and expires after 10 minutes, so no sign-in is needed (it can be opened straight from a browser). Cells that start with `=`, `+`, `-` or `@` are neutralised so a spreadsheet never runs them as formulas."
+      }
+    },
+    "/api/v1/admin/announcements/preview": {
+      "post": {
+        "operationId": "AdminAnnouncementsController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewAnnouncementDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Active Lahore customers, by push",
+                  "value": {
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "cityId": 1,
+                      "activeWithinDays": 60
+                    },
+                    "channels": [
+                      "PUSH"
+                    ]
+                  }
+                },
+                "winback": {
+                  "summary": "Customers gone quiet, by SMS",
+                  "value": {
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "inactiveForDays": 90
+                    },
+                    "channels": [
+                      "SMS"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "cityId": 1,
+                      "activeWithinDays": 60
+                    },
+                    "recipients": 840,
+                    "reachable": 790,
+                    "byRole": {
+                      "CUSTOMER": 840
+                    },
+                    "byChannel": {
+                      "PUSH": 790,
+                      "SMS": 0,
+                      "EMAIL": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_SEGMENT": {
+                    "summary": "INVALID_SEGMENT: Both `activeWithinDays` and `inactiveForDays` were given.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_SEGMENT",
+                        "message": "Both `activeWithinDays` and `inactiveForDays` were given.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-announcements"
+        ],
+        "summary": "Preview an announcement’s audience",
+        "description": "**Who can use this:** signed-in admins.\n\nCounts who an audience would reach, without sending anything: the total, the split by role and how many can be reached on each channel (people who switched a channel off, or have no registered phone for push, are not counted there). Only active accounts are ever included, never admins. Describe the audience with `roles`, a `cityId`, and **either** `activeWithinDays` (signed in or ordered recently) **or** `inactiveForDays` (win-back)."
+      }
+    },
+    "/api/v1/admin/announcements": {
+      "post": {
+        "operationId": "AdminAnnouncementsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnnouncementDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Push to active Lahore customers",
+                  "value": {
+                    "title": "Eid offer",
+                    "body": "Get 15% off your next laundry order this week.",
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "cityId": 1,
+                      "activeWithinDays": 60
+                    },
+                    "channels": [
+                      "PUSH"
+                    ],
+                    "confirmRecipients": 840
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "f2b3c4d5-9e5f-4a6b-8c7d-4e8f2a3b5c75",
+                    "title": "Eid offer",
+                    "body": "Get 15% off your next laundry order this week.",
+                    "titleUr": null,
+                    "bodyUr": null,
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "cityId": 1,
+                      "activeWithinDays": 60
+                    },
+                    "channels": [
+                      "PUSH"
+                    ],
+                    "status": "QUEUED",
+                    "recipientCount": 840,
+                    "messagesQueued": 0,
+                    "error": null,
+                    "sentById": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                    "createdAt": "2026-10-26T09:00:00.000Z",
+                    "completedAt": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_SEGMENT": {
+                    "summary": "INVALID_SEGMENT: Both `activeWithinDays` and `inactiveForDays` were given.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_SEGMENT",
+                        "message": "Both `activeWithinDays` and `inactiveForDays` were given.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_ANNOUNCEMENT": {
+                    "summary": "INVALID_ANNOUNCEMENT: Only one of the Urdu title and text was given.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_ANNOUNCEMENT",
+                        "message": "Only one of the Urdu title and text was given.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "AUDIENCE_CHANGED": {
+                    "summary": "AUDIENCE_CHANGED: `confirmRecipients` no longer matches the audience.",
+                    "value": {
+                      "error": {
+                        "code": "AUDIENCE_CHANGED",
+                        "message": "`confirmRecipients` no longer matches the audience.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Understood, but cannot be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "NO_RECIPIENTS": {
+                    "summary": "NO_RECIPIENTS: Nobody matches the audience.",
+                    "value": {
+                      "error": {
+                        "code": "NO_RECIPIENTS",
+                        "message": "Nobody matches the audience.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "RATE_LIMITED: More than 5 announcements were sent in an hour.",
+                    "value": {
+                      "error": {
+                        "code": "RATE_LIMITED",
+                        "message": "More than 5 announcements were sent in an hour.",
+                        "details": {
+                          "retryAfterSec": 540
+                        },
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-announcements"
+        ],
+        "summary": "Send an announcement",
+        "description": "**Who can use this:** signed-in admins.\n\nSends a message to everyone in the audience by push, SMS and/or email (default push). Pass the preview’s `recipients` as `confirmRecipients`: if the audience has changed since, nothing is sent (`409 AUDIENCE_CHANGED`). Messages are queued and spread over time (push 200/s, SMS 20/s, email 10/s) so provider limits are respected; people who switched a channel off are skipped on it. Give both Urdu fields to reach Urdu speakers in their language. At most 5 announcements per hour. Follow progress with **Get an announcement**."
+      },
+      "get": {
+        "operationId": "AdminAnnouncementsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "f2b3c4d5-9e5f-4a6b-8c7d-4e8f2a3b5c75",
+                      "title": "Eid offer",
+                      "body": "Get 15% off your next laundry order this week.",
+                      "titleUr": null,
+                      "bodyUr": null,
+                      "segment": {
+                        "roles": [
+                          "CUSTOMER"
+                        ],
+                        "cityId": 1,
+                        "activeWithinDays": 60
+                      },
+                      "channels": [
+                        "PUSH"
+                      ],
+                      "status": "SENT",
+                      "recipientCount": 840,
+                      "messagesQueued": 790,
+                      "error": null,
+                      "sentById": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                      "createdAt": "2026-10-26T09:00:00.000Z",
+                      "completedAt": "2026-10-26T09:00:12.000Z"
+                    }
+                  ],
+                  "meta": {
+                    "nextCursor": null
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-announcements"
+        ],
+        "summary": "Announcement history",
+        "description": "**Who can use this:** signed-in admins.\n\nEvery announcement, newest first."
+      }
+    },
+    "/api/v1/admin/announcements/{id}": {
+      "get": {
+        "operationId": "AdminAnnouncementsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "f2b3c4d5-9e5f-4a6b-8c7d-4e8f2a3b5c75"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "f2b3c4d5-9e5f-4a6b-8c7d-4e8f2a3b5c75",
+                    "title": "Eid offer",
+                    "body": "Get 15% off your next laundry order this week.",
+                    "titleUr": null,
+                    "bodyUr": null,
+                    "segment": {
+                      "roles": [
+                        "CUSTOMER"
+                      ],
+                      "cityId": 1,
+                      "activeWithinDays": 60
+                    },
+                    "channels": [
+                      "PUSH"
+                    ],
+                    "status": "SENT",
+                    "recipientCount": 840,
+                    "messagesQueued": 790,
+                    "error": null,
+                    "sentById": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                    "createdAt": "2026-10-26T09:00:00.000Z",
+                    "completedAt": "2026-10-26T09:00:12.000Z",
+                    "delivery": {
+                      "PUSH": {
+                        "queued": 40,
+                        "sent": 742,
+                        "failed": 8
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ANNOUNCEMENT_NOT_FOUND": {
+                    "summary": "ANNOUNCEMENT_NOT_FOUND: There is no such announcement.",
+                    "value": {
+                      "error": {
+                        "code": "ANNOUNCEMENT_NOT_FOUND",
+                        "message": "There is no such announcement.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-announcements"
+        ],
+        "summary": "Get an announcement",
+        "description": "**Who can use this:** signed-in admins.\n\nThe announcement and how delivery is going, per channel: still `queued`, `sent` or `failed`."
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "operationId": "AdminAuditController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                      "createdAt": "2026-10-25T09:05:00.000Z",
+                      "action": "PAYOUT_APPROVED",
+                      "entity": "Payout",
+                      "entityId": "c5e1a7b3-8d2f-4e6c-b0a4-7f3d9e1c5b84",
+                      "actor": {
+                        "id": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                        "name": "Operations Admin",
+                        "role": "ADMIN"
+                      },
+                      "actorRole": "ADMIN",
+                      "before": null,
+                      "after": {
+                        "status": "APPROVED"
+                      },
+                      "ip": "203.0.113.7",
+                      "requestId": "e9a5c1d7-3f6b-4d2e-8c0a-1b7d5f9e3a06"
+                    }
+                  ],
+                  "meta": {
+                    "nextCursor": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "INVALID_RANGE": {
+                    "summary": "INVALID_RANGE: `from` is after `to`.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_RANGE",
+                        "message": "`from` is after `to`.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-audit"
+        ],
+        "summary": "Audit log",
+        "description": "**Who can use this:** signed-in admins.\n\nWho did what to which record, newest first: approvals, payouts, commission changes, cancellations, announcements and more. Combine filters, for example `entity=Payout&entityId=…` for one payout’s history or `actorId=…` for everything one person did. `before` / `after` hold the values where they were recorded. The log cannot be edited or deleted."
+      }
     }
   },
   "info": {
@@ -20586,6 +22752,10 @@
       "description": "Vendor: delivered-order earnings, ledger movements, and payout requests."
     },
     {
+      "name": "vendor-analytics",
+      "description": "Vendor: the shop’s own orders, sales, earnings, best sellers and rating trend."
+    },
+    {
       "name": "rider",
       "description": "The rider app: apply, go online, take pickup and delivery jobs, prove delivery with the customer’s code, see earnings and COD cash."
     },
@@ -20620,6 +22790,22 @@
     {
       "name": "admin-finance",
       "description": "Admin: commission rules, payout approval and payment, and cash-on-delivery settlement."
+    },
+    {
+      "name": "admin-analytics",
+      "description": "Admin: platform orders, sales, revenue, active customers and top vendors by city and date range."
+    },
+    {
+      "name": "admin-reports",
+      "description": "Admin: build CSV / Excel reports in the background and download them with a short-lived signed link."
+    },
+    {
+      "name": "admin-announcements",
+      "description": "Admin: preview an audience, send an announcement by push, SMS or email, and follow its delivery."
+    },
+    {
+      "name": "admin-audit",
+      "description": "Admin: search the audit trail of who did what to which record."
     },
     {
       "name": "webhooks",
@@ -20876,6 +23062,22 @@
         "properties": {}
       },
       "ResolveComplaintDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RollupDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "PreviewAnnouncementDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateAnnouncementDto": {
         "type": "object",
         "properties": {}
       },

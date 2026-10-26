@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import type { Env } from '../../config/env';
 import { QUEUES } from '../../infra/queue/queues';
-import { SEND_EMAIL_JOB, SendEmailJob } from '../notifications/notifications.processor';
+import { SEND_EMAIL_JOB, SendEmailJob } from '../notifications/notifications.jobs';
 
 /** Tells the operations team something needs a human (a job nobody could take, a courier failure). Never throws. */
 @Injectable()

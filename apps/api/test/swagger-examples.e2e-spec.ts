@@ -13,8 +13,11 @@ import { CloudinaryService, uploadFolder } from '../src/infra/cloudinary/cloudin
 import { DispatchService } from '../src/modules/delivery/dispatch.service';
 import { mockWebhookSignature } from '../src/modules/delivery/courier/mock-courier.provider';
 import { NotificationOrchestrator } from '../src/modules/notifications/notification-orchestrator';
+import { AnnouncementFanoutService } from '../src/modules/announcements/announcement-fanout.service';
+import { AuditService } from '../src/modules/audit/audit.service';
+import { ReportsService } from '../src/modules/reports/reports.service';
 import { acceptedOrder, createRider, jobOf } from './delivery-helpers';
-import { Basics, NOW, TestApp, clearRateLimits, createAdmin, createLiveVendor, createTestApp, createUserWithToken, createVendorFixture, fixedClock, otpLogin, prepareReferenceData, randomCnic, randomPhone } from './helpers';
+import { Basics, NOW, TestApp, clearRateLimits, createAdmin, createCustomer, createLiveVendor, createTestApp, createUserWithToken, createVendorFixture, fixedClock, otpLogin, prepareReferenceData, randomCnic, randomPhone } from './helpers';
 import { DELIVERY, PICKUP, orderScenario, placeOrder } from './order-helpers';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -350,6 +353,68 @@ describe('Swagger examples match the real API (e2e)', () => {
     await adminCall('get', `/admin/cod/collections?riderId=${holder.rider.id}&settled=false`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/collections', r.body));
   });
 
+  it('reporting: analytics, reports, announcements and the audit log', async () => {
+    const adminGet = (path: string) => http.get('/api/v1' + path).set(admin.auth);
+    const s = await orderScenario(t, basics);
+    const vendorId = s.vendor.vendor.id;
+    const at = (iso: string) => new Date(iso);
+
+    // — a week of trade for one shop: a delivered order with items and a rating, and one still in progress —
+    const make = async (placed: string, status: 'DELIVERED' | 'IN_PROCESS', total: number) =>
+      t.prisma.order.create({
+        data: {
+          orderNo: `C-${Math.random().toString(36).slice(2, 10)}`, customerId: s.customer.user.id, vendorId, cityId: basics.cityId, addressSnapshot: {}, status,
+          pickupSlotStart: at(placed), pickupSlotEnd: at(placed), deliverySlotStart: at(placed), deliverySlotEnd: at(placed),
+          subtotal: total, deliveryFee: 50, total, commissionRatePct: 15, commissionAmount: total * 0.15, vendorEarning: total * 0.85,
+          paymentMethod: 'COD', paymentStatus: 'COD_PENDING', vendorRespondBy: at(placed), createdAt: at(placed), placedAt: at(placed),
+          deliveredAt: status === 'DELIVERED' ? at('2026-10-21T12:00:00Z') : null,
+        },
+      });
+    const delivered = await make('2026-10-21T06:00:00Z', 'DELIVERED', 1000);
+    await make('2026-10-22T06:00:00Z', 'IN_PROCESS', 400);
+    await t.prisma.orderItem.create({ data: { orderId: delivered.id, name: 'Shirt', serviceType: 'WASH_IRON', unitPrice: 100, qty: 10, lineTotal: 1000 } });
+    await t.prisma.review.create({ data: { orderId: delivered.id, customerId: s.customer.user.id, targetType: 'VENDOR', vendorId, rating: 5, createdAt: at('2026-10-21T14:00:00Z') } });
+
+    // — the admin dashboard —
+    const range = 'from=2026-10-17&to=2026-10-23';
+    await adminGet(`/admin/analytics/overview?${range}`).expect(200).then((r) => expectMatchesDocs('GET /admin/analytics/overview', r.body));
+    await adminGet(`/admin/analytics/orders?${range}`).expect(200).then((r) => expectMatchesDocs('GET /admin/analytics/orders', r.body));
+    await adminGet(`/admin/analytics/revenue?${range}`).expect(200).then((r) => expectMatchesDocs('GET /admin/analytics/revenue', r.body));
+    await adminGet(`/admin/analytics/vendors?${range}`).expect(200).then((r) => expectMatchesDocs('GET /admin/analytics/vendors', r.body));
+    await http.post('/api/v1/admin/analytics/rollup').set(admin.auth).send({ from: '2026-10-19', to: '2026-10-21' }).expect(202).then((r) => expectMatchesDocs('POST /admin/analytics/rollup', r.body));
+
+    // — the shop's own view —
+    await http.get('/api/v1/vendor/analytics?days=7').set(s.vendor.owner.auth).expect(200).then((r) => expectMatchesDocs('GET /vendor/analytics', r.body));
+
+    // — a report: requested, built by the worker, then listed and opened —
+    const requested = await http.post('/api/v1/admin/reports').set(admin.auth).send({ type: 'ORDERS', format: 'XLSX', from: '2026-10-17', to: '2026-10-23', cityId: basics.cityId }).expect(202);
+    expectMatchesDocs('POST /admin/reports', requested.body);
+    await t.app.get(ReportsService).generate(requested.body.data.id, true);
+    await adminGet('/admin/reports').expect(200).then((r) => expectMatchesDocs('GET /admin/reports', r.body));
+    const opened = await adminGet(`/admin/reports/${requested.body.data.id}`).expect(200);
+    expectMatchesDocs('GET /admin/reports/{id}', opened.body);
+    const file = await http.get(opened.body.data.download.url).expect(200);
+    expect(file.headers['content-type']).toContain('spreadsheetml');
+
+    // — an announcement: preview, send, let the worker fan it out, then read it back —
+    const fan = await createCustomer(t);
+    await t.prisma.address.create({ data: { userId: fan.user.id, cityId: basics.cityId, line1: '9 Docs Rd', label: 'Home', lat: 31.5, lng: 74.3 } });
+    await t.prisma.deviceToken.create({ data: { userId: fan.user.id, token: `docs-token-${fan.user.id}`, platform: 'android' } });
+    await t.prisma.user.update({ where: { id: fan.user.id }, data: { lastLoginAt: clock.now() } });
+    const only = { roles: ['CUSTOMER'], cityId: basics.cityId, activeWithinDays: 1 };
+    const preview = await http.post('/api/v1/admin/announcements/preview').set(admin.auth).send({ segment: only, channels: ['PUSH'] }).expect(200);
+    expectMatchesDocs('POST /admin/announcements/preview', preview.body);
+    const sent = await http.post('/api/v1/admin/announcements').set(admin.auth).send({ title: 'Eid offer', body: 'Get 15% off your next laundry order this week.', segment: only, channels: ['PUSH'], confirmRecipients: preview.body.data.recipients }).expect(202);
+    expectMatchesDocs('POST /admin/announcements', sent.body);
+    await t.app.get(AnnouncementFanoutService).run(sent.body.data.id);
+    await adminGet('/admin/announcements').expect(200).then((r) => expectMatchesDocs('GET /admin/announcements', r.body));
+    await adminGet(`/admin/announcements/${sent.body.data.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/announcements/{id}', r.body));
+
+    // — the audit trail (the newest entry is the one the example describes) —
+    await t.app.get(AuditService).record({ action: 'PAYOUT_APPROVED', entity: 'Payout', entityId: s.vendor.vendor.id, actorId: admin.user.id, actorRole: Role.ADMIN, after: { status: 'APPROVED' }, ip: '203.0.113.7', requestId: 'req-docs' });
+    await adminGet('/admin/audit-logs').expect(200).then((r) => expectMatchesDocs('GET /admin/audit-logs', r.body));
+  });
+
   it('health checks', async () => {
     await http.get('/api/v1/health/live').expect(200).then((r) => expectMatchesDocs('GET /health/live', r.body));
     await http.get('/api/v1/health/ready').expect(200).then((r) => expectMatchesDocs('GET /health/ready', r.body));
@@ -359,6 +424,7 @@ describe('Swagger examples match the real API (e2e)', () => {
     // Guards against adding an endpoint example without a matching contract check. Keep this list in sync on purpose.
     const verifiedElsewhere = new Set([
       'GET /orders/{id}/events', // text/event-stream, covered by order-live.e2e-spec.ts
+      'GET /reports/{id}/download', // a file, not JSON: covered by reports.e2e-spec.ts (and its headers are checked above)
       'POST /auth/admin/login', // covered below
       'POST /me/devices', 'DELETE /me/devices', 'DELETE /me/addresses/{id}', 'DELETE /cart', 'DELETE /vendor/staff/{userId}', 'DELETE /vendor/catalog/items/{id}', // 204 no body
       'POST /vendor/register', // needs Cloudinary assets; covered by vendors.e2e-spec.ts

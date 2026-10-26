@@ -179,6 +179,34 @@ enum NotificationStatus {
   FAILED
 }
 
+enum ReportType {
+  ORDERS
+  PAYMENTS
+  PAYOUTS
+  COD
+  VENDORS
+}
+
+enum ReportFormat {
+  CSV
+  XLSX
+}
+
+enum ReportStatus {
+  QUEUED
+  RUNNING
+  READY
+  FAILED
+  EXPIRED
+}
+
+enum AnnouncementStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+}
+
 enum ReferralStatus {
   PENDING
   REWARDED
@@ -508,6 +536,7 @@ model Order {
   @@index([vendorId, status])
   @@index([status, createdAt])
   @@index([cityId, createdAt])
+  @@index([deliveredAt])
 }
 
 model OrderItem {
@@ -865,31 +894,112 @@ model Referral {
 }
 
 model Notification {
-  id        String              @id @default(uuid()) @db.Uuid
-  userId    String              @db.Uuid
-  channel   NotificationChannel
-  template  String
-  payload   Json
-  status    NotificationStatus  @default(QUEUED)
-  attempts  Int                 @default(0)
-  error     String?
-  sentAt    DateTime?
-  createdAt DateTime            @default(now())
+  id             String              @id @default(uuid()) @db.Uuid
+  userId         String              @db.Uuid
+  channel        NotificationChannel
+  template       String
+  payload        Json
+  status         NotificationStatus  @default(QUEUED)
+  attempts       Int                 @default(0)
+  error          String?
+  sentAt         DateTime?
+  createdAt      DateTime            @default(now())
+  // Set when the message came from an admin announcement (delivery stats are counted from these rows).
+  announcementId String?             @db.Uuid
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([status, channel])
+  @@index([announcementId, status])
 }
 
 model Announcement {
-  id        String   @id @default(uuid()) @db.Uuid
-  title     String
-  body      String
-  segment   Json // {role?, cityId?, ...}
-  sentById  String   @db.Uuid
-  sentCount Int      @default(0)
-  createdAt DateTime @default(now())
+  id             String                @id @default(uuid()) @db.Uuid
+  title          String
+  body           String
+  titleUr        String?
+  bodyUr         String?
+  segment        Json // {roles?, cityId?, activeWithinDays?, inactiveForDays?}
+  channels       NotificationChannel[]
+  status         AnnouncementStatus    @default(QUEUED)
+  sentById       String                @db.Uuid
+  recipientCount Int                   @default(0)
+  sentCount      Int                   @default(0)
+  error          String?
+  createdAt      DateTime              @default(now())
+  completedAt    DateTime?
+
+  notifications Notification[]
+
+  @@index([createdAt])
+}
+
+// ───────────── ANALYTICS & REPORTS (Phase 8) ─────────────
+// One row per Pakistan-time day and city; filled by the nightly rollup (and on demand for gaps).
+model DailyCityStat {
+  day             DateTime @db.Date
+  cityId          Int
+  ordersPlaced    Int      @default(0)
+  ordersDelivered Int      @default(0)
+  ordersCancelled Int      @default(0)
+  gmv             Decimal  @default(0) @db.Decimal(14, 2) // order totals of orders delivered that day
+  commission      Decimal  @default(0) @db.Decimal(14, 2)
+  vendorEarnings  Decimal  @default(0) @db.Decimal(14, 2)
+  deliveryFees    Decimal  @default(0) @db.Decimal(14, 2)
+  discounts       Decimal  @default(0) @db.Decimal(14, 2)
+  codGmv          Decimal  @default(0) @db.Decimal(14, 2)
+  activeCustomers Int      @default(0)
+  newCustomers    Int      @default(0)
+  computedAt      DateTime @default(now())
+
+  @@id([day, cityId])
+}
+
+model DailyVendorStat {
+  day             DateTime @db.Date
+  vendorId        String   @db.Uuid
+  cityId          Int
+  ordersPlaced    Int      @default(0)
+  ordersDelivered Int      @default(0)
+  ordersCancelled Int      @default(0)
+  gmv             Decimal  @default(0) @db.Decimal(14, 2)
+  commission      Decimal  @default(0) @db.Decimal(14, 2)
+  vendorEarnings  Decimal  @default(0) @db.Decimal(14, 2)
+  computedAt      DateTime @default(now())
+
+  @@id([day, vendorId])
+  @@index([vendorId, day])
+}
+
+model Report {
+  id            String       @id @default(uuid()) @db.Uuid
+  type          ReportType
+  format        ReportFormat
+  params        Json // {from, to, cityId?}
+  status        ReportStatus @default(QUEUED)
+  requestedById String       @db.Uuid
+  rowCount      Int?
+  byteSize      Int?
+  fileName      String?
+  error         String?
+  createdAt     DateTime     @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  expiresAt     DateTime?
+
+  file ReportFile?
+
+  @@index([requestedById, createdAt])
+  @@index([status, expiresAt])
+}
+
+model ReportFile {
+  reportId String @id @db.Uuid
+  data     Bytes
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
@@ -909,4 +1019,6 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@index([action, createdAt])
 }

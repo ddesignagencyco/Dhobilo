@@ -11,7 +11,7 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 import { QUEUES } from '../../infra/queue/queues';
 import { RateLimiter } from '../../infra/redis/rate-limiter.service';
 import { REDIS } from '../../infra/redis/redis.constants';
-import { SEND_SMS_JOB } from '../notifications/notifications.processor';
+import { SEND_SMS_JOB } from '../notifications/notifications.jobs';
 
 export const OTP_LIMITS = {
   requestPerPhone: { limit: 3, windowSec: 600 },

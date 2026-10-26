@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { QUEUES } from '../../infra/queue/queues';
-import { SEND_EMAIL_JOB, SEND_SMS_JOB, SendEmailJob, SendSmsJob } from './notifications.processor';
+import { SEND_EMAIL_JOB, SEND_SMS_JOB, SendEmailJob, SendSmsJob } from './notifications.jobs';
 
 export type VendorDecision = 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'REACTIVATED';
 

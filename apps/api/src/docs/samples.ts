@@ -21,6 +21,8 @@ export const ID = {
   complaint: 'b4d6f8a0-3c5e-4d7f-8a9b-1e3c5d7f9a20',
   review: 'c6e8a0b2-5d7f-4e9a-b1c3-2f4d6e8a0b31',
   admin: 'd8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53',
+  report: 'e0a1b2c3-8d4e-4f5a-9b6c-3d7e1f2a4b64',
+  announcement: 'f2b3c4d5-9e5f-4a6b-8c7d-4e8f2a3b5c75',
 } as const;
 
 export const PHONE = { local: '03001234567', e164: '+923001234567', vendor: '+923000000011' } as const;
