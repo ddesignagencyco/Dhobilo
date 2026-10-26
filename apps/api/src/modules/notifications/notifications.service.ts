@@ -90,4 +90,13 @@ export class NotificationsService {
       this.logger.error({ err, decision, requestId }, 'Could not enqueue rider decision notification');
     }
   }
+
+  /** A plain SMS for flows that do not need a localized template. Never throws. */
+  async notifySms(to: string, message: string, requestId?: string) {
+    try {
+      await this.queue.add(SEND_SMS_JOB, { to, message, requestId } satisfies SendSmsJob);
+    } catch (err) {
+      this.logger.error({ err, requestId }, 'Could not enqueue an SMS');
+    }
+  }
 }

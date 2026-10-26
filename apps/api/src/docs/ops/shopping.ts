@@ -152,7 +152,10 @@ export const cartDocs: OperationDocs = {
     response: { example: ok(SAMPLE_QUOTE) },
     errors: [
       { status: 400, code: 'CART_EMPTY', when: 'Add at least one item.' },
-      { status: 400, code: 'PROMO_UNAVAILABLE', when: 'Promo codes are not available yet.' },
+      { status: 422, code: 'PROMO_NOT_FOUND', when: 'The code does not exist.' },
+      { status: 422, code: 'PROMO_UNAVAILABLE', when: 'The code is inactive, expired, for another city, or belongs to another account.' },
+      { status: 422, code: 'PROMO_MIN_ORDER', when: 'The cart subtotal is below the code\'s minimum order.' },
+      { status: 422, code: 'PROMO_USAGE_LIMIT', when: 'The code has reached its usage limit or you already used it.' },
       { status: 404, code: 'NOT_FOUND', when: 'Vendor not found (or not live).' },
       { status: 422, code: 'ITEM_UNAVAILABLE', when: 'Some items are no longer available from this vendor.' },
     ],
@@ -186,6 +189,11 @@ export const orderDocs: OperationDocs = {
       { status: 422, code: 'OUT_OF_SERVICE_AREA', when: 'This vendor does not serve your address.' },
       { status: 422, code: 'ITEM_UNAVAILABLE', when: 'Some items are no longer available from this vendor.' },
       { status: 422, code: 'IDEMPOTENCY_KEY_REUSED', when: 'This Idempotency-Key was already used for a different order.' },
+      { status: 422, code: 'PROMO_NOT_FOUND', when: 'The promo code does not exist.' },
+      { status: 422, code: 'PROMO_UNAVAILABLE', when: 'The promo code is inactive, expired, for another city, or belongs to another account.' },
+      { status: 422, code: 'PROMO_MIN_ORDER', when: 'The order subtotal is below the promo code\'s minimum order.' },
+      { status: 422, code: 'PROMO_USAGE_LIMIT', when: 'The promo code has reached its usage limit or you already used it.' },
+      { status: 409, code: 'PROMO_CHANGED', when: 'The promo discount changed since your estimate. Review the new total and try again.' },
     ],
   },
   'GET /orders': {

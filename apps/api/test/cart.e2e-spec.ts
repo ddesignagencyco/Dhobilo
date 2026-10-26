@@ -244,8 +244,8 @@ describe('Cart and estimate (e2e)', () => {
     it('rejects promo codes explicitly instead of ignoring them', async () => {
       const v = await vendorWithItems();
       const { auth } = await createCustomer(t);
-      const res = await http.post('/api/v1/cart/estimate').set(auth).send({ vendorId: v.vendor.id, items: [{ serviceItemId: v.items[0].id, qty: 1 }], promoCode: 'SAVE10' }).expect(400);
-      expect(res.body.error.code).toBe('PROMO_UNAVAILABLE');
+      const res = await http.post('/api/v1/cart/estimate').set(auth).send({ vendorId: v.vendor.id, items: [{ serviceItemId: v.items[0].id, qty: 1 }], promoCode: 'SAVE10' }).expect(422);
+      expect(res.body.error.code).toBe('PROMO_NOT_FOUND');
     });
 
     it('fails clearly for an empty cart, unavailable items and unknown vendors', async () => {

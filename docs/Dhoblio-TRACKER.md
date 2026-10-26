@@ -306,13 +306,13 @@
 **Refs:** FR-C11, FR-C13, FR-C14, FR-V10, FR-A5, FR-A6
 
 ### BE
-- [ ] **BE-7.1** Reviews: vendor + rider, 1–5 + comment, only after `DELIVERED`, one per target per order; maintain `ratingAvg/ratingCount` transactionally (FR-C11)
-- [ ] **BE-7.2** Complaints/redo: create with photos, vendor reply thread, admin assignment, statuses, resolution (refund/redo/reject) (FR-C13, FR-V10, FR-A5)
-- [ ] **BE-7.3** Redo handling: linked follow-up jobs on the same order (TRD §10) with notifications
-- [ ] **BE-7.4** Promo engine: percent/flat, caps, min order, validity, per-user + global limits, city scope; atomic redemption at order placement (FR-C14, FR-A6)
-- [ ] **BE-7.5** Admin promo CRUD + usage stats (FR-A6)
-- [ ] **BE-7.6** Referral: referee applies code at signup; reward on referee's first delivered order (credit as promo/discount) (FR-C14)
-- [ ] **BE-7.7** Tests: promo race (limit exceeded under concurrency), review rules, complaint permissions
+- [x] **BE-7.1** Reviews: vendor + rider, 1–5 + comment, only after `DELIVERED`, one per target per order; maintain `ratingAvg/ratingCount` transactionally (FR-C11)
+- [x] **BE-7.2** Complaints/redo: create with photos, vendor reply thread, admin assignment, statuses, resolution (refund/redo/reject) (FR-C13, FR-V10, FR-A5)
+- [x] **BE-7.3** Redo handling: linked follow-up jobs on the same order (TRD §10) with notifications
+- [x] **BE-7.4** Promo engine: percent/flat, caps, min order, validity, per-user + global limits, city scope; atomic redemption at order placement (FR-C14, FR-A6)
+- [x] **BE-7.5** Admin promo CRUD + usage stats (FR-A6)
+- [x] **BE-7.6** Referral: referee applies code at signup; reward on referee's first delivered order (credit as promo/discount) (FR-C14)
+- [x] **BE-7.7** Tests: promo race (limit exceeded under concurrency), review rules, complaint permissions
 
 ### FE
 - [ ] **FE-7.1** Post-delivery rating prompt: vendor + rider stars and comment (FR-C11)
@@ -472,3 +472,4 @@
 |---|---|---|---|---|---|
 | 1 | 0 | | | | TRD §20 items 1–3 |
 | 2 | | | | | |
+| 21-22 | 7 | Reviews, complaints with redo, promos and referrals; full unit and e2e suites green | Phase 8 | Real payment credentials and live Cloudinary checks pending; redo rider compensation not automated | Redo compensation policy |

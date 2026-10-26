@@ -28,6 +28,12 @@ export class VerifyOtpDto {
   @IsOptional()
   @IsIn(SIGNUP_ROLES)
   role?: (typeof SIGNUP_ROLES)[number];
+
+  /** A friend's referral code. Applied only when a new CUSTOMER account is created. */
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @Matches(/^[A-Z0-9]{4,20}$/, { message: 'referralCode must be 4-20 letters or digits' })
+  referralCode?: string;
 }
 
 export class RefreshDto {

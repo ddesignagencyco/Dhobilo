@@ -85,13 +85,68 @@ export class DeliveryJobsService {
       ],
       skipDuplicates: true,
     });
-    const job = await this.prisma.deliveryJob.findUniqueOrThrow({ where: { orderId_jobType: { orderId, jobType: type } } });
+    const job = await this.prisma.deliveryJob.findUniqueOrThrow({ where: { orderId_jobType_attempt: { orderId, jobType: type, attempt: 1 } } });
     if (created.count === 1) {
       this.emitChange(job, J.UNASSIGNED, 'SYSTEM');
       // Searching starts shortly before the window opens, not the moment the job exists.
       await this.scheduler.dispatch(job.id, this.delayUntilSearch(job.scheduledStart), { first: true });
     }
     return job;
+  }
+
+  /**
+   * A redo adds a fresh pickup + delivery attempt to an already-delivered order. Attempts are unique per leg, so a
+   * retried admin resolution cannot create a second pair of jobs.
+   */
+  async createRedoJobs(orderId: string, adminId: string, requestId?: string): Promise<DeliveryJob[]> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        status: true,
+        pickupSlotStart: true,
+        pickupSlotEnd: true,
+        deliverySlotStart: true,
+        deliverySlotEnd: true,
+        jobs: { select: { attempt: true } },
+      },
+    });
+    if (!order) throw this.notFound();
+    if (order.status !== OrderStatus.DELIVERED) {
+      throw new AppException('REDO_NOT_ALLOWED', 'A redo can only follow a delivered order.', HttpStatus.CONFLICT);
+    }
+
+    const nextAttempt = Math.max(0, ...order.jobs.map((j) => j.attempt)) + 1;
+    const now = this.clock.now();
+    const windowMs = Math.max(
+      order.pickupSlotEnd.getTime() - order.pickupSlotStart.getTime(),
+      order.deliverySlotEnd.getTime() - order.deliverySlotStart.getTime(),
+      60 * 60_000,
+    );
+    const created = await this.prisma.deliveryJob.createMany({
+      data: (['PICKUP', 'DROP'] as const).map((jobType) => ({
+        orderId,
+        jobType,
+        attempt: nextAttempt,
+        isRedo: true,
+        scheduledStart: now,
+        scheduledEnd: new Date(now.getTime() + windowMs),
+        riderFee: new Prisma.Decimal(this.config.get(jobType === 'PICKUP' ? 'RIDER_FEE_PICKUP_PKR' : 'RIDER_FEE_DROP_PKR', { infer: true })),
+      })),
+      skipDuplicates: true,
+    });
+    const jobs = await this.prisma.deliveryJob.findMany({
+      where: { orderId, attempt: nextAttempt },
+      orderBy: { jobType: 'asc' },
+    });
+    if (created.count > 0) {
+      for (const job of jobs) {
+        this.emitChange(job, J.UNASSIGNED, 'ADMIN');
+        await this.scheduler.dispatch(job.id);
+      }
+      for (const job of jobs) await this.audit('JOB_REDO_CREATED', job.id, adminId, { orderId, attempt: nextAttempt }, requestId);
+    }
+    return jobs;
   }
 
   /** Milliseconds until dispatch should start looking for this job's rider. */
@@ -180,7 +235,7 @@ export class DeliveryJobsService {
     if (held.status !== J.ACCEPTED) {
       throw new AppException('JOB_INVALID_TRANSITION', `A ${held.status.toLowerCase()} job cannot be started.`, HttpStatus.CONFLICT, { status: held.status });
     }
-    if (held.jobType === JobType.DROP) {
+    if (held.jobType === JobType.DROP && !held.isRedo) {
       await this.advanceOrder(held.orderId, ORDER_AFTER.DROP.start, rider, requestId);
     }
     const updated = await this.move(jobId, J.ACCEPTED, J.IN_TRANSIT, 'RIDER', { data: { startedAt: this.clock.now() }, where: { riderId: rider.id }, requestId });
@@ -221,7 +276,7 @@ export class DeliveryJobsService {
       where: { riderId: rider.id },
       requestId,
     });
-    await this.advanceOrder(held.orderId, finish, rider, requestId);
+    if (!held.isRedo) await this.advanceOrder(held.orderId, finish, rider, requestId);
     return updated;
   }
 
@@ -360,13 +415,13 @@ export class DeliveryJobsService {
   /** A status the courier reported. Mirrors what a rider would do: set out, finish, or fail. */
   async applyPartnerProgress(job: DeliveryJob, to: 'IN_TRANSIT' | 'COMPLETED' | 'FAILED', reason?: string): Promise<void> {
     if (to === 'IN_TRANSIT') {
-      if (job.jobType === JobType.DROP) await this.advanceOrder(job.orderId, ORDER_AFTER.DROP.start, null);
+      if (job.jobType === JobType.DROP && !job.isRedo) await this.advanceOrder(job.orderId, ORDER_AFTER.DROP.start, null);
       await this.move(job.id, J.ACCEPTED, J.IN_TRANSIT, 'PARTNER', { data: { startedAt: this.clock.now() } });
     } else if (to === 'COMPLETED') {
       // A partner can report "delivered" without a separate "on the way".
       if (job.status === J.ACCEPTED) await this.applyPartnerProgress(job, 'IN_TRANSIT');
       await this.move(job.id, J.IN_TRANSIT, J.COMPLETED, 'PARTNER', { data: { completedAt: this.clock.now() } });
-      await this.advanceOrder(job.orderId, ORDER_AFTER[job.jobType].finish, null);
+      if (!job.isRedo) await this.advanceOrder(job.orderId, ORDER_AFTER[job.jobType].finish, null);
     } else {
       await this.move(job.id, [J.ACCEPTED, J.IN_TRANSIT], J.FAILED, 'PARTNER', { data: { failureReason: reason ?? 'The courier could not complete it.' } });
       await this.ops.alert('A courier partner job failed', `Order ${job.orderId} (${job.jobType}): ${reason ?? 'no reason given'}`, { jobId: job.id });

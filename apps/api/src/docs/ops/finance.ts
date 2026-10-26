@@ -126,7 +126,7 @@ export const financeDocs: OperationDocs = {
   'POST /vendor/payouts': {
     summary: 'Request a payout',
     tag: 'vendor-finance',
-    who: [...VENDOR],
+    who: ['VENDOR_OWNER'],
     description: 'Owner only. The amount cannot exceed the available ledger balance; the check runs under a lock so simultaneous requests cannot overspend. An admin approves and marks it paid.',
     requests: {
       default: { summary: 'Bank transfer', value: { amount: '2500.00', method: 'BANK', accountRef: 'PK36SCBL0000001123456702', note: 'Weekly withdrawal' } },

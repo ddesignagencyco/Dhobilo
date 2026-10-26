@@ -352,6 +352,8 @@ export const adminDeliveryDocs: OperationDocs = {
         approvedAt: null,
         approvedById: null,
         rejectionReason: null,
+        ratingAvg: '0.00',
+        ratingCount: 0,
         createdAt: '2026-10-23T08:00:00.000Z',
         updatedAt: '2026-10-23T08:00:00.000Z',
         user: { id: ID.user, name: 'Bilal Ahmed', phone: '+923001112233', email: null },

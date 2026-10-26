@@ -186,44 +186,44 @@ enum ReferralStatus {
 
 // ───────────── IDENTITY ─────────────
 model City {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  nameUr    String?
-  timezone  String   @default("Asia/Karachi")
-  isActive  Boolean  @default(true)
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  nameUr           String?
+  timezone         String   @default("Asia/Karachi")
+  isActive         Boolean  @default(true)
   // Short code used in order numbers, e.g. LHR -> DHB-LHR-000123.
-  code      String?  @unique
+  code             String?  @unique
   // Flat delivery fee in PKR added to every order in this city (TRD §20 #7).
-  deliveryFee Decimal @default(0) @db.Decimal(10, 2)
+  deliveryFee      Decimal  @default(0) @db.Decimal(10, 2)
   // Last order number issued in this city; incremented atomically when an order is placed.
-  orderSeq  Int      @default(0)
+  orderSeq         Int      @default(0)
   // When set (and the partner is active), deliveries in this city go to the courier partner instead of our riders.
-  courierPartnerId String? @db.Uuid
-  createdAt DateTime @default(now())
+  courierPartnerId String?  @db.Uuid
+  createdAt        DateTime @default(now())
 
   courierPartner CourierPartner? @relation(fields: [courierPartnerId], references: [id])
-  vendors   Vendor[]
-  riders    Rider[]
-  orders    Order[]
-  addresses Address[]
+  vendors        Vendor[]
+  riders         Rider[]
+  orders         Order[]
+  addresses      Address[]
 }
 
 model User {
-  id              String     @id @default(uuid()) @db.Uuid
-  phone           String     @unique
-  email           String?    @unique
-  passwordHash    String? // admin accounts only
-  name            String?
-  role            Role
-  status          UserStatus @default(ACTIVE)
-  locale          Locale     @default(EN)
-  referralCode    String?    @unique
+  id                String     @id @default(uuid()) @db.Uuid
+  phone             String     @unique
+  email             String?    @unique
+  passwordHash      String? // admin accounts only
+  name              String?
+  role              Role
+  status            UserStatus @default(ACTIVE)
+  locale            Locale     @default(EN)
+  referralCode      String?    @unique
   // Which channels the user wants order updates on: { push, whatsapp, sms, email } (missing = on).
   notificationPrefs Json?
-  phoneVerifiedAt DateTime?
-  lastLoginAt     DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  phoneVerifiedAt   DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   addresses     Address[]
   sessions      Session[]
@@ -238,6 +238,7 @@ model User {
   complaints    Complaint[]
   complaintMsgs ComplaintMessage[]
   redemptions   PromoRedemption[]
+  promoCodes    PromoCode[]        @relation("UserPromos")
   referralsMade Referral[]         @relation("Referrer")
   referredBy    Referral?          @relation("Referee")
   auditLogs     AuditLog[]
@@ -392,8 +393,8 @@ model VendorHours {
 }
 
 model ServiceCategory {
-  id     Int    @id @default(autoincrement())
-  name   String @unique
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
   nameUr String?
 
   items       ServiceItem[]
@@ -546,23 +547,25 @@ model OrderStatusHistory {
 
 // ───────────── DELIVERY ─────────────
 model Rider {
-  id                 String      @id @default(uuid()) @db.Uuid
-  userId             String      @unique @db.Uuid
-  cityId             Int
-  status             RiderStatus @default(PENDING)
-  cnicEnc            String
-  cnicHash           String      @unique
-  photoUrl           String?
-  photoPublicId      String?
-  isOnline           Boolean     @default(false)
-  lastLat            Float?
-  lastLng            Float?
-  lastSeenAt         DateTime?
-  approvedAt         DateTime?
-  approvedById       String?     @db.Uuid
-  rejectionReason    String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String      @unique @db.Uuid
+  cityId          Int
+  status          RiderStatus @default(PENDING)
+  cnicEnc         String
+  cnicHash        String      @unique
+  photoUrl        String?
+  photoPublicId   String?
+  isOnline        Boolean     @default(false)
+  lastLat         Float?
+  lastLng         Float?
+  lastSeenAt      DateTime?
+  approvedAt      DateTime?
+  approvedById    String?     @db.Uuid
+  rejectionReason String?
+  ratingAvg       Decimal     @default(0) @db.Decimal(3, 2)
+  ratingCount     Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   user        User            @relation(fields: [userId], references: [id])
   city        City            @relation(fields: [cityId], references: [id])
@@ -586,7 +589,9 @@ model CourierPartner {
   webhookEvents CourierWebhookEvent[]
 }
 
-/** Every webhook a courier partner sent, keyed by their event id, so a retried delivery is applied once. */
+/**
+ * Every webhook a courier partner sent, keyed by their event id, so a retried delivery is applied once.
+ */
 model CourierWebhookEvent {
   id        String   @id @default(uuid()) @db.Uuid
   partnerId String   @db.Uuid
@@ -600,39 +605,43 @@ model CourierWebhookEvent {
 }
 
 model DeliveryJob {
-  id                 String    @id @default(uuid()) @db.Uuid
-  orderId            String    @db.Uuid
-  jobType            JobType
-  status             JobStatus @default(UNASSIGNED)
-  riderId            String?   @db.Uuid
-  partnerId          String?   @db.Uuid
-  partnerRef         String? // courier tracking id
-  scheduledStart     DateTime
-  scheduledEnd       DateTime
-  assignedAt         DateTime?
-  startedAt          DateTime?
-  completedAt        DateTime?
-  proofType          ProofType?
-  proofPhotoUrl      String?
-  proofPhotoPublicId String?
-  proofOtpHash       String?
-  proofOtpExpiresAt  DateTime?
-  proofOtpAttempts   Int       @default(0)
-  failureReason      String?
-  riderFee           Decimal?  @db.Decimal(10, 2)
+  id                  String     @id @default(uuid()) @db.Uuid
+  orderId             String     @db.Uuid
+  jobType             JobType
+  status              JobStatus  @default(UNASSIGNED)
+  riderId             String?    @db.Uuid
+  partnerId           String?    @db.Uuid
+  partnerRef          String? // courier tracking id
+  scheduledStart      DateTime
+  scheduledEnd        DateTime
+  assignedAt          DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  proofType           ProofType?
+  proofPhotoUrl       String?
+  proofPhotoPublicId  String?
+  proofOtpHash        String?
+  proofOtpExpiresAt   DateTime?
+  proofOtpAttempts    Int        @default(0)
+  failureReason       String?
+  riderFee            Decimal?   @db.Decimal(10, 2)
   // Riders who declined or let the offer lapse; dispatch never offers the job to them again.
-  declinedRiderIds   String[]  @default([]) @db.Uuid
-  dispatchAttempts   Int       @default(0)
+  declinedRiderIds    String[]   @default([]) @db.Uuid
+  dispatchAttempts    Int        @default(0)
+  // 1 for the original leg; a redo adds another attempt instead of overwriting the completed job.
+  attempt             Int        @default(1)
+  // A redo follows up a delivered order, so completing it does not move the order back through the lifecycle.
+  isRedo              Boolean    @default(false)
   // Set once ops has been alerted that nobody could be found, so the alert is sent once.
   unassignedAlertedAt DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   rider   Rider?          @relation(fields: [riderId], references: [id])
   partner CourierPartner? @relation(fields: [partnerId], references: [id])
 
-  @@unique([orderId, jobType])
+  @@unique([orderId, jobType, attempt])
   @@index([riderId, status])
   @@index([status, jobType])
 }
@@ -809,12 +818,18 @@ model PromoCode {
   validFrom      DateTime
   validTo        DateTime
   cityId         Int? // null = all cities
+  // A referral reward is a one-time promo usable only by the referrer.
+  ownerUserId    String?      @db.Uuid
   isActive       Boolean      @default(true)
   deletedAt      DateTime?
   createdAt      DateTime     @default(now())
 
-  orders      Order[]
-  redemptions PromoRedemption[]
+  owner          User?             @relation("UserPromos", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  orders         Order[]
+  redemptions    PromoRedemption[]
+  referralReward Referral?         @relation("ReferralReward")
+
+  @@index([ownerUserId])
 }
 
 model PromoRedemption {
@@ -834,15 +849,17 @@ model PromoRedemption {
 }
 
 model Referral {
-  id         String         @id @default(uuid()) @db.Uuid
-  referrerId String         @db.Uuid
-  refereeId  String         @unique @db.Uuid
-  status     ReferralStatus @default(PENDING)
-  rewardedAt DateTime?
-  createdAt  DateTime       @default(now())
+  id            String         @id @default(uuid()) @db.Uuid
+  referrerId    String         @db.Uuid
+  refereeId     String         @unique @db.Uuid
+  status        ReferralStatus @default(PENDING)
+  rewardedAt    DateTime?
+  rewardPromoId String?        @unique @db.Uuid
+  createdAt     DateTime       @default(now())
 
-  referrer User @relation("Referrer", fields: [referrerId], references: [id])
-  referee  User @relation("Referee", fields: [refereeId], references: [id])
+  referrer    User       @relation("Referrer", fields: [referrerId], references: [id])
+  referee     User       @relation("Referee", fields: [refereeId], references: [id])
+  rewardPromo PromoCode? @relation("ReferralReward", fields: [rewardPromoId], references: [id], onDelete: SetNull)
 
   @@index([referrerId])
 }

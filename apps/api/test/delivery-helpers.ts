@@ -52,7 +52,7 @@ export async function acceptedOrder<T extends { id: string }>(http: ReturnType<t
   return order;
 }
 
-export const jobOf = (t: TestApp, orderId: string, type: JobType) => t.prisma.deliveryJob.findUniqueOrThrow({ where: { orderId_jobType: { orderId, jobType: type } } });
+export const jobOf = (t: TestApp, orderId: string, type: JobType) => t.prisma.deliveryJob.findUniqueOrThrow({ where: { orderId_jobType_attempt: { orderId, jobType: type, attempt: 1 } } });
 
 /** A uuid that matches no row. */
 export const nobody = () => randomUUID();

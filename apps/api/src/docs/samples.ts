@@ -17,6 +17,10 @@ export const ID = {
   commissionRule: 'd7f3b9c5-1e4a-4b8d-a6c2-9e5f0d7a3c95',
   settlement: 'e9a5c1d7-3f6b-4d2e-8c0a-1b7d5f9e3a06',
   codCollection: 'f1b7d3e9-5a8c-4f0b-b2d6-3c9e7a1f5d17',
+  promo: 'a2c4e6f8-1b3d-4c5e-9f7a-2d6b8c0e4f19',
+  complaint: 'b4d6f8a0-3c5e-4d7f-8a9b-1e3c5d7f9a20',
+  review: 'c6e8a0b2-5d7f-4e9a-b1c3-2f4d6e8a0b31',
+  admin: 'd8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53',
 } as const;
 
 export const PHONE = { local: '03001234567', e164: '+923001234567', vendor: '+923000000011' } as const;
@@ -94,6 +98,7 @@ export const SAMPLE_QUOTE = {
   deliveryFee: '150.00',
   discountTotal: '0.00',
   total: '510.00',
+  promo: null,
   maxTurnaroundHours: 48,
   warnings: [] as string[],
 };
@@ -127,6 +132,7 @@ export const SAMPLE_ORDER = {
   total: '510.00',
   paymentMethod: 'COD',
   paymentStatus: 'COD_PENDING',
+  promo: null,
   customerNote: 'Please fold gently',
   vendorRespondBy: '2026-10-22T13:47:00.000Z',
   rejectionReason: null,
@@ -198,6 +204,7 @@ export const SAMPLE_BOARD_ROW = {
   total: '510.00',
   vendorEarning: '306.00',
   paymentMethod: 'COD',
+  paymentStatus: 'COD_PENDING',
   customerName: 'Ayesha Khan',
   itemCount: 1,
 };

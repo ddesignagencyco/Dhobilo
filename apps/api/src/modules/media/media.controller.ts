@@ -12,10 +12,11 @@ import { ErrorCode } from '../../common/errors/error-codes';
 import { HttpStatus } from '@nestjs/common';
 
 /** Who may upload each kind, where it is stored, and whether it stays private (no public URL). */
-const KINDS: Record<UploadKindDto, { role: Role; folder: 'vendor-docs' | 'rider' | 'proof'; sensitive: boolean }> = {
+const KINDS: Record<UploadKindDto, { role: Role; folder: 'vendor-docs' | 'rider' | 'proof' | 'complaint'; sensitive: boolean }> = {
   'vendor-docs': { role: Role.VENDOR_OWNER, folder: 'vendor-docs', sensitive: true },
   'rider-photo': { role: Role.RIDER, folder: 'rider', sensitive: false },
   'delivery-proof': { role: Role.RIDER, folder: 'proof', sensitive: true },
+  complaint: { role: Role.CUSTOMER, folder: 'complaint', sensitive: true },
 };
 
 @ApiTags('media')
@@ -33,7 +34,7 @@ export class MediaController {
    */
   @Post('sign')
   @HttpCode(200)
-  @Roles(Role.VENDOR_OWNER, Role.RIDER)
+  @Roles(Role.VENDOR_OWNER, Role.RIDER, Role.CUSTOMER)
   async sign(@CurrentUser() user: AuthUser, @Body() dto: SignUploadDto) {
     await this.limiter.consume(`rl:media-sign:user:${user.id}`, 30, 3600);
     const kind = KINDS[dto.kind];

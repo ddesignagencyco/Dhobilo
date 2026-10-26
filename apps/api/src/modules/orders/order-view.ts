@@ -8,6 +8,7 @@ export const orderSelect = {
   status: true,
   vendorId: true,
   vendor: { select: { id: true, businessName: true } },
+  promo: { select: { code: true } },
   addressSnapshot: true,
   pickupSlotStart: true,
   pickupSlotEnd: true,

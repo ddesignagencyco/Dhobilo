@@ -140,6 +140,7 @@ export async function createVendorFixture(
 /** In-memory stand-in for CloudinaryService: no network, but keeps the real folder-ownership rule. */
 export function fakeCloudinary() {
   return {
+    folderRoot: 'dhoblio',
     signUpload: jest.fn(),
     verifyAsset: jest.fn(async (publicId: string, folderPrefix: string) => {
       if (!publicId.startsWith(`${folderPrefix}/`)) {

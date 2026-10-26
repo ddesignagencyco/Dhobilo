@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { AppException } from '../../common/errors/app.exception';
 import { fmt, money, sum } from '../../common/money/money';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { PromotionsService } from '../promos/promotions.service';
 import { EstimateDto, SetCartDto } from './dto/cart.dto';
 import { PricingService, mergeLines, toQuoteView } from './pricing.service';
 
@@ -12,6 +13,7 @@ export class CartService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricing: PricingService,
+    private readonly promotions: PromotionsService,
   ) {}
 
   /** All of the customer's carts (one per vendor), or just one. Lines whose item was removed show `available: false`. */
@@ -95,9 +97,6 @@ export class CartService {
 
   /** Server-side price estimate (FR-C5): from the given items, or from the saved cart when none are given. */
   async estimate(customerId: string, dto: EstimateDto) {
-    if (dto.promoCode) {
-      throw new AppException('PROMO_UNAVAILABLE', 'Promo codes are not available yet.', HttpStatus.BAD_REQUEST);
-    }
     let lines = dto.items;
     if (!lines) {
       const saved = await this.prisma.cartItem.findMany({
@@ -106,6 +105,17 @@ export class CartService {
       });
       lines = saved;
     }
-    return toQuoteView(await this.pricing.quote(this.prisma, dto.vendorId, lines));
+    const quote = await this.pricing.quote(this.prisma, dto.vendorId, lines);
+    const promo = dto.promoCode
+      ? await this.promotions.resolve(this.prisma, customerId, dto.promoCode, quote.vendor.cityId, quote.subtotal)
+      : null;
+    if (promo) {
+      quote.discountTotal = promo.discount;
+      quote.total = quote.subtotal.plus(quote.deliveryFee).minus(promo.discount);
+    }
+    return {
+      ...toQuoteView(quote),
+      promo: promo ? { code: promo.code, discountTotal: fmt(promo.discount) } : null,
+    };
   }
 }

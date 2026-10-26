@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { PromotionsModule } from '../promos/promotions.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -12,7 +13,7 @@ import { TokenService } from './token.service';
 /** Guards run in registration order: authenticate -> role check -> ownership check. */
 @Global()
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [JwtModule.register({}), PromotionsModule],
   controllers: [AuthController],
   providers: [
     AuthService,

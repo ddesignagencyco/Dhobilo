@@ -8,6 +8,7 @@ import { ErrorCode } from '../../common/errors/error-codes';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { RateLimiter } from '../../infra/redis/rate-limiter.service';
 import { REDIS } from '../../infra/redis/redis.constants';
+import { ReferralsService } from '../promos/referrals.service';
 import { AdminLoginDto, RequestOtpDto, VerifyOtpDto } from './dto/auth.dto';
 import { OtpService } from './otp.service';
 import { normalizePkMobile } from './phone.util';
@@ -46,6 +47,7 @@ export class AuthService {
     private readonly otp: OtpService,
     private readonly tokens: TokenService,
     private readonly limiter: RateLimiter,
+    private readonly referrals: ReferralsService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
@@ -58,7 +60,11 @@ export class AuthService {
     const phone = this.requirePhone(dto.phone);
     await this.otp.verify(phone, dto.code, ctx.ip ?? 'unknown');
 
-    const { user, isNew } = await this.findOrCreateUser(phone, dto.role ?? Role.CUSTOMER);
+    const role = dto.role ?? Role.CUSTOMER;
+    if (dto.referralCode && role !== Role.CUSTOMER) {
+      throw new AppException('REFERRAL_CUSTOMER_ONLY', 'Referral codes are only for customer sign-ups.', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+    const { user, isNew } = await this.findOrCreateUser(phone, role, dto.referralCode);
     // Admins sign in with email + password only; a phone code never opens an admin account.
     if (user.role === Role.ADMIN) {
       throw new AppException(ErrorCode.UNAUTHENTICATED, 'Please sign in again.', HttpStatus.UNAUTHORIZED);
@@ -131,20 +137,24 @@ export class AuthService {
     return false;
   }
 
-  /** First login creates the account (with a referral code); later logins keep the existing role. */
-  private async findOrCreateUser(phone: string, role: Role): Promise<{ user: User; isNew: boolean }> {
+  /** First login creates the account (with its own share code); later logins keep the existing role. */
+  private async findOrCreateUser(phone: string, role: Role, invitedBy?: string): Promise<{ user: User; isNew: boolean }> {
     const existing = await this.prisma.user.findUnique({ where: { phone } });
     if (existing) return { user: existing, isNew: false };
 
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        const user = await this.prisma.user.create({
-          data: { phone, role, referralCode: generateReferralCode(), phoneVerifiedAt: new Date() },
+        const user = await this.prisma.$transaction(async (tx) => {
+          const created = await tx.user.create({
+            data: { phone, role, referralCode: generateReferralCode(), phoneVerifiedAt: new Date() },
+          });
+          if (invitedBy) await this.referrals.applyAtSignup(tx, invitedBy, created.id);
+          return created;
         });
         return { user, isNew: true };
       } catch (err) {
         if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') throw err;
-        // Either a concurrent first login for this phone won the race, or the referral code collided: retry.
+        // Either a concurrent first login for this phone won the race, or the share code collided: retry.
         const raced = await this.prisma.user.findUnique({ where: { phone } });
         if (raced) return { user: raced, isNew: false };
       }

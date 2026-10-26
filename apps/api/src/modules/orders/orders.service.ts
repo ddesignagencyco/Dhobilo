@@ -15,6 +15,7 @@ import { RateLimiter } from '../../infra/redis/rate-limiter.service';
 import { CartService } from '../cart/cart.service';
 import { PricingService, QuotedVendor, mergeLines } from '../cart/pricing.service';
 import { CommissionService } from '../finance/commission.service';
+import { PromotionsService } from '../promos/promotions.service';
 import { SlotsService } from '../slots/slots.service';
 import { ListOrdersQueryDto, PlaceOrderDto } from './dto/orders.dto';
 import { OrderLifecycleService } from './lifecycle/order-lifecycle.service';
@@ -75,6 +76,7 @@ export class OrdersService {
     private readonly lifecycle: OrderLifecycleService,
     private readonly access: OrderAccessService,
     private readonly cart: CartService,
+    private readonly promotions: PromotionsService,
   ) {}
 
   /**
@@ -86,7 +88,6 @@ export class OrdersService {
     if (replay) return { order: replay, replayed: true };
 
     await this.limiter.consume(`rl:order-place:user:${user.id}`, PLACE_LIMIT.limit, PLACE_LIMIT.windowSec);
-    this.assertAcceptedRequest(dto);
 
     const address = await this.prisma.address.findFirst({ where: { id: dto.addressId, userId: user.id, deletedAt: null } });
     if (!address) throw new AppException('ADDRESS_NOT_FOUND', 'Choose one of your saved addresses.', HttpStatus.UNPROCESSABLE_ENTITY);
@@ -94,6 +95,13 @@ export class OrdersService {
     const now = this.clock.now();
     const quote = await this.pricing.quote(this.prisma, dto.vendorId, dto.items);
     const vendor = quote.vendor;
+    const promo = dto.promoCode
+      ? await this.promotions.resolve(this.prisma, user.id, dto.promoCode, vendor.cityId, quote.subtotal, now)
+      : null;
+    if (promo) {
+      quote.discountTotal = promo.discount;
+      quote.total = quote.subtotal.plus(quote.deliveryFee).minus(promo.discount);
+    }
 
     if (vendor.availability !== 'OPEN' || !withinOpeningHours(vendor, now)) {
       throw new AppException('VENDOR_UNAVAILABLE', 'This vendor is not taking orders right now.', HttpStatus.CONFLICT, {
@@ -141,6 +149,11 @@ export class OrdersService {
 
         const [{ orderSeq }] = await tx.$queryRaw<{ orderSeq: number }[]>`
           UPDATE "City" SET "orderSeq" = "orderSeq" + 1 WHERE id = ${vendor.cityId} RETURNING "orderSeq"`;
+        if (promo) {
+          const applied = await this.promotions.lockAndValidate(tx, user.id, promo.id, vendor.cityId, quote.subtotal, promo.discount, now);
+          quote.discountTotal = applied.discount;
+          quote.total = quote.subtotal.plus(quote.deliveryFee).minus(applied.discount);
+        }
         const commission = await this.commission.compute(
           tx,
           vendor.id,
@@ -181,6 +194,7 @@ export class OrdersService {
             vendorEarning: commission.vendorEarning,
             paymentMethod: dto.paymentMethod,
             paymentStatus: online ? PaymentStatus.PENDING : PaymentStatus.COD_PENDING,
+            promoId: promo?.id ?? null,
             customerNote: dto.customerNote,
             // For online orders this is reset when the gateway confirms payment, so the vendor gets the full window.
             vendorRespondBy: new Date(now.getTime() + vendor.respondWithinMin * 60_000),
@@ -196,6 +210,9 @@ export class OrdersService {
               })),
             },
             history: { create: { fromStatus: null, toStatus: OrderStatus.PLACED, actorId: user.id, actorRole: Role.CUSTOMER } },
+            ...(promo
+              ? { redemption: { create: { promoId: promo.id, userId: user.id, amount: quote.discountTotal } } }
+              : {}),
             payments: {
               create: {
                 method: dto.paymentMethod,
@@ -312,11 +329,6 @@ export class OrdersService {
     return { cart, unavailable, priceChanges };
   }
 
-  /** Promo codes arrive in Phase 7: refuse rather than silently ignore one. */
-  private assertAcceptedRequest(dto: PlaceOrderDto): void {
-    if (dto.promoCode) throw new AppException('PROMO_UNAVAILABLE', 'Promo codes are not available yet.', HttpStatus.BAD_REQUEST);
-  }
-
   /** The earlier order for this (customer, key), if any, provided the request is the same one. */
   private async findReplay(customerId: string, key: string, dto: PlaceOrderDto) {
     const existing = await this.prisma.order.findFirst({
@@ -327,11 +339,13 @@ export class OrdersService {
 
     const wanted = new Map(mergeLines(dto.items).map((l) => [l.serviceItemId, l.qty]));
     const sameItems = existing.items.length === wanted.size && existing.items.every((i) => i.serviceItemId && wanted.get(i.serviceItemId) === i.qty);
+    const samePromo = (existing.promo?.code ?? null) === (dto.promoCode ? dto.promoCode.trim().toUpperCase() : null);
     const same =
       existing.vendorId === dto.vendorId &&
       existing.paymentMethod === dto.paymentMethod &&
       existing.pickupSlotStart.getTime() === new Date(dto.pickupSlotStart).getTime() &&
       existing.deliverySlotStart.getTime() === new Date(dto.deliverySlotStart).getTime() &&
+      samePromo &&
       sameItems;
     if (!same) {
       throw new AppException('IDEMPOTENCY_KEY_REUSED', 'This Idempotency-Key was already used for a different order.', HttpStatus.UNPROCESSABLE_ENTITY);

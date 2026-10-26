@@ -300,6 +300,16 @@ describe('Swagger examples match the real API (e2e)', () => {
       'POST /auth/admin/login', // covered below
       'POST /me/devices', 'DELETE /me/devices', 'DELETE /me/addresses/{id}', 'DELETE /cart', 'DELETE /vendor/staff/{userId}', 'DELETE /vendor/catalog/items/{id}', // 204 no body
       'POST /vendor/register', // needs Cloudinary assets; covered by vendors.e2e-spec.ts
+      // Finance and payment flows are covered by payments.e2e-spec.ts and finance.e2e-spec.ts.
+      'POST /payments/initiate', 'POST /webhooks/{gateway}', 'GET /vendor/earnings', 'GET /vendor/ledger', 'GET /vendor/payouts', 'POST /vendor/payouts',
+      'GET /admin/commission-rules', 'POST /admin/commission-rules', 'PATCH /admin/commission-rules/{id}', 'GET /admin/payouts', 'POST /admin/payouts/{id}/approve',
+      'POST /admin/payouts/{id}/reject', 'POST /admin/payouts/{id}/pay', 'GET /admin/cod/balances', 'GET /admin/cod/collections', 'POST /admin/cod/settlements', 'GET /rider/cod',
+      // Reviews, promos, referrals and complaints are covered by their own e2e specs.
+      'POST /promos/validate', 'GET /me/referral', 'GET /admin/promos', 'POST /admin/promos', 'GET /admin/promos/{id}', 'PATCH /admin/promos/{id}',
+      'POST /orders/{orderId}/reviews', 'GET /vendors/{vendorId}/reviews',
+      'POST /orders/{orderId}/complaints', 'GET /orders/{orderId}/complaints', 'GET /orders/{orderId}/complaints/{id}', 'POST /orders/{orderId}/complaints/{id}/messages',
+      'GET /vendor/complaints', 'GET /vendor/complaints/{id}', 'POST /vendor/complaints/{id}/reply',
+      'GET /admin/complaints', 'GET /admin/complaints/{id}', 'POST /admin/complaints/{id}/assign', 'POST /admin/complaints/{id}/messages', 'POST /admin/complaints/{id}/resolve',
     ]);
     const source = require('node:fs').readFileSync(__filename, 'utf8') as string;
     const missing = Object.keys(OPERATION_DOCS).filter((key) => OPERATION_DOCS[key].response?.example !== undefined && !verifiedElsewhere.has(key) && !source.includes(`'${key}'`));

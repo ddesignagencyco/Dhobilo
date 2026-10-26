@@ -285,7 +285,7 @@ describe('Orders (e2e)', () => {
         expect(placed.slice(before)).toHaveLength(0);
       }
       expect((await place(s, { paymentMethod: 'BITCOIN' }).expect(400)).body.error.code).toBe('VALIDATION_FAILED');
-      expect((await place(s, { promoCode: 'SAVE10' }).expect(400)).body.error.code).toBe('PROMO_UNAVAILABLE');
+      expect((await place(s, { promoCode: 'SAVE10' }).expect(422)).body.error.code).toBe('PROMO_NOT_FOUND');
     });
 
     it('rejects unknown or smuggled fields', async () => {

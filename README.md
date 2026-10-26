@@ -14,10 +14,11 @@ Backend only; the frontend (`apps/web`) has not been started.
 - Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
 - Phase 2 (Vendor onboarding, approval, catalog): backend done. Uploads, verification and the short-lived signed document links were checked end to end against a live Cloudinary account (private files, not publicly reachable).
 
-- Phase 3 (Discovery, cart, order placement): backend done. COD and online payment methods are accepted; promo codes are refused until Phase 7.
+- Phase 3 (Discovery, cart, order placement): backend done. COD and online payment methods are accepted; promo codes are validated and applied at checkout.
 - Phase 4 (Order lifecycle, vendor operations, notifications): backend done. State machine, vendor accept/reject/advance, cancel, reorder, live tracking (SSE), vendor-timeout auto-cancel, and English/Urdu notifications over SMS, WhatsApp (SMS fallback), push and email. The real WhatsApp provider and SMS gateway adapters wait on choosing providers (mock providers work); the FCM client is unit-tested but not yet run against live Firebase.
 - Phase 5 (Riders and delivery): backend done. Rider registration and admin review, Redis presence/location, delivery jobs created from order events, auto-dispatch with widening radius plus race-safe manual claim, proof of delivery by code or photo, rider earnings, customer delivery view and polled rider position, admin dispatch board, and a courier-partner adapter with a mock partner. Only the mock partner exists; a real one waits on choosing a provider.
 - Phase 6 (Payments, COD, commission and payouts): backend done. Hosted checkout and signed raw-body webhooks for card, JazzCash, Easypaisa and Raast, payment reconciliation/timeout cancellation/refunds, COD collection and rider settlement, commission rules, vendor ledger/earnings, payout requests with admin approval, and Swagger docs for every route. Gateways run in validated mock mode; real merchant credentials and sandbox runs are still pending. Settings are in `.env.example` under "Online payments".
+- Phase 7 (Reviews, complaints, promos and referrals): backend done. Post-delivery vendor and rider reviews with transactional rating aggregates, complaints with photos and vendor/admin threads, refund/redo/reject resolution with linked redo jobs, atomic promo redemption with per-user and global limits, admin promo management, and referral rewards on the referee's first delivered order. Every route is documented in Swagger. All unit and e2e suites pass locally against Dockerized Postgres and Redis.
 
 ### API so far (`/api/v1`)
 
@@ -26,7 +27,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Auth | `POST /auth/otp/request`, `POST /auth/otp/verify`, `POST /auth/refresh`, `POST /auth/logout`, `POST /auth/admin/login` |
 | Profile | `GET/PATCH /me`, `POST/DELETE /me/devices` |
 | Addresses | `GET/POST /me/addresses`, `PATCH/DELETE /me/addresses/:id` |
-| Media | `POST /media/sign` for `vendor-docs` (vendor owners; private), `rider-photo` (riders; public, customers see it) and `delivery-proof` (riders; private) |
+| Media | `POST /media/sign` for `vendor-docs` (vendor owners; private), `rider-photo` (riders; public, customers see it), `delivery-proof` (riders; private) and `complaint` (customers; private) |
 | Vendor | `POST /vendor/register`, `GET/PATCH /vendor/profile`, `GET/PUT /vendor/hours`, `PATCH /vendor/availability`, `GET/POST /vendor/staff`, `DELETE /vendor/staff/:userId` |
 | Catalog | `GET /service-categories` (public), `GET/POST /vendor/catalog/items`, `PATCH/DELETE /vendor/catalog/items/:id`, `POST /vendor/catalog/import` (JSON or CSV) |
 | Admin vendors | `GET /admin/vendors`, `GET /admin/vendors/:id`, `GET /admin/vendors/:id/cnic` (audited), `POST /admin/vendors/:id/{approve,reject,suspend,reactivate}` |
@@ -46,6 +47,9 @@ Backend only; the frontend (`apps/web`) has not been started.
 | Vendor finance | `GET /vendor/earnings` (`range=day, week or month`), `GET /vendor/ledger`, `GET/POST /vendor/payouts` |
 | Admin finance | `GET/POST /admin/commission-rules`, `PATCH/DELETE /admin/commission-rules/:id`, `GET /admin/payouts`, `POST /admin/payouts/:id/{approve,reject,pay}`, `GET /admin/cod/{balances,collections}`, `POST /admin/cod/settlements` |
 | Rider COD | `GET /rider/cod` (cash to deposit and history) |
+| Reviews | `POST /orders/:orderId/reviews` (customer; vendor and/or rider), `GET /vendors/:vendorId/reviews` (public, cursor-paginated) |
+| Promos & referrals | `POST /promos/validate`, `GET /me/referral`, `GET/POST /admin/promos`, `GET/PATCH/DELETE /admin/promos/:id` |
+| Complaints | Customer: `POST/GET /orders/:orderId/complaints`, `GET /orders/:orderId/complaints/:id`, `POST /orders/:orderId/complaints/:id/messages`; vendor: `GET /vendor/complaints`, `GET /vendor/complaints/:id`, `POST /vendor/complaints/:id/reply`; admin: `GET /admin/complaints`, `GET /admin/complaints/:id`, `POST /admin/complaints/:id/{assign,messages,resolve}` |
 | Admin cities | `PATCH /admin/cities/:id` (delivery fee, active flag, order code, `courierPartnerId`) |
 | Public | `GET /cities`, `GET /health/live`, `GET /health/ready` |
 
@@ -59,6 +63,10 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 **How delivery works:** accepting an order creates a pickup job; reaching `READY` creates the drop job. Dispatch starts `DISPATCH_LEAD_MIN` (60) minutes before the window, offering the job to the nearest online approved rider, widening the radius and retrying until someone accepts or the attempts run out (then ops is alerted, if `OPS_ALERT_EMAIL` is set). Riders can also claim unassigned jobs manually; two riders racing for one job means one wins and the other gets `409 JOB_ALREADY_TAKEN`. A completed pickup/drop moves the order to `PICKED_UP`/`OUT_FOR_DELIVERY`/`DELIVERED`. A delivery needs the customer's 4-digit code or a proof photo. If a vendor or admin advances the order themselves, the matching open job is cancelled so nobody is sent for work already done. Cities with a courier partner switch to that partner instead of the in-house dispatch flow.
 
 **How payments work:** customers choose COD or an online method at checkout. Online orders start as `PENDING` and stay invisible to vendors until the gateway webhook marks them paid; a signed raw-body webhook applies each event once, ignores out-of-order failures after success, and the worker reconciles stale payments. Unpaid online orders are cancelled after `PAYMENT_TIMEOUT_MIN` (default 10). A payment that arrives after cancellation is refunded automatically. COD orders are visible immediately; the collecting rider's cash is tracked and admins record settlements. On delivery the finance worker posts the vendor earning and commission to an append-only ledger, and vendors can request a payout only up to their available balance; admins approve and pay it. All gateways support a validated mock mode for local/testing use, signed with `PAYMENT_MOCK_WEBHOOK_SECRET`; production refuses `PAYMENTS_MODE=mock`.
+
+**How reviews and complaints work:** only a delivered order can be reviewed, with one review per vendor or rider per order; rating averages update in the same transaction as the review. A customer can open one live complaint per delivered order with up to three private photos. The vendor can reply, an admin can assign it to themselves and resolve it with a refund, a redo (new pickup/drop jobs on the same order) or a rejection. Online refunds go through the original gateway; COD refunds are recorded by the admin.
+
+**How promos and referrals work:** promo codes support percent or flat discounts, caps, minimum spend, validity windows, per-user and global usage limits, and city scope. Checkout revalidates the code under a row lock and records redemption atomically. Referral codes are accepted for new customer signups only; when the referee's first order is delivered, the referrer receives a personal one-time promo code.
 
 **Cloudinary setup** (needed for vendor registration, rider photos and delivery proof): set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` and `CLOUDINARY_UPLOAD_PRESET` in `.env`. Vendor documents and delivery proofs are uploaded as `authenticated` assets, so they never have a public URL; rider profile photos are public because customers see them. The API itself enforces JPG/PNG/WebP and 5 MB when it verifies an upload (presets cannot cap file size).
 
@@ -82,10 +90,13 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Courier-partner adapter, signed idempotent webhook and per-city switch (mock partner only) | `src/modules/delivery/courier` |
 | Payment gateway registry/adapters (card, JazzCash, Easypaisa, Raast, mock), hosted checkout, signed raw-body webhooks, reconciliation, timeout cancellation and refunds | `src/modules/payments` |
 | Commission rules, ledger, vendor earnings, COD collection/settlement and payouts | `src/modules/finance` |
+| Post-delivery vendor/rider reviews with transactional rating aggregates | `src/modules/reviews` |
+| Complaints with private photos, vendor replies, admin triage and refund/redo/reject resolution | `src/modules/complaints`, `src/modules/delivery` |
+| Promo validation and atomic redemption, admin promo CRUD, referral signup and first-delivery rewards | `src/modules/promos` |
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 | CI: install, Prisma generate/validate, lint (when configured), typecheck, unit + e2e tests, API build, OpenAPI artifact | `.github/workflows/ci.yml` |
 
-Next: Phase 7 (reviews, complaints, promos and referrals). See the [tracker](docs/Dhobilo-TRACKER.md).
+Next: Phase 8 (admin analytics, reports and announcements). See the [tracker](docs/Dhobilo-TRACKER.md).
 
 ## Stack
 

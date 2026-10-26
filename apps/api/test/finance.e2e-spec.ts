@@ -56,8 +56,8 @@ describe('Finance (e2e)', () => {
 
     const entries = await t.prisma.ledgerEntry.findMany({ where: { orderId: order.id }, orderBy: { type: 'asc' } });
     expect(entries.map((e) => ({ type: e.type, amount: e.amount.toFixed(2) }))).toEqual([
-      { type: 'COMMISSION', amount: '-30.00' },
       { type: 'ORDER_EARNING', amount: '170.00' },
+      { type: 'COMMISSION', amount: '-30.00' },
     ]);
 
     const earnings = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);

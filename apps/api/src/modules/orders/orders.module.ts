@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CartModule } from '../cart/cart.module';
 import { FinanceModule } from '../finance/finance.module';
+import { PromotionsModule } from '../promos/promotions.module';
 import { SlotsModule } from '../slots/slots.module';
 import { VendorsModule } from '../vendors/vendors.module';
 import { AdminOrdersService } from './admin-orders.service';
@@ -17,7 +18,7 @@ import { VendorOrdersController } from './vendor-orders.controller';
 import { VendorOrdersService } from './vendor-orders.service';
 
 @Module({
-  imports: [CartModule, FinanceModule, SlotsModule, VendorsModule, OrderLifecycleModule],
+  imports: [CartModule, FinanceModule, PromotionsModule, SlotsModule, VendorsModule, OrderLifecycleModule],
   controllers: [OrdersController, VendorOrdersController],
   providers: [OrdersService, VendorOrdersService, AdminOrdersService, OrderOwnership, OrderAccessService, OrderViewerGuard, OrderStreamService, OrderEventsHub, OrderTimersScheduler],
   exports: [OrdersService, VendorOrdersService, AdminOrdersService, OrderLifecycleModule],

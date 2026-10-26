@@ -85,6 +85,10 @@ export const envSchema = z
     /** Shared secret the mock courier partner signs its webhooks with (testing). */
     COURIER_MOCK_WEBHOOK_SECRET: z.string().default(''),
 
+    /** Referral rewards (Phase 7): a personal one-time promo for the referrer. */
+    REFERRAL_REWARD_PKR: z.coerce.number().min(0).default(100),
+    REFERRAL_REWARD_VALID_DAYS: z.coerce.number().int().min(1).default(90),
+
     /** Online payments (Phase 6). `mock` returns a stand-in checkout and accepts signed test webhooks. */
     PAYMENTS_MODE: z.enum(['mock', 'live']).default('mock'),
     /** How long a customer has to finish an online payment before the order is cancelled. */
