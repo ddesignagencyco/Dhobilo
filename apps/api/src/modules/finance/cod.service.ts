@@ -7,6 +7,7 @@ import { decodeCursor, encodeCursor } from '../../common/pagination/cursor';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CodBalancesQueryDto, CodCollectionsQueryDto, SettleCodDto } from './dto/finance.dto';
+import { LedgerService } from './ledger.service';
 
 @Injectable()
 export class CodService {
@@ -15,6 +16,7 @@ export class CodService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clock: Clock,
+    private readonly ledger: LedgerService,
   ) {}
 
   /**
@@ -122,13 +124,16 @@ export class CodService {
     return { items, nextCursor: hasMore && last ? encodeCursor({ createdAt: last.collectedAt, id: last.id }) : null };
   }
 
-  /** Settles every unsettled collection for one rider in a single batch. */
+  /**
+   * Settles every unsettled collection for one rider in a single batch. The platform now holds that cash, so in the same
+   * transaction each order's vendor is credited (earning and commission posted) and the order becomes fully PAID.
+   */
   async settle(dto: SettleCodDto, adminId: string) {
     return this.prisma.$transaction(async (tx) => {
       await this.lock(tx, `cod:rider:${dto.riderId}`);
       const open = await tx.codCollection.findMany({
         where: { riderId: dto.riderId, settlementId: null },
-        select: { id: true, amount: true },
+        select: { id: true, orderId: true, amount: true },
       });
       if (open.length === 0) {
         throw new AppException('COD_NOTHING_TO_SETTLE', 'This rider has no unsettled cash.', HttpStatus.CONFLICT);
@@ -141,11 +146,18 @@ export class CodService {
         where: { id: { in: open.map((c) => c.id) } },
         data: { settlementId: settlement.id },
       });
+      let ordersCredited = 0;
+      for (const c of open) {
+        if (await this.ledger.postOrderEarnings(c.orderId, { cashDeposited: true }, tx)) ordersCredited++;
+        await tx.order.updateMany({ where: { id: c.orderId, paymentStatus: PaymentStatus.COD_COLLECTED }, data: { paymentStatus: PaymentStatus.PAID } });
+        await tx.payment.updateMany({ where: { orderId: c.orderId, method: PaymentMethod.COD, status: PaymentStatus.COD_COLLECTED }, data: { status: PaymentStatus.PAID } });
+      }
       return {
         id: settlement.id,
         riderId: settlement.riderId,
         amount: fmt(money(settlement.amount)),
         collections: open.length,
+        ordersCredited,
         reference: settlement.reference,
         settledAt: settlement.settledAt,
       };

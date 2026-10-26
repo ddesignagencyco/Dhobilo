@@ -596,7 +596,7 @@ export default function () {
 | 3 | Payment gateways | JazzCash, Easypaisa, Raast, one card gateway | Merchant onboarding is slow; start in parallel with Phase 0 |
 | 4 | Pickup/delivery address | Same address used for both legs in MVP | Different drop address? |
 | 5 | "Delivered → Customer confirms" | Proof of delivery (OTP/photo) completes delivery | Add explicit customer confirm / auto-confirm window? |
-| 6 | COD + commission | Vendor earning credited after the rider's cash is settled | Finance rule: who holds cash, when does vendor become payable |
+| 6 | COD + commission | Vendor earning credited after the rider's cash is settled | **Implemented as assumed:** the platform holds no money until the rider's deposit is recorded, so a cash order credits the vendor in the same step as that deposit (online-paid orders are credited at delivery). Revisit if the business wants to advance vendors against cash still in transit. |
 | 7 | Delivery fee | Flat/zone fee configurable per city, shown in estimate | Pricing model; who earns it (rider pay vs platform) |
 | 8 | Slots | Hourly windows within vendor hours, capacity-limited per vendor | Slot length and capacity rules |
 | 9 | Vendor response window | Default 15 min, configurable per vendor, auto-reject on timeout | Confirm default |

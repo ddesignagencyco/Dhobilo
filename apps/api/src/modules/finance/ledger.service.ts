@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { LedgerType, OrderStatus, PayoutStatus, Prisma } from '@prisma/client';
+import { LedgerType, OrderStatus, PaymentMethod, PayoutStatus, Prisma } from '@prisma/client';
 import { Money, money, sum } from '../../common/money/money';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
@@ -19,15 +19,20 @@ export class LedgerService {
   /**
    * Posts the vendor's earning and the platform commission for a delivered order. Safe to call more than once:
    * the advisory lock plus the existence check make it a no-op after the first successful post.
+   *
+   * A cash-on-delivery order is only posted with `cashDeposited`: until the rider has handed the money in, the
+   * platform does not hold it, so the vendor is not credited (TRD §20 #6). Pass `db` to post inside a transaction
+   * the caller already has (the cash settlement does, so the deposit and the credits succeed or fail together).
    */
-  async postOrderEarnings(orderId: string): Promise<boolean> {
-    return this.prisma.$transaction(async (tx) => {
+  async postOrderEarnings(orderId: string, opts: { cashDeposited?: boolean } = {}, db?: Prisma.TransactionClient): Promise<boolean> {
+    const post = async (tx: Prisma.TransactionClient) => {
       await this.lock(tx, `ledger:order:${orderId}`);
       const order = await tx.order.findUnique({
         where: { id: orderId },
-        select: { vendorId: true, status: true, commissionAmount: true, vendorEarning: true },
+        select: { vendorId: true, status: true, paymentMethod: true, commissionAmount: true, vendorEarning: true },
       });
       if (!order || order.status !== OrderStatus.DELIVERED) return false;
+      if (order.paymentMethod === PaymentMethod.COD && !opts.cashDeposited) return false;
       const existing = await tx.ledgerEntry.count({ where: { orderId, type: { in: [LedgerType.ORDER_EARNING, LedgerType.COMMISSION] } } });
       if (existing > 0) return false;
 
@@ -40,7 +45,8 @@ export class LedgerService {
         });
       }
       return true;
-    });
+    };
+    return db ? post(db) : this.prisma.$transaction(post);
   }
 
   /** Takes back the vendor's earning for a delivered order that is refunded (the commission memo row is not part of it). */

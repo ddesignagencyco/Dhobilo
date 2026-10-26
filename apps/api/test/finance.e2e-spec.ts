@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import type { Job } from 'bullmq';
 import request from 'supertest';
 import { Clock } from '../src/common/time/clock';
@@ -43,13 +43,27 @@ describe('Finance (e2e)', () => {
       where: { id: orderId },
       data: { status: OrderStatus.DELIVERED, deliveredAt: clock.now() },
     });
+  const deliverPrepaid = async (orderId: string) => {
+    await t.prisma.order.update({ where: { id: orderId }, data: { paymentMethod: PaymentMethod.CARD, paymentStatus: PaymentStatus.PAID } });
+    await deliver(orderId);
+  };
+  /** A cash order delivered by `rider`, with the collection recorded the way the finance worker does it. */
+  const deliverCash = async (s: OrderScenario, rider: Awaited<ReturnType<typeof createRider>>) => {
+    const order = await placeOrder(http, s);
+    await t.prisma.deliveryJob.create({
+      data: { orderId: order.id, jobType: 'DROP', status: 'COMPLETED', riderId: rider.rider.id, scheduledStart: NOW, scheduledEnd: new Date(NOW.getTime() + 3_600_000), completedAt: clock.now(), riderFee: '50.00' },
+    });
+    await deliver(order.id);
+    await settle(order.id);
+    return order;
+  };
   const settle = (orderId: string) =>
     processor.process({ name: SETTLE_ORDER_JOB, data: { orderId } } as Job<SettleOrderJob>);
 
   it('posts a delivered order to the ledger once, then serves the vendor balance, earnings and payout lifecycle', async () => {
     const s = await scenario();
     const order = await placeOrder(http, s);
-    await deliver(order.id);
+    await deliverPrepaid(order.id);
 
     expect(await ledger.postOrderEarnings(order.id)).toBe(true);
     expect(await ledger.postOrderEarnings(order.id)).toBe(false);
@@ -62,7 +76,7 @@ describe('Finance (e2e)', () => {
 
     const earnings = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
     expect(earnings.body.data.totals).toEqual({ orders: 1, gross: '200.00', commission: '30.00', net: '170.00' });
-    expect(earnings.body.data.balance).toEqual({ total: '170.00', pending: '0.00', available: '170.00' }); // the same 170.00 the report calls net
+    expect(earnings.body.data.balance).toEqual({ total: '170.00', pending: '0.00', available: '170.00', awaitingCash: { orders: 0, amount: '0.00' } }); // the same 170.00 the report calls net
 
     const requested = await http
       .post('/api/v1/vendor/payouts')
@@ -140,7 +154,7 @@ describe('Finance (e2e)', () => {
   it('reverses the net order earning once when a delivered order is refunded', async () => {
     const s = await scenario();
     const order = await placeOrder(http, s);
-    await deliver(order.id);
+    await deliverPrepaid(order.id);
     expect(await ledger.postOrderEarnings(order.id)).toBe(true);
 
     expect(await ledger.refundOrderEarnings(order.id)).toBe(true);
@@ -171,8 +185,11 @@ describe('Finance (e2e)', () => {
     });
     await deliver(order.id);
 
-    expect(await settle(order.id)).toEqual({ orderId: order.id, earned: true, collected: true });
+    expect(await settle(order.id)).toEqual({ orderId: order.id, earned: false, collected: true }); // cash recorded; the vendor is not credited yet
     expect(await settle(order.id)).toEqual({ orderId: order.id, earned: false, collected: false });
+    expect(await t.prisma.ledgerEntry.count({ where: { orderId: order.id } })).toBe(0);
+    const waiting = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
+    expect(waiting.body.data.balance).toEqual({ total: '0.00', pending: '0.00', available: '0.00', awaitingCash: { orders: 1, amount: '170.00' } });
 
     const row = await t.prisma.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(row.paymentStatus).toBe(PaymentStatus.COD_COLLECTED);
@@ -201,7 +218,16 @@ describe('Finance (e2e)', () => {
       .set(admin.auth)
       .send({ riderId: r.rider.id, reference: 'DEP-1024' })
       .expect(201);
-    expect(settled.body.data).toMatchObject({ riderId: r.rider.id, amount: '350.00', collections: 1, reference: 'DEP-1024' });
+    expect(settled.body.data).toMatchObject({ riderId: r.rider.id, amount: '350.00', collections: 1, ordersCredited: 1, reference: 'DEP-1024' });
+
+    // the deposit is what credits the vendor, and it fully pays the order
+    const credited = await t.prisma.ledgerEntry.findMany({ where: { orderId: order.id } });
+    expect(credited.map((e) => [e.type, e.amount.toFixed(2)]).sort()).toEqual([['COMMISSION', '-30.00'], ['ORDER_EARNING', '170.00']]);
+    expect((await t.prisma.order.findUniqueOrThrow({ where: { id: order.id } })).paymentStatus).toBe(PaymentStatus.PAID);
+    expect((await t.prisma.payment.findFirstOrThrow({ where: { orderId: order.id } })).status).toBe(PaymentStatus.PAID);
+    const afterDeposit = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
+    expect(afterDeposit.body.data.balance).toEqual({ total: '170.00', pending: '0.00', available: '170.00', awaitingCash: { orders: 0, amount: '0.00' } });
+    expect(await cod.settle({ riderId: r.rider.id }, admin.user.id).catch((e) => e.code)).toBe('COD_NOTHING_TO_SETTLE');
 
     const after = await http.get('/api/v1/admin/cod/balances').set(admin.auth).expect(200);
     expect(after.body.data.map((b: { riderId: string }) => b.riderId)).not.toContain(r.rider.id);
@@ -254,5 +280,48 @@ describe('Finance (e2e)', () => {
     await http.delete(`/api/v1/admin/commission-rules/${ruleId}`).set(admin.auth).expect(204);
     const after = await http.get('/api/v1/admin/commission-rules?scope=GLOBAL').set(admin.auth).expect(200);
     expect(after.body.data.map((r: { id: string }) => r.id)).not.toContain(ruleId);
+  });
+
+  it('a cash order earns the vendor nothing until its cash is deposited, and a deposit credits only that rider\'s orders', async () => {
+    const s = await scenario();
+    const a = await createRider(t, basics, { online: false });
+    const b = await createRider(t, basics, { online: false });
+    const orderA = await deliverCash(s, a);
+    const orderB = await deliverCash(s, b);
+
+    // the ledger itself refuses to credit cash that has not arrived, however it is asked
+    expect(await ledger.postOrderEarnings(orderA.id)).toBe(false);
+    expect(await ledger.postOrderEarnings(orderB.id)).toBe(false);
+    expect((await ledger.balance(s.vendor.vendor.id)).total.toFixed(2)).toBe('0.00');
+
+    await http.post('/api/v1/admin/cod/settlements').set(admin.auth).send({ riderId: a.rider.id, reference: 'DEP-A' }).expect(201);
+    expect(await t.prisma.ledgerEntry.count({ where: { orderId: orderA.id } })).toBe(2);
+    expect(await t.prisma.ledgerEntry.count({ where: { orderId: orderB.id } })).toBe(0); // rider B still holds the cash
+    expect((await ledger.balance(s.vendor.vendor.id)).total.toFixed(2)).toBe('170.00');
+    const mid = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
+    expect(mid.body.data.balance.awaitingCash).toEqual({ orders: 1, amount: '170.00' });
+    expect(mid.body.data.totals).toMatchObject({ orders: 2, net: '340.00' }); // both are delivered and earned; only one is payable yet
+
+    await http.post('/api/v1/admin/cod/settlements').set(admin.auth).send({ riderId: b.rider.id, reference: 'DEP-B' }).expect(201);
+    expect((await ledger.balance(s.vendor.vendor.id)).total.toFixed(2)).toBe('340.00');
+  });
+
+  it('settling cash credits the vendor exactly once even if posting is repeated, and a refunded cash order is taken back', async () => {
+    const s = await scenario();
+    const r = await createRider(t, basics, { online: false });
+    const order = await deliverCash(s, r);
+    await http.post('/api/v1/admin/cod/settlements').set(admin.auth).send({ riderId: r.rider.id }).expect(201);
+    expect(await ledger.postOrderEarnings(order.id, { cashDeposited: true })).toBe(false); // already credited
+    expect(await t.prisma.ledgerEntry.count({ where: { orderId: order.id, type: 'ORDER_EARNING' } })).toBe(1);
+    expect(await ledger.refundOrderEarnings(order.id)).toBe(true);
+    expect((await ledger.balance(s.vendor.vendor.id)).total.toFixed(2)).toBe('0.00');
+  });
+
+  it('a prepaid order is credited as soon as it is delivered', async () => {
+    const s = await scenario();
+    const order = await placeOrder(http, s);
+    await deliverPrepaid(order.id);
+    expect(await settle(order.id)).toEqual({ orderId: order.id, earned: true, collected: false });
+    expect((await ledger.balance(s.vendor.vendor.id)).total.toFixed(2)).toBe('170.00');
   });
 });

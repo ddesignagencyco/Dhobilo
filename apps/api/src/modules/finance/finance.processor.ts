@@ -21,7 +21,10 @@ export class FinanceProcessor extends WorkerHost {
     switch (job.name) {
       case SETTLE_ORDER_JOB: {
         const orderId = job.data.orderId;
-        const [earned, collected] = await Promise.all([this.ledger.postOrderEarnings(orderId), this.cod.recordForOrder(orderId)]);
+        // Prepaid orders are credited now. A cash order is only recorded as cash in the rider's hand: the vendor is
+        // credited when the admin records the rider's deposit (see CodService.settle).
+        const collected = await this.cod.recordForOrder(orderId);
+        const earned = await this.ledger.postOrderEarnings(orderId);
         return { orderId, earned, collected };
       }
       default:

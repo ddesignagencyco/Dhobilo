@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { OrderStatus } from '@prisma/client';
+import { LedgerType, OrderStatus, PaymentMethod } from '@prisma/client';
 import { fmt, money, sum } from '../../common/money/money';
 import { Clock } from '../../common/time/clock';
 import { addDays, localParts, localToUtc } from '../../common/time/zoned';
@@ -24,7 +24,7 @@ export class EarningsService {
     const startDate = range === 'day' ? today : range === 'week' ? addDays(today, -6) : `${today.slice(0, 8)}01`;
     const from = localToUtc(startDate, 0, TZ);
 
-    const [orders, balance] = await Promise.all([
+    const [orders, balance, awaiting] = await Promise.all([
       this.prisma.order.findMany({
         where: { vendorId, status: OrderStatus.DELIVERED, deliveredAt: { gte: from, lte: now } },
         orderBy: { deliveredAt: 'desc' },
@@ -40,6 +40,12 @@ export class EarningsService {
         },
       }),
       this.ledger.balance(vendorId),
+      // Delivered cash orders whose money has not reached us yet: earned, but not yet payable.
+      this.prisma.order.aggregate({
+        where: { vendorId, status: OrderStatus.DELIVERED, paymentMethod: PaymentMethod.COD, ledger: { none: { type: LedgerType.ORDER_EARNING } } },
+        _sum: { vendorEarning: true },
+        _count: { _all: true },
+      }),
     ]);
 
     const subtotal = sum(orders.map((o) => money(o.subtotal)));
@@ -56,7 +62,12 @@ export class EarningsService {
         commission: fmt(commission),
         net: fmt(net),
       },
-      balance: { total: fmt(balance.total), pending: fmt(balance.pending), available: fmt(balance.available) },
+      balance: {
+        total: fmt(balance.total),
+        pending: fmt(balance.pending),
+        available: fmt(balance.available),
+        awaitingCash: { orders: awaiting._count._all, amount: fmt(awaiting._sum.vendorEarning ? money(awaiting._sum.vendorEarning) : money(0)) },
+      },
       orders: orders.map((o) => ({
         id: o.id,
         orderNo: o.orderNo,
