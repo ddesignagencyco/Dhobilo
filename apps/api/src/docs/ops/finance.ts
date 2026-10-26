@@ -14,9 +14,10 @@ const SAMPLE_RULE = {
   ratePct: '15.00',
   effectiveFrom: '2026-10-01T00:00:00.000Z',
   createdById: ID.user,
-  vendor: null,
-  category: { name: 'Wash & Iron' },
 };
+
+/** How the list shows a vendor's own rule: the vendor's name comes along, the category is empty. */
+const LISTED_RULE = { ...SAMPLE_RULE, scope: 'VENDOR', vendorId: ID.vendor, categoryId: null, vendor: { businessName: 'Sparkle Laundry' }, category: null };
 
 const SAMPLE_PAYOUT = {
   id: ID.payout,
@@ -147,7 +148,7 @@ export const financeDocs: OperationDocs = {
       vendorId: { example: ID.vendor, description: 'Only rules for this vendor.' },
       categoryId: { example: 2, description: 'Only rules for this category.' },
     },
-    response: { example: ok([SAMPLE_RULE]) },
+    response: { example: ok([LISTED_RULE]) },
   },
   'POST /admin/commission-rules': {
     summary: 'Create a commission rule',

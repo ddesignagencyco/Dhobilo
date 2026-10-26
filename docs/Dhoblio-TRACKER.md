@@ -267,10 +267,10 @@
 
 ### BE
 - [x] **BE-6.1** `PaymentGateway` interface + registry + mock gateway; `Payment` lifecycle and `Order.paymentStatus` sync
-- [x] **BE-6.2** JazzCash adapter: initiate, signature/hash verify, webhook, status inquiry, refund (FR-C8)
-- [x] **BE-6.3** Easypaisa adapter (same scope) (FR-C8)
-- [x] **BE-6.4** Card gateway adapter (PayFast/HBL) with hosted checkout — no PAN touches our systems (FR-C8)
-- [x] **BE-6.5** Raast adapter (bank-to-bank/QR) (SRS §8.2)
+- [x] **BE-6.2** JazzCash adapter: initiate, signature/hash verify, webhook, status inquiry, refund (FR-C8) (built to JazzCash's published signing rule and unit-tested; NOT run against the sandbox; the status-inquiry and refund endpoint paths are assumptions to confirm with JazzCash)
+- [ ] **BE-6.3** Easypaisa adapter (same scope) (FR-C8) (an adapter exists using a generic signed-webhook scheme, NOT written to the provider's own spec; check it against the provider's documentation and sandbox before enabling live payments)
+- [ ] **BE-6.4** Card gateway adapter (PayFast/HBL) with hosted checkout — no PAN touches our systems (FR-C8) (an adapter exists using a generic signed-webhook scheme, NOT written to the provider's own spec; check it against the provider's documentation and sandbox before enabling live payments)
+- [ ] **BE-6.5** Raast adapter (bank-to-bank/QR) (SRS §8.2) (an adapter exists using a generic signed-webhook scheme, NOT written to the provider's own spec; check it against the provider's documentation and sandbox before enabling live payments)
 - [x] **BE-6.6** Webhook controller: raw-body signature verification, idempotent upsert by `(gateway, gatewayRef)`, async processing (TRD §13.2)
 - [x] **BE-6.7** Payment timeout + reconciliation cron (poll pending > 10 min); auto-cancel unpaid orders
 - [x] **BE-6.8** Refunds on cancel/reject/dispute; refund ledger entries

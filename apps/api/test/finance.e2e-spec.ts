@@ -54,15 +54,15 @@ describe('Finance (e2e)', () => {
     expect(await ledger.postOrderEarnings(order.id)).toBe(true);
     expect(await ledger.postOrderEarnings(order.id)).toBe(false);
 
-    const entries = await t.prisma.ledgerEntry.findMany({ where: { orderId: order.id }, orderBy: { type: 'asc' } });
-    expect(entries.map((e) => ({ type: e.type, amount: e.amount.toFixed(2) }))).toEqual([
-      { type: 'ORDER_EARNING', amount: '170.00' },
+    const entries = await t.prisma.ledgerEntry.findMany({ where: { orderId: order.id } });
+    expect(entries.map((e) => ({ type: e.type, amount: e.amount.toFixed(2) })).sort((x, y) => x.type.localeCompare(y.type))).toEqual([
       { type: 'COMMISSION', amount: '-30.00' },
+      { type: 'ORDER_EARNING', amount: '170.00' }, // the vendor's share, already net of the 30.00 commission
     ]);
 
     const earnings = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
     expect(earnings.body.data.totals).toEqual({ orders: 1, gross: '200.00', commission: '30.00', net: '170.00' });
-    expect(earnings.body.data.balance).toEqual({ total: '140.00', pending: '0.00', available: '140.00' });
+    expect(earnings.body.data.balance).toEqual({ total: '170.00', pending: '0.00', available: '170.00' }); // the same 170.00 the report calls net
 
     const requested = await http
       .post('/api/v1/vendor/payouts')
@@ -83,7 +83,7 @@ describe('Finance (e2e)', () => {
       .set(s.vendor.owner.auth)
       .send({ amount: '100.00', method: 'WALLET', accountRef: '03001234567' })
       .expect(409);
-    expect(tooMuch.body.error).toMatchObject({ code: 'PAYOUT_EXCEEDS_BALANCE', details: { available: '40.00' } });
+    expect(tooMuch.body.error).toMatchObject({ code: 'PAYOUT_EXCEEDS_BALANCE', details: { available: '70.00' } }); // 170 less the 100 already asked for
 
     const list = await http.get('/api/v1/admin/payouts?status=REQUESTED').set(admin.auth).expect(200);
     expect(list.body.data.map((p: { id: string }) => p.id)).toContain(payoutId);
@@ -97,7 +97,7 @@ describe('Finance (e2e)', () => {
       .send({ txnRef: 'BANK-889122' })
       .expect(200);
     expect(paid.body.data).toMatchObject({ status: 'PAID', txnRef: 'BANK-889122', processedBy: admin.user.id });
-    expect((await ledger.balance(s.vendor.vendor.id)).available.toFixed(2)).toBe('40.00');
+    expect((await ledger.balance(s.vendor.vendor.id)).available.toFixed(2)).toBe('70.00');
     expect((await ledger.balance(s.vendor.vendor.id)).pending.toFixed(2)).toBe('0.00');
     expect(await ledger.postPayout(payoutId)).toBe(false);
 
@@ -134,7 +134,7 @@ describe('Finance (e2e)', () => {
       .send({ reason: 'Wallet details need updating' })
       .expect(200);
     expect(rejected.body.data).toMatchObject({ status: 'REJECTED', note: 'Wallet details need updating' });
-    expect((await ledger.balance(s.vendor.vendor.id)).available.toFixed(2)).toBe('40.00');
+    expect((await ledger.balance(s.vendor.vendor.id)).available.toFixed(2)).toBe('70.00');
   });
 
   it('reverses the net order earning once when a delivered order is refunded', async () => {
@@ -150,7 +150,7 @@ describe('Finance (e2e)', () => {
     const refund = await t.prisma.ledgerEntry.findFirstOrThrow({
       where: { orderId: order.id, type: 'REFUND' },
     });
-    expect(refund.amount.toFixed(2)).toBe('-140.00');
+    expect(refund.amount.toFixed(2)).toBe('-170.00');
   });
 
   it('settles COD through the worker, records the rider collection and clears it in an admin settlement batch', async () => {
