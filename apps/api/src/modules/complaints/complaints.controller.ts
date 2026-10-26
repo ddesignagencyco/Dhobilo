@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { ComplaintsService } from './complaints.service';
 import { ComplaintMessageDto, CreateComplaintDto, ListComplaintsQueryDto } from './dto/complaints.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('complaints')
 @ApiBearerAuth()
@@ -15,6 +16,7 @@ import { ComplaintMessageDto, CreateComplaintDto, ListComplaintsQueryDto } from 
 export class ComplaintsController {
   constructor(private readonly complaints: ComplaintsService) {}
 
+  @RateLimit({ name: 'complaint-create', limit: 10, windowSec: 86400 })
   @Post()
   create(
     @CurrentUser() user: { id: string },
@@ -44,6 +46,7 @@ export class ComplaintsController {
     return this.complaints.customerDetail(user.id, orderId, id);
   }
 
+  @RateLimit({ name: 'complaint-message', limit: 60, windowSec: 3600 })
   @Post(':id/messages')
   reply(
     @CurrentUser() user: { id: string },

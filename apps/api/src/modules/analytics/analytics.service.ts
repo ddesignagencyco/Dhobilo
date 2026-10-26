@@ -230,6 +230,8 @@ export class AnalyticsService {
     const cityName = new Map(cities.map((c) => [c.id, c.name]));
     const perCity = new Map<number, Totals>();
     for (const r of rows) perCity.set(r.cityId, addInto(perCity.get(r.cityId) ?? emptyTotals(), r));
+    // Every city has a (zero) row in the daily tables; the breakdown lists only cities where something happened.
+    for (const [id, t] of perCity) if (t.ordersPlaced + t.ordersDelivered + t.ordersCancelled === 0) perCity.delete(id);
     return {
       range: this.header(range, q.cityId),
       totals: { ordersPlaced: totals.ordersPlaced, ordersDelivered: totals.ordersDelivered, ordersCancelled: totals.ordersCancelled },
@@ -251,6 +253,7 @@ export class AnalyticsService {
     const totals = rows.reduce((t, r) => addInto(t, r), emptyTotals());
     const perCity = new Map<number, Totals>();
     for (const r of rows) perCity.set(r.cityId, addInto(perCity.get(r.cityId) ?? emptyTotals(), r));
+    for (const [id, t] of perCity) if (t.ordersPlaced + t.ordersDelivered + t.ordersCancelled === 0) perCity.delete(id);
     return {
       range: this.header(range, q.cityId),
       totals: {

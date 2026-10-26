@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { RateLimitGuard } from '../../common/rate-limit/rate-limit.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { PromotionsModule } from '../promos/promotions.module';
 import { AuthController } from './auth.controller';
@@ -22,6 +23,7 @@ import { TokenService } from './token.service';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: OwnershipGuard },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
   exports: [TokenService],
 })

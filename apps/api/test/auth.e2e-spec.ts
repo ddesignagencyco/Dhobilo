@@ -106,7 +106,7 @@ describe('Auth (e2e)', () => {
       const res = await otpLogin(http, p);
       const cookie = (res.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('dhoblio_rt='))!;
       expect(cookie).toMatch(/HttpOnly/i);
-      expect(cookie).toMatch(/SameSite=Lax/i);
+      expect(cookie).toMatch(/SameSite=Strict/i);
       expect(cookie).toMatch(/Path=\/api\/v1\/auth/);
     });
 

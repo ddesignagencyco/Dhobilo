@@ -6,6 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CartService } from '../cart/cart.service';
 import { ValidatePromoDto } from './dto/promos.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('promos')
 @ApiBearerAuth()
@@ -15,6 +16,7 @@ export class PromosController {
   constructor(private readonly cart: CartService) {}
 
   /** Prices a code against the current items. The same rules run again at checkout. */
+  @RateLimit({ name: 'promo-validate', limit: 30, windowSec: 60 })
   @Post('validate')
   @HttpCode(200)
   validate(@CurrentUser() user: AuthUser, @Body() dto: ValidatePromoDto) {

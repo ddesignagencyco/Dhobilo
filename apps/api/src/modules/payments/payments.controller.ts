@@ -6,6 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { InitiatePaymentDto } from './dto/payments.dto';
 import { PaymentsService } from './payments.service';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('payments')
 @ApiBearerAuth()
@@ -17,6 +18,7 @@ export class PaymentsController {
    * Creates (or resumes) the hosted checkout for one of your orders. Card and wallet credentials are entered on
    * the provider's page, never sent to this API. COD orders cannot be paid online.
    */
+  @RateLimit({ name: 'payment-start', limit: 20, windowSec: 600 })
   @Post('initiate')
   @HttpCode(200)
   @Roles(Role.CUSTOMER)

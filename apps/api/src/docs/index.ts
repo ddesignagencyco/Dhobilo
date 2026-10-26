@@ -3,6 +3,7 @@ import { accountDocs, authDocs } from './ops/auth';
 import { complaintDocs } from './ops/complaints';
 import { adminDeliveryDocs, customerDeliveryDocs, riderDocs, webhookDocs } from './ops/delivery';
 import { financeDocs } from './ops/finance';
+import { operationsDocs } from './ops/operations';
 import { promoDocs } from './ops/promos';
 import { reportingDocs } from './ops/reporting';
 import { reviewDocs } from './ops/reviews';
@@ -26,6 +27,7 @@ export const OPERATION_DOCS: OperationDocs = {
   ...adminDeliveryDocs,
   ...financeDocs,
   ...reportingDocs,
+  ...operationsDocs,
   ...promoDocs,
   ...reviewDocs,
   ...complaintDocs,

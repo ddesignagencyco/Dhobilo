@@ -10,3 +10,6 @@ coverage/
 .vscode/
 pgdata/
 redisdata/
+backups/
+ops/perf/tokens.json
+ops/perf/out/

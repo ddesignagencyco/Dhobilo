@@ -8,6 +8,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { CreateReviewDto, ListVendorReviewsQueryDto } from './dto/reviews.dto';
 import { ReviewsService } from './reviews.service';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('reviews')
 @Controller()
@@ -16,6 +17,7 @@ export class ReviewsController {
 
   @ApiBearerAuth()
   @Roles(Role.CUSTOMER)
+  @RateLimit({ name: 'review-create', limit: 30, windowSec: 86400 })
   @Post('orders/:orderId/reviews')
   create(@CurrentUser() user: AuthUser, @Param('orderId', ParseUUIDPipe) orderId: string, @Body() dto: CreateReviewDto) {
     return this.reviews.create(user.id, orderId, dto);

@@ -25,6 +25,14 @@ const MIDDLEWARE_CODES: Record<number, string> = {
   415: 'UNSUPPORTED_MEDIA_TYPE',
 };
 
+/** Prisma codes that mean "overloaded, try again": P2024 pool timeout, P2028 transaction timed out or closed, P2034 write conflict. */
+const BUSY_PRISMA_CODES = new Set(['P2024', 'P2028', 'P2034']);
+export const RETRY_AFTER_SEC = 2;
+
+function busy(): ResolvedError {
+  return { status: HttpStatus.SERVICE_UNAVAILABLE, code: 'SERVICE_BUSY', message: 'The service is busy. Please try again in a moment.', details: { retryAfterSec: RETRY_AFTER_SEC } };
+}
+
 export function resolveError(exception: unknown): ResolvedError {
   if (exception instanceof AppException) {
     return {
@@ -70,7 +78,11 @@ export function resolveError(exception: unknown): ResolvedError {
     if (exception.code === 'P2025') {
       return { status: HttpStatus.NOT_FOUND, code: ErrorCode.NOT_FOUND, message: 'Resource not found' };
     }
+    // The database could not keep up (transaction timed out, no free connection, write conflict): the caller should
+    // simply try again. Orders carry an Idempotency-Key, so a retry can never place the order twice.
+    if (BUSY_PRISMA_CODES.has(exception.code)) return busy();
   }
+  if (exception instanceof Prisma.PrismaClientInitializationError) return busy();
 
   return { status: HttpStatus.INTERNAL_SERVER_ERROR, code: ErrorCode.INTERNAL, message: 'Internal server error' };
 }
@@ -87,11 +99,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const { status, code, message, details } = resolveError(exception);
 
-    if (status >= 500) {
+    if (code === 'SERVICE_BUSY') {
+      this.logger.warn({ err: exception, requestId: req.id }, 'Database overloaded: asked the caller to retry');
+    } else if (status >= 500) {
       this.logger.error({ err: exception, requestId: req.id }, 'Unhandled exception');
     }
 
     if (res.headersSent) return;
+    if (code === 'SERVICE_BUSY') res.setHeader('Retry-After', String(RETRY_AFTER_SEC));
 
     res.status(status).json({
       error: { code, message, ...(details !== undefined ? { details } : {}), requestId: req.id },

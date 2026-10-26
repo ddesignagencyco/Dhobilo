@@ -5,6 +5,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { AppException } from '../../common/errors/app.exception';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { REDIS } from '../../infra/redis/redis.module';
+import { ShutdownService } from './shutdown.service';
 
 @ApiTags('health')
 @Public()
@@ -13,6 +14,7 @@ export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(REDIS) private readonly redis: Redis,
+    private readonly shutdown: ShutdownService,
   ) {}
 
   /** Liveness: the process is up. No dependency checks, so orchestrators don't restart us over a DB blip. */
@@ -24,6 +26,9 @@ export class HealthController {
   /** Readiness: Postgres and Redis both answer. 503 otherwise so the LB stops routing here. */
   @Get('ready')
   async ready() {
+    if (this.shutdown.isDraining()) {
+      throw new AppException('NOT_READY', 'Service is shutting down', HttpStatus.SERVICE_UNAVAILABLE, { draining: true });
+    }
     const [db, redis] = await Promise.all([
       this.prisma.$queryRaw`SELECT 1`.then(() => 'up' as const, () => 'down' as const),
       this.redis.ping().then((r) => (r === 'PONG' ? ('up' as const) : ('down' as const)), () => 'down' as const),

@@ -38,3 +38,26 @@ describe('resolveError', () => {
     expect(r.message).toBe('Internal server error');
   });
 });
+
+describe('resolveError: an overloaded database', () => {
+  const known = (code: string) => new Prisma.PrismaClientKnownRequestError('x', { code, clientVersion: 'test' });
+
+  it('asks the caller to retry (503) instead of reporting a fault, for timeouts and write conflicts', () => {
+    for (const code of ['P2024', 'P2028', 'P2034']) {
+      expect(resolveError(known(code))).toEqual({
+        status: 503,
+        code: 'SERVICE_BUSY',
+        message: 'The service is busy. Please try again in a moment.',
+        details: { retryAfterSec: 2 },
+      });
+    }
+  });
+
+  it('does the same when the database cannot be reached at all', () => {
+    expect(resolveError(new Prisma.PrismaClientInitializationError("Can't reach database server", 'test')).status).toBe(503);
+  });
+
+  it('still treats other database errors as faults', () => {
+    expect(resolveError(known('P2010')).status).toBe(500);
+  });
+});

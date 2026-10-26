@@ -6,8 +6,11 @@ import cookieParser from 'cookie-parser';
 import { raw, text } from 'express';
 import type { Express, Request } from 'express';
 import helmet from 'helmet';
+import { docsPolicy, noStoreForApi } from './common/security/headers';
 import { Logger } from 'nestjs-pino';
 import { requestId } from './common/middleware/request-id.middleware';
+import { allowedOrigins } from './common/security/origins';
+import { securityHeaders } from './common/security/headers';
 import type { Env } from './config/env';
 import { enrichDocument } from './docs/enrich';
 import { SWAGGER_UI_OPTIONS, createDocumentBuilder } from './docs/swagger.config';
@@ -25,7 +28,9 @@ export function configureApp(app: INestApplication): void {
 
   app.use(requestId);
   app.useLogger(app.get(Logger));
-  app.use(helmet());
+  app.use(helmet(securityHeaders(config.get('NODE_ENV', { infer: true }) === 'production')));
+  app.use(docsPolicy);
+  app.use(noStoreForApi);
   app.use(compression());
   app.use(cookieParser());
   // CSV catalog imports arrive as raw text (JSON is parsed by Nest's default body parser).
@@ -43,12 +48,14 @@ export function configureApp(app: INestApplication): void {
     app.use(`/api/v1/webhooks/${gateway}`, rawWebhook);
   }
 
-  const rawOrigins = config.get('CORS_ORIGINS', { infer: true }) || config.get('APP_URL', { infer: true });
-  const origins = String(rawOrigins)
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean);
-  app.enableCors({ origin: origins, credentials: true, exposedHeaders: ['x-request-id'] });
+  app.enableCors({
+    origin: allowedOrigins(config),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['authorization', 'content-type', 'idempotency-key', 'x-token-transport', 'last-event-id', 'accept-language'],
+    exposedHeaders: ['x-request-id'],
+    maxAge: 600,
+  });
 
   app.setGlobalPrefix(GLOBAL_PREFIX);
   app.enableShutdownHooks();

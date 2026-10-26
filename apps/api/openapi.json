@@ -22666,6 +22666,223 @@
         "summary": "Audit log",
         "description": "**Who can use this:** signed-in admins.\n\nWho did what to which record, newest first: approvals, payouts, commission changes, cancellations, announcements and more. Combine filters, for example `entity=Payout&entityId=…` for one payout’s history or `actorId=…` for everything one person did. `before` / `after` hold the values where they were recorded. The log cannot be edited or deleted."
       }
+    },
+    "/api/v1/admin/queues": {
+      "get": {
+        "operationId": "AdminQueuesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "healthy": false,
+                    "queues": [
+                      {
+                        "queue": "notifications",
+                        "waiting": 3,
+                        "active": 1,
+                        "delayed": 0,
+                        "failed": 12,
+                        "stuck": 0,
+                        "oldestWaitingSec": 4,
+                        "recentFailures": [
+                          {
+                            "id": "4821",
+                            "name": "send-sms",
+                            "reason": "gateway timeout",
+                            "attemptsMade": 5,
+                            "failedAt": "2026-10-26T09:12:00.000Z"
+                          }
+                        ],
+                        "healthy": false
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-queues"
+        ],
+        "summary": "Background queue health",
+        "description": "**Who can use this:** signed-in admins.\n\nEvery background queue (notifications, payments, delivery, reports and so on): how many jobs are waiting, running, delayed and failed, how long the oldest waiting job has been there, any job that has been running suspiciously long (`stuck`) and the latest failures with their reason. `healthy` is false when a queue has too many failed jobs, a large backlog or a stuck job; the same conditions email the operations address (at most once an hour per problem). A failed job is one that used up all its retries."
+      }
+    },
+    "/api/v1/admin/queues/{name}/retry-failed": {
+      "post": {
+        "operationId": "AdminQueuesController_retry",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "notifications",
+            "description": "A queue name from **Background queue health**."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "queue": "notifications",
+                    "retried": 12
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: The queue name is not one of ours.",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-queues"
+        ],
+        "summary": "Retry failed jobs",
+        "description": "**Who can use this:** signed-in admins.\n\nPuts a queue’s failed jobs (up to 100 at a time) back in line, after the cause has been fixed. Jobs are written to be repeat-safe, so retrying never doubles an effect."
+      }
     }
   },
   "info": {
@@ -22802,6 +23019,10 @@
     {
       "name": "admin-announcements",
       "description": "Admin: preview an audience, send an announcement by push, SMS or email, and follow its delivery."
+    },
+    {
+      "name": "admin-queues",
+      "description": "Admin: health of the background queues, and retrying jobs that failed."
     },
     {
       "name": "admin-audit",

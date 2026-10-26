@@ -150,6 +150,7 @@ describe('Vendor registration and panel (e2e)', () => {
         { ownerId: user.id },
         { ratingAvg: 5 },
       ]) {
+        await clearRateLimits(t.redis); // registration is limited to 5 attempts a day, and every refused attempt counts
         const res = await http.post('/api/v1/vendor/register').set(auth).send(registerBody(user.id, patch)).expect(400);
         expect(res.body.error.code).toBe('VALIDATION_FAILED');
       }

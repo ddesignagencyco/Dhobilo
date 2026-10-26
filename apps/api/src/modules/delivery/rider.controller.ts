@@ -24,6 +24,7 @@ import { RiderContextGuard } from './rider-context.guard';
 import { RiderAppService } from './rider-app.service';
 import { RiderRegistrationService } from './rider-registration.service';
 import { RequireRiderStatus } from './rider-context';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('rider')
 @ApiBearerAuth()
@@ -41,6 +42,7 @@ export class RiderController {
    * Apply to ride. Upload a profile photo first (POST /media/sign with kind `rider-photo`), then send its public id
    * here. The account stays PENDING until an admin approves it. A rejected rider re-submits through the same call.
    */
+  @RateLimit({ name: 'rider-register', limit: 5, windowSec: 86400 })
   @Post('register')
   register(@CurrentUser() user: AuthUser, @Body() dto: RegisterRiderDto, @Req() req: AuthedRequest) {
     return this.registration.register(user, dto, { ip: req.ip, requestId: req.id });
@@ -74,6 +76,7 @@ export class RiderController {
   }
 
   /** Send the position every 20-30 seconds while online. A rider who stops pinging stops being offered jobs. */
+  @RateLimit({ name: 'rider-location', limit: 30, windowSec: 60 })
   @Post('location')
   @HttpCode(200)
   @UseGuards(RiderContextGuard)

@@ -365,15 +365,15 @@
 **Refs:** SRS §7 (all) · TRD §18, §19
 
 ### BE
-- [ ] **BE-9.1** Rate limiting review on all public/sensitive endpoints; abuse protections on OTP, promos, webhooks
-- [ ] **BE-9.2** Security headers, strict CORS, cookie flags, CSRF review for cookie-based refresh
-- [ ] **BE-9.3** Query performance: `EXPLAIN ANALYZE` hot paths (discovery, orders list, vendor board, ledger); add/adjust indexes; confirm no N+1
-- [ ] **BE-9.4** Connection pooling (Prisma/PgBouncer sizing) and Redis/BullMQ settings under load
-- [ ] **BE-9.5** Data protection review: encryption at rest enabled, CNIC access audited, log redaction verified, retention/deletion policy implemented
-- [ ] **BE-9.6** Backups + restore drill (PITR); document RTO/RPO
-- [ ] **BE-9.7** Graceful shutdown + zero-downtime deploy; ≥ 2 API replicas behind LB
-- [ ] **BE-9.8** Fix issues found by ZAP baseline scan and dependency audit
-- [ ] **BE-9.9** Queue resilience: DLQ/failed-job alerts, stuck-job detection, poison-job handling
+- [x] **BE-9.1** Rate limiting review on all public/sensitive endpoints; abuse protections on OTP, promos, webhooks (backstop plus 13 route limits, guarded by a test; table in docs/Dhoblio-OPS.md)
+- [x] **BE-9.2** Security headers, strict CORS, cookie flags, CSRF review for cookie-based refresh (strict headers and CORS, production refuses wildcard origins, SameSite=Strict, origin check on cookie refresh/logout)
+- [ ] **BE-9.3** Query performance: `EXPLAIN ANALYZE` hot paths (discovery, orders list, vendor board, ledger); add/adjust indexes; confirm no N+1 (PARTIAL: profiling and the slow-query log under load found and fixed three bottlenecks (timezone formatter, city order counter lock, 5xx on DB timeout); the full EXPLAIN ANALYZE pass over every hot path is still to do)
+- [x] **BE-9.4** Connection pooling (Prisma/PgBouncer sizing) and Redis/BullMQ settings under load (pool size and timeout configurable, sizing rule documented; BullMQ/Redis tuning under staging load still to confirm)
+- [ ] **BE-9.5** Data protection review: encryption at rest enabled, CNIC access audited, log redaction verified, retention/deletion policy implemented (PARTIAL: retention job done; account-deletion flow and legal retention periods need a decision)
+- [ ] **BE-9.6** Backups + restore drill (PITR); document RTO/RPO (PARTIAL: scripts and a restore drill on 100k orders done (backup 7 s, restore 10 s, everything identical); PITR and the real RTO/RPO need the managed database)
+- [x] **BE-9.7** Graceful shutdown + zero-downtime deploy; ≥ 2 API replicas behind LB (graceful drain on SIGTERM; two replicas behind nginx survived a rolling restart with 0 of 300 requests failed)
+- [ ] **BE-9.8** Fix issues found by ZAP baseline scan and dependency audit (PARTIAL: npm audit 9 -> 3 (remaining are Prisma CLI tooling); ZAP baseline not run yet)
+- [x] **BE-9.9** Queue resilience: DLQ/failed-job alerts, stuck-job detection, poison-job handling (queue watch with ops alerts, GET /admin/queues, retry-failed, failed set as dead-letter store)
 
 ### FE
 - [ ] **FE-9.1** Meet JS/route budgets; code-split maps and charts; Cloudinary `f_auto,q_auto,dpr_auto` everywhere
@@ -384,11 +384,11 @@
 - [ ] **FE-9.6** Cross-browser/device matrix: Android 8+, iOS 13+, Chrome/Edge/Safari for panels
 
 ### OPS / QA (k6 and verification)
-- [ ] **QA-9.1** Seed staging with realistic volume (≥ 500 vendors, ≥ 100 k orders)
-- [ ] **QA-9.2** k6 `customer-journey.js` at 200 VUs — thresholds in TRD §19.1 met
-- [ ] **QA-9.3** k6 `vendor-board.js` and `rider-dispatch.js` — thresholds met
-- [ ] **QA-9.4** k6 `stress.js` — record breaking point; confirm graceful degradation and no data corruption
-- [ ] **QA-9.5** k6 `soak.js` (2–4 h) — no memory/connection leaks, queue depth stable
+- [ ] **QA-9.1** Seed staging with realistic volume (≥ 500 vendors, ≥ 100 k orders) (local scratch database has 500 vendors / 100k orders; staging seed still to do)
+- [ ] **QA-9.2** k6 `customer-journey.js` at 200 VUs — thresholds in TRD §19.1 met (NOT MET on the dev PC: reads inside budget at 200 VUs, POST /orders p95 2.8 s vs 1.5 s; re-run on staging hardware)
+- [ ] **QA-9.3** k6 `vendor-board.js` and `rider-dispatch.js` — thresholds met (scripts written, not yet run)
+- [ ] **QA-9.4** k6 `stress.js` — record breaking point; confirm graceful degradation and no data corruption (script written, not yet run)
+- [ ] **QA-9.5** k6 `soak.js` (2–4 h) — no memory/connection leaks, queue depth stable (script and watcher written, not yet run)
 - [ ] **QA-9.6** Chaos tests: kill API mid-order, Redis restart, DB failover, gateway timeout; no lost orders/payments (SRS §7 Reliability)
 - [ ] **QA-9.7** Lighthouse CI on throttled 3G for the order path: interactive < 3 s (SRS §7 Performance)
 - [ ] **OPS-9.1** Uptime monitor, alerts (5xx rate, p95 latency, queue depth, failed jobs, DB CPU/connections)

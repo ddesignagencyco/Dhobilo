@@ -32,6 +32,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { MediaModule } from './modules/media/media.module';
 import { NotificationOrchestratorModule } from './modules/notifications/notification-orchestrator.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OpsModule } from './modules/ops/ops.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PromotionsHttpModule } from './modules/promos/promotions-http.module';
@@ -87,6 +88,7 @@ import { UsersModule } from './modules/users/users.module';
     ReportsModule,
     AnnouncementsModule,
     AuditQueryModule,
+    OpsModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

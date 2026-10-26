@@ -13,10 +13,16 @@ export function isValidDateString(value: string): boolean {
   return probe.getUTCFullYear() === y && probe.getUTCMonth() === mo - 1 && probe.getUTCDate() === d;
 }
 
-/** Offset of `tz` from UTC at `instant`, in ms (Asia/Karachi = +5h). */
-export function tzOffsetMs(instant: Date, tz: string): number {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
+/**
+ * Building an Intl.DateTimeFormat is expensive (tens of microseconds and a lot of garbage); slot lists call this
+ * dozens of times per request, so one formatter per timezone is kept for the life of the process.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function formatterFor(tz: string): Intl.DateTimeFormat {
+  let f = formatters.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
       timeZone: tz,
       hourCycle: 'h23',
       year: 'numeric',
@@ -25,11 +31,31 @@ export function tzOffsetMs(instant: Date, tz: string): number {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-    })
-      .formatToParts(instant)
-      .map((p) => [p.type, p.value]),
-  );
-  const wallAsUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    });
+    formatters.set(tz, f);
+  }
+  return f;
+}
+
+/** Offset of `tz` from UTC at `instant`, in ms (Asia/Karachi = +5h). */
+export function tzOffsetMs(instant: Date, tz: string): number {
+  let year = 0;
+  let month = 0;
+  let day = 0;
+  let hour = 0;
+  let minute = 0;
+  let second = 0;
+  for (const p of formatterFor(tz).formatToParts(instant)) {
+    switch (p.type) {
+      case 'year': year = +p.value; break;
+      case 'month': month = +p.value; break;
+      case 'day': day = +p.value; break;
+      case 'hour': hour = +p.value; break;
+      case 'minute': minute = +p.value; break;
+      case 'second': second = +p.value; break;
+    }
+  }
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute, second);
   return wallAsUtc - Math.floor(instant.getTime() / 1000) * 1000;
 }
 

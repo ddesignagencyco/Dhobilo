@@ -10,6 +10,7 @@ export const QUEUES = {
   EXPORTS: 'exports',
   MEDIA: 'media',
   ANALYTICS: 'analytics',
+  MAINTENANCE: 'maintenance',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -29,4 +30,5 @@ export const QUEUE_JOB_OPTIONS: Record<QueueName, DefaultJobOptions> = {
   [QUEUES.EXPORTS]: { ...base, attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
   [QUEUES.MEDIA]: { ...base, attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
   [QUEUES.ANALYTICS]: { ...base, attempts: 3, backoff: { type: 'exponential', delay: 60_000 } },
+  [QUEUES.MAINTENANCE]: { ...base, attempts: 2, backoff: { type: 'exponential', delay: 60_000 } },
 };

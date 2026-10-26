@@ -115,6 +115,29 @@ export const envSchema = z
     RAAST_API_URL: z.string().default(''),
     RAAST_RETURN_URL: z.string().default(''),
 
+    /** Backstop for every route, per signed-in user (or IP when signed out), per minute. 0 turns it off. */
+    RATE_LIMIT_DEFAULT_PER_MIN: z.coerce.number().int().min(0).default(600),
+
+    /** Postgres connections this process may open (Prisma pool). Size: replicas x this <= max_connections x 0.8. */
+    DB_POOL_SIZE: z.coerce.number().int().min(1).max(200).default(10),
+    /** How long a query waits for a free pool connection before failing. */
+    DB_POOL_TIMEOUT_SEC: z.coerce.number().int().min(1).default(10),
+    /** On SIGTERM the API reports "not ready" for this long before it stops, so the load balancer drains it first. */
+    SHUTDOWN_DRAIN_MS: z.coerce.number().int().min(0).default(0),
+
+    /** Queue watch (Phase 9): alert when failed jobs or a backlog build up. */
+    QUEUE_ALERT_FAILED: z.coerce.number().int().min(1).default(10),
+    QUEUE_ALERT_WAITING: z.coerce.number().int().min(1).default(1000),
+    /** A job that has been "active" this long is probably stuck. */
+    QUEUE_ALERT_STUCK_MIN: z.coerce.number().int().min(1).default(15),
+    QUEUE_ALERT_COOLDOWN_MIN: z.coerce.number().int().min(1).default(60),
+
+    /** Retention (days): how long operational records are kept before the nightly clean-up removes them. */
+    RETENTION_OTP_DAYS: z.coerce.number().int().min(1).default(2),
+    RETENTION_SESSION_DAYS: z.coerce.number().int().min(1).default(30),
+    RETENTION_NOTIFICATION_DAYS: z.coerce.number().int().min(7).default(180),
+    RETENTION_WEBHOOK_EVENT_DAYS: z.coerce.number().int().min(7).default(90),
+
     BULL_BOARD_ENABLED: bool.default(false),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   })
@@ -125,6 +148,16 @@ export const envSchema = z
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
       });
+    }
+    if (env.NODE_ENV === 'production') {
+      const origins = (env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+      if (origins.length === 0 || origins.some((o) => o === '*' || !/^https:\/\/[^*\s]+$/.test(o))) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['CORS_ORIGINS'],
+          message: 'CORS_ORIGINS must list the exact https:// origins allowed in production (no wildcard)',
+        });
+      }
     }
     if (env.NODE_ENV === 'production' && env.PAYMENTS_MODE === 'mock') {
       ctx.addIssue({

@@ -11,6 +11,7 @@ import type { VendorContext } from './vendor-context';
 import { VendorContextGuard } from './vendor-context.guard';
 import { VendorProfileService } from './vendor-profile.service';
 import { VendorRegistrationService } from './vendor-registration.service';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('vendor')
 @ApiBearerAuth()
@@ -25,6 +26,7 @@ export class VendorController {
    * Apply to join as a vendor. Upload the CNIC and shop photos first (POST /media/sign), then send their
    * public ids here. The account stays PENDING until an admin approves it. A rejected vendor re-submits here.
    */
+  @RateLimit({ name: 'vendor-register', limit: 5, windowSec: 86400 })
   @Post('register')
   @Roles(Role.VENDOR_OWNER)
   register(@CurrentUser() user: AuthUser, @Body() dto: RegisterVendorDto, @Req() req: AuthedRequest) {

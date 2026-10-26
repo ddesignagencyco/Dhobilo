@@ -1,0 +1,37 @@
+# Two API replicas behind a load balancer, for testing zero-downtime deploys and failover locally (BE-9.7).
+#   docker compose -f docker-compose.yml -f docker-compose.ha.yml up -d --build
+# The LB listens on http://localhost:8080 (the single `api` container keeps :4000 for direct access).
+services:
+  api:
+    stop_grace_period: 30s
+    environment:
+      TRUST_PROXY: "1"
+      SHUTDOWN_DRAIN_MS: "3000"
+
+  api2:
+    build: { context: ., dockerfile: docker/api.Dockerfile }
+    container_name: dhoblio-api2
+    command: ["node", "dist/main.js"]
+    env_file: .env
+    stop_grace_period: 30s
+    environment:
+      DATABASE_URL: postgresql://dhoblio:dhoblio@postgres:5432/dhoblio?schema=public
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailhog
+      TRUST_PROXY: "1"
+      SHUTDOWN_DRAIN_MS: "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/v1/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      retries: 6
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      mailhog: { condition: service_started }
+
+  lb:
+    image: nginx:1.27-alpine
+    container_name: dhoblio-lb
+    ports: ["8080:8080"]
+    volumes: ["./docker/nginx.ha.conf:/etc/nginx/nginx.conf:ro"]
+    depends_on: [api, api2]

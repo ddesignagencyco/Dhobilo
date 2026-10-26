@@ -9,6 +9,7 @@ import { PayoutsService } from './payouts.service';
 import { CurrentVendor, RequireVendorStatus } from '../vendors/vendor-context';
 import type { VendorContext } from '../vendors/vendor-context';
 import { VendorContextGuard } from '../vendors/vendor-context.guard';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('vendor-finance')
 @ApiBearerAuth()
@@ -43,6 +44,7 @@ export class VendorFinanceController {
   }
 
   /** Ask to withdraw part of the available balance. */
+  @RateLimit({ name: 'payout-request', limit: 10, windowSec: 86400 })
   @Post('payouts')
   @Roles(Role.VENDOR_OWNER)
   request(@CurrentVendor() vendor: VendorContext, @Body() dto: RequestPayoutDto) {

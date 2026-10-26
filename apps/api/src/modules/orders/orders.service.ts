@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentMethod, PaymentStatus, Prisma, Role } from '@prisma/client';
@@ -147,8 +148,6 @@ export class OrdersService {
           turnaroundHours: quote.maxTurnaroundHours,
         });
 
-        const [{ orderSeq }] = await tx.$queryRaw<{ orderSeq: number }[]>`
-          UPDATE "City" SET "orderSeq" = "orderSeq" + 1 WHERE id = ${vendor.cityId} RETURNING "orderSeq"`;
         if (promo) {
           const applied = await this.promotions.lockAndValidate(tx, user.id, promo.id, vendor.cityId, quote.subtotal, promo.discount, now);
           quote.discountTotal = applied.discount;
@@ -162,10 +161,11 @@ export class OrdersService {
           now,
         );
 
-        return tx.order.create({
+        const order = await tx.order.create({
           select: { id: true },
           data: {
-            orderNo: orderNumber(vendor.city, orderSeq),
+            // Placeholder; the real number is taken as the very last step (see below).
+            orderNo: `PENDING-${randomUUID()}`,
             idempotencyKey,
             customerId: user.id,
             vendorId: vendor.id,
@@ -223,6 +223,14 @@ export class OrdersService {
             },
           },
         });
+        // Every order in a city increments the same counter row, and that row stays locked until the transaction ends.
+        // Taking the number first made all orders of a city queue behind each other for the whole placement (the load
+        // test saw 350 ms on average and 5 s at worst). Taking it last keeps the lock to two statements and the commit,
+        // and a placement that fails still does not burn a number, because the increment rolls back with it.
+        const [{ orderSeq }] = await tx.$queryRaw<{ orderSeq: number }[]>`
+          UPDATE "City" SET "orderSeq" = "orderSeq" + 1 WHERE id = ${vendor.cityId} RETURNING "orderSeq"`;
+        await tx.order.update({ where: { id: order.id }, data: { orderNo: orderNumber(vendor.city, orderSeq) }, select: { id: true } });
+        return order;
       });
     } catch (err) {
       // Two simultaneous requests with the same key: the loser gets the winner's order.

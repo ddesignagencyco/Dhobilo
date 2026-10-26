@@ -5,6 +5,7 @@ import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
 import { Public } from '../../common/decorators/public.decorator';
 import { PaymentsService } from './payments.service';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 type RawRequest = Request & { rawBody?: Buffer };
 
@@ -15,6 +16,7 @@ type RawRequest = Request & { rawBody?: Buffer };
 export class PaymentWebhooksController {
   constructor(private readonly payments: PaymentsService) {}
 
+  @RateLimit({ name: 'webhook', limit: 1200, windowSec: 60, by: 'ip' })
   @Post(':gateway')
   @HttpCode(200)
   receive(

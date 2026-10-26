@@ -34,7 +34,23 @@ describe('validateEnv', () => {
   });
 
   it('allows OTP_BYPASS=false in production', () => {
-    expect(validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live' }).NODE_ENV).toBe('production');
+    expect(validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live', CORS_ORIGINS: 'https://app.dhoblio.pk' }).NODE_ENV).toBe('production');
+  });
+
+  it('needs exact https origins for CORS in production, never a wildcard', () => {
+    const prod = { ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live' };
+    for (const bad of [undefined, '', '*', 'https://*.dhoblio.pk', 'http://app.dhoblio.pk', 'https://a.pk,*']) {
+      expect(() => validateEnv({ ...prod, ...(bad === undefined ? {} : { CORS_ORIGINS: bad }) })).toThrow(/CORS_ORIGINS/);
+    }
+    expect(validateEnv({ ...prod, CORS_ORIGINS: 'https://app.dhoblio.pk, https://admin.dhoblio.pk' }).NODE_ENV).toBe('production');
+    expect(() => validateEnv({ ...base, NODE_ENV: 'development' })).not.toThrow(); // local development keeps its relaxed default
+  });
+
+  it('has safe defaults for rate limits, the database pool and shutdown', () => {
+    const env = validateEnv(base);
+    expect(env).toMatchObject({ RATE_LIMIT_DEFAULT_PER_MIN: 600, DB_POOL_SIZE: 10, DB_POOL_TIMEOUT_SEC: 10, SHUTDOWN_DRAIN_MS: 0, RETENTION_OTP_DAYS: 2, RETENTION_NOTIFICATION_DAYS: 180 });
+    expect(() => validateEnv({ ...base, DB_POOL_SIZE: '0' })).toThrow(/DB_POOL_SIZE/);
+    expect(() => validateEnv({ ...base, RETENTION_NOTIFICATION_DAYS: '3' })).toThrow(/RETENTION_NOTIFICATION_DAYS/);
   });
 
   it('refuses mock payments in production', () => {

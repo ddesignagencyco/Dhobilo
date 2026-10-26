@@ -424,6 +424,7 @@ describe('Swagger examples match the real API (e2e)', () => {
     // Guards against adding an endpoint example without a matching contract check. Keep this list in sync on purpose.
     const verifiedElsewhere = new Set([
       'GET /orders/{id}/events', // text/event-stream, covered by order-live.e2e-spec.ts
+      'GET /admin/queues', 'POST /admin/queues/{name}/retry-failed', // covered by hardening.e2e-spec.ts
       'GET /reports/{id}/download', // a file, not JSON: covered by reports.e2e-spec.ts (and its headers are checked above)
       'POST /auth/admin/login', // covered below
       'POST /me/devices', 'DELETE /me/devices', 'DELETE /me/addresses/{id}', 'DELETE /cart', 'DELETE /vendor/staff/{userId}', 'DELETE /vendor/catalog/items/{id}', // 204 no body

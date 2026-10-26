@@ -6,6 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CartService } from './cart.service';
 import { EstimateDto, SetCartDto } from './dto/cart.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('cart')
 @ApiBearerAuth()
@@ -34,6 +35,7 @@ export class CartController {
   }
 
   /** Instant price: items + delivery fee = total, computed from current prices. */
+  @RateLimit({ name: 'cart-estimate', limit: 120, windowSec: 60 })
   @Post('estimate')
   @HttpCode(200)
   estimate(@CurrentUser() user: AuthUser, @Body() dto: EstimateDto) {
