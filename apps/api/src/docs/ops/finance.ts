@@ -37,7 +37,7 @@ const SAMPLE_EARNINGS = {
   from: '2026-10-19T19:00:00.000Z',
   to: '2026-10-26T10:00:00.000Z',
   totals: { orders: 12, gross: '14400.00', commission: '2160.00', net: '12240.00' },
-  balance: { total: '18240.00', pending: '2500.00', available: '15740.00' },
+  balance: { total: '18240.00', pending: '2500.00', available: '15740.00', awaitingCash: { orders: 2, amount: '612.00' } },
   orders: [
     {
       id: ID.order,
@@ -99,7 +99,7 @@ export const financeDocs: OperationDocs = {
     tag: 'vendor-finance',
     who: [...VENDOR],
     description:
-      'Delivered orders only, counted on the Pakistan business day. `range=day` is today, `week` is the last 7 days including today (default), and `month` is the current calendar month. `balance` comes from the ledger: `available` is what you can request after pending payouts.',
+      'Delivered orders only, counted on the Pakistan business day. `range=day` is today, `week` is the last 7 days including today (default), and `month` is the current calendar month. `balance` comes from the ledger: `awaitingCash` is the share of delivered **cash** orders whose money the rider has not yet handed in (it becomes part of `total` the moment the admin records the deposit); `available` is what you can request after pending payouts.',
     params: { range: { example: 'week', description: '`day`, `week` or `month`.' } },
     response: { example: ok(SAMPLE_EARNINGS) },
     errors: [{ status: 403, code: 'VENDOR_NOT_ACTIVE', when: 'The vendor account is not approved.' }],
@@ -268,10 +268,11 @@ export const financeDocs: OperationDocs = {
     summary: 'Settle a rider’s cash',
     tag: 'admin-finance',
     who: [...ADMIN],
-    description: 'Takes every unsettled collection for the rider and links it to one settlement batch. Fails when there is nothing to settle.',
+    description:
+      'The rider hands in cash. Takes every unsettled collection for the rider and links it to one settlement batch. **In the same step each of those orders’ vendors is credited** (earning and commission posted to their ledger) and the order becomes fully PAID: a cash order earns the vendor nothing until its cash reaches us. Fails when there is nothing to settle.',
     requests: { default: { summary: 'Cash handed over', value: { riderId: ID.staff, reference: 'DEP-20261025-04' } } },
     response: {
-      example: ok({ id: ID.settlement, riderId: ID.staff, amount: '8640.00', collections: 6, reference: 'DEP-20261025-04', settledAt: '2026-10-25T12:00:00.000Z' }),
+      example: ok({ id: ID.settlement, riderId: ID.staff, amount: '8640.00', collections: 6, ordersCredited: 6, reference: 'DEP-20261025-04', settledAt: '2026-10-25T12:00:00.000Z' }),
     },
     errors: [{ status: 409, code: 'COD_NOTHING_TO_SETTLE', when: 'The rider has no unsettled cash.' }],
   },

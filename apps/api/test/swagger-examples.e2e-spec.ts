@@ -309,12 +309,19 @@ describe('Swagger examples match the real API (e2e)', () => {
     const signature = createHmac('sha256', process.env.PAYMENT_MOCK_WEBHOOK_SECRET!).update(raw).digest('hex');
     await http.post('/api/v1/webhooks/card').set('content-type', 'application/json').set('x-payment-signature', signature).send(raw).expect(200).then((r) => expectMatchesDocs('POST /webhooks/{gateway}', r.body));
 
-    // — a cash order delivered by a rider, credited to the vendor by the finance worker —
+    // — cash orders: the rider collects the cash at delivery; the vendor is credited when the admin records the deposit —
+    const deliverCash = async (rider: Awaited<ReturnType<typeof createRider>>) => {
+      const cash = await placeOrder(http, s);
+      await t.prisma.deliveryJob.create({ data: { orderId: cash.id, jobType: 'DROP', status: 'COMPLETED', riderId: rider.rider.id, scheduledStart: NOW, scheduledEnd: new Date(NOW.getTime() + 3_600_000), completedAt: NOW, riderFee: '50.00' } });
+      await t.prisma.order.update({ where: { id: cash.id }, data: { status: 'DELIVERED', deliveredAt: NOW } });
+      await processor.process({ name: SETTLE_ORDER_JOB, data: { orderId: cash.id } } as Job<SettleOrderJob>);
+    };
     const rider = await createRider(t, basics, { online: false });
-    const cash = await placeOrder(http, s);
-    await t.prisma.deliveryJob.create({ data: { orderId: cash.id, jobType: 'DROP', status: 'COMPLETED', riderId: rider.rider.id, scheduledStart: NOW, scheduledEnd: new Date(NOW.getTime() + 3_600_000), completedAt: NOW, riderFee: '50.00' } });
-    await t.prisma.order.update({ where: { id: cash.id }, data: { status: 'DELIVERED', deliveredAt: NOW } });
-    await processor.process({ name: SETTLE_ORDER_JOB, data: { orderId: cash.id } } as Job<SettleOrderJob>);
+    await deliverCash(rider);
+    await adminCall('post', '/admin/cod/settlements', { riderId: rider.rider.id, reference: 'DEP-1024' }).expect(201).then((r) => expectMatchesDocs('POST /admin/cod/settlements', r.body));
+    // a second rider whose cash has not been handed in yet
+    const holder = await createRider(t, basics, { online: false });
+    await deliverCash(holder);
 
     // — what the vendor sees of their money —
     await http.get('/api/v1/vendor/earnings?range=day').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/earnings', r.body));
@@ -337,11 +344,10 @@ describe('Swagger examples match the real API (e2e)', () => {
     await adminCall('patch', `/admin/commission-rules/${rule.body.data.id}`, { ratePct: 12.5 }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/commission-rules/{id}', r.body));
     await adminCall('delete', `/admin/commission-rules/${rule.body.data.id}`).expect(204);
 
-    // — the rider's cash, and the admin settling it —
-    await http.get('/api/v1/rider/cod').set(rider.auth).expect(200).then((r) => expectMatchesDocs('GET /rider/cod', r.body));
+    // — the cash still in the second rider's hand —
+    await http.get('/api/v1/rider/cod').set(holder.auth).expect(200).then((r) => expectMatchesDocs('GET /rider/cod', r.body));
     await adminCall('get', '/admin/cod/balances').expect(200).then((r) => expectMatchesDocs('GET /admin/cod/balances', r.body));
-    await adminCall('get', `/admin/cod/collections?riderId=${rider.rider.id}&settled=false`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/collections', r.body));
-    await adminCall('post', '/admin/cod/settlements', { riderId: rider.rider.id, reference: 'DEP-1024' }).expect(201).then((r) => expectMatchesDocs('POST /admin/cod/settlements', r.body));
+    await adminCall('get', `/admin/cod/collections?riderId=${holder.rider.id}&settled=false`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/collections', r.body));
   });
 
   it('health checks', async () => {

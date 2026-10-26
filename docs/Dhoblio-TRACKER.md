@@ -274,9 +274,9 @@
 - [x] **BE-6.6** Webhook controller: raw-body signature verification, idempotent upsert by `(gateway, gatewayRef)`, async processing (TRD §13.2)
 - [x] **BE-6.7** Payment timeout + reconciliation cron (poll pending > 10 min); auto-cancel unpaid orders
 - [x] **BE-6.8** Refunds on cancel/reject/dispute; refund ledger entries
-- [x] **BE-6.9** COD: `CodCollection` on delivery, rider COD balance, admin records `CodSettlement` (SRS §8.2)
+- [x] **BE-6.9** COD: `CodCollection` on delivery, rider COD balance, admin records `CodSettlement` (SRS §8.2) (the deposit also credits the vendors of those orders)
 - [x] **BE-6.10** Commission rules CRUD (global/category/vendor) + effective-dating; admin endpoints (FR-A3)
-- [x] **BE-6.11** Finance queue: on `DELIVERED` post `ORDER_EARNING` / `COMMISSION` ledger entries idempotently (per agreed COD rule, TRD §20 #6)
+- [x] **BE-6.11** Finance queue: on `DELIVERED` post `ORDER_EARNING` / `COMMISSION` ledger entries idempotently (per agreed COD rule, TRD §20 #6) (online-paid orders are credited at delivery; cash orders when the rider's deposit is recorded)
 - [x] **BE-6.12** Vendor earnings API: day/week/month totals, commission deducted, per-order lines (FR-V8)
 - [x] **BE-6.13** Payout request (balance check under row lock), admin approve/pay/reject, ledger `PAYOUT` entry (FR-V9)
 - [x] **BE-6.14** Tests: duplicate webhooks, out-of-order webhooks, partial failures, ledger sums equal order math, payout can't exceed balance

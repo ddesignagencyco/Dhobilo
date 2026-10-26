@@ -1,8 +1,10 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import request from 'supertest';
 import { Clock } from '../src/common/time/clock';
+import { CodService } from '../src/modules/finance/cod.service';
 import { LedgerService } from '../src/modules/finance/ledger.service';
 import { Basics, NOW, TestApp, clearRateLimits, createAdmin, createTestApp, fixedClock, prepareReferenceData } from './helpers';
+import { createRider } from './delivery-helpers';
 import { OrderScenario, orderScenario, placeOrder } from './order-helpers';
 
 const IBAN = 'PK36SCBL0000001123456702';
@@ -10,9 +12,9 @@ const money = (v: unknown) => Number(v).toFixed(2);
 const total = <T>(xs: T[], f: (x: T) => unknown) => xs.reduce((n, x) => n + Number(f(x)), 0);
 
 /**
- * QA-6.2: the books must balance. Orders of different sizes are delivered, credited, one is refunded, a payout is
- * paid out, one order is cancelled and one is delivered but not yet credited; then every number is cross-checked
- * against the orders themselves, to the rupee.
+ * QA-6.2: the books must balance. Orders of different sizes are delivered; prepaid ones are credited at once, cash
+ * ones when their rider's deposit is recorded (one rider has not deposited yet); one order is refunded, a payout is
+ * paid out and one order is cancelled. Then every number is cross-checked against the orders themselves, to the rupee.
  */
 describe('Ledger reconciliation (e2e)', () => {
   let t: TestApp;
@@ -21,6 +23,7 @@ describe('Ledger reconciliation (e2e)', () => {
   let clock: ReturnType<typeof fixedClock>;
   let admin: Awaited<ReturnType<typeof createAdmin>>;
   let ledger: LedgerService;
+  let cod: CodService;
 
   beforeAll(async () => {
     clock = fixedClock();
@@ -29,6 +32,7 @@ describe('Ledger reconciliation (e2e)', () => {
     basics = await prepareReferenceData(t);
     admin = await createAdmin(t);
     ledger = t.app.get(LedgerService);
+    cod = t.app.get(CodService);
   });
   beforeEach(async () => {
     clock.set(NOW);
@@ -54,9 +58,24 @@ describe('Ledger reconciliation (e2e)', () => {
     for (const k of [...kinds, ...kinds]) placed.push(await placeOrder(http, s, k));
     const [a, b, c, d, e, f] = placed;
 
-    for (const o of [a, b, c, d, e, f]) await deliver(o.id);
-    for (const o of [a, b, c, d, e]) expect(await ledger.postOrderEarnings(o.id)).toBe(true); // f is delivered but not credited yet
-    for (const o of [a, b, c, d, e]) expect(await ledger.postOrderEarnings(o.id)).toBe(false); // posting is idempotent
+    // a, b, c were paid online: credited as soon as they are delivered, and posting twice changes nothing
+    for (const o of [a, b, c]) {
+      await t.prisma.order.update({ where: { id: o.id }, data: { paymentMethod: PaymentMethod.CARD, paymentStatus: PaymentStatus.PAID } });
+      await deliver(o.id);
+      expect(await ledger.postOrderEarnings(o.id)).toBe(true);
+      expect(await ledger.postOrderEarnings(o.id)).toBe(false);
+    }
+    // d, e are cash orders from rider one, f from rider two. Delivering them only puts the cash in the rider's hand.
+    const riderOne = await createRider(t, basics, { online: false });
+    const riderTwo = await createRider(t, basics, { online: false });
+    for (const [o, r] of [[d, riderOne], [e, riderOne], [f, riderTwo]] as const) {
+      await t.prisma.deliveryJob.create({ data: { orderId: o.id, jobType: 'DROP', status: 'COMPLETED', riderId: r.rider.id, scheduledStart: NOW, scheduledEnd: new Date(NOW.getTime() + 3_600_000), completedAt: NOW, riderFee: '50.00' } });
+      await deliver(o.id);
+      expect(await cod.recordForOrder(o.id)).toBe(true);
+      expect(await ledger.postOrderEarnings(o.id)).toBe(false); // the cash has not reached us
+    }
+    // rider one hands the cash in: d and e are credited, f (rider two's cash) is not
+    await http.post('/api/v1/admin/cod/settlements').set(admin.auth).send({ riderId: riderOne.rider.id, reference: 'DEP-1' }).expect(201);
 
     const refunded = c;
     expect(await ledger.refundOrderEarnings(refunded.id)).toBe(true);
@@ -99,7 +118,8 @@ describe('Ledger reconciliation (e2e)', () => {
     expect(money(balance.total.toFixed(2))).toBe(money(expected));
     expect(money(balance.available.toFixed(2))).toBe(money(expected)); // nothing is waiting to be paid
     const report = await http.get('/api/v1/vendor/earnings?range=day').set(s.vendor.owner.auth).expect(200);
-    expect(report.body.data.balance).toEqual({ total: money(expected), pending: '0.00', available: money(expected) });
+    // f is delivered and earned, but its cash is still with rider two, so it is shown separately and not in the balance
+    expect(report.body.data.balance).toEqual({ total: money(expected), pending: '0.00', available: money(expected), awaitingCash: { orders: 1, amount: money(byId.get(f.id)!.vendorEarning) } });
     expect(money(Number(report.body.data.totals.gross) - Number(report.body.data.totals.commission))).toBe(report.body.data.totals.net);
 
     // orders that were not credited have no entries at all
@@ -115,8 +135,9 @@ describe('Ledger reconciliation (e2e)', () => {
     it('refuses to edit or delete a ledger entry, and to post an order twice', async () => {
       const s = await orderScenario(t, basics);
       const order = await placeOrder(http, s);
+      await t.prisma.order.update({ where: { id: order.id }, data: { paymentMethod: PaymentMethod.CARD, paymentStatus: PaymentStatus.PAID } }); // prepaid: credited at delivery
       await deliver(order.id);
-      await ledger.postOrderEarnings(order.id);
+      expect(await ledger.postOrderEarnings(order.id)).toBe(true);
       const entry = await t.prisma.ledgerEntry.findFirstOrThrow({ where: { orderId: order.id, type: 'ORDER_EARNING' } });
 
       await expect(t.prisma.ledgerEntry.update({ where: { id: entry.id }, data: { amount: 999 } })).rejects.toThrow();

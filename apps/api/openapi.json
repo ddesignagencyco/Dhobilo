@@ -6826,6 +6826,7 @@
                     "riderId": "5a9d7e12-2b34-4c56-8d78-9e0f1a2b3c4d",
                     "amount": "8640.00",
                     "collections": 6,
+                    "ordersCredited": 6,
                     "reference": "DEP-20261025-04",
                     "settledAt": "2026-10-25T12:00:00.000Z"
                   }
@@ -6939,7 +6940,7 @@
           "admin-finance"
         ],
         "summary": "Settle a rider’s cash",
-        "description": "**Who can use this:** signed-in admins.\n\nTakes every unsettled collection for the rider and links it to one settlement batch. Fails when there is nothing to settle."
+        "description": "**Who can use this:** signed-in admins.\n\nThe rider hands in cash. Takes every unsettled collection for the rider and links it to one settlement batch. **In the same step each of those orders’ vendors is credited** (earning and commission posted to their ledger) and the order becomes fully PAID: a cash order earns the vendor nothing until its cash reaches us. Fails when there is nothing to settle."
       }
     },
     "/api/v1/orders": {
@@ -9861,7 +9862,11 @@
                     "balance": {
                       "total": "18240.00",
                       "pending": "2500.00",
-                      "available": "15740.00"
+                      "available": "15740.00",
+                      "awaitingCash": {
+                        "orders": 2,
+                        "amount": "612.00"
+                      }
                     },
                     "orders": [
                       {
@@ -9944,7 +9949,7 @@
           "vendor-finance"
         ],
         "summary": "My earnings and balance",
-        "description": "**Who can use this:** signed-in vendor owners or vendor staff.\n\nDelivered orders only, counted on the Pakistan business day. `range=day` is today, `week` is the last 7 days including today (default), and `month` is the current calendar month. `balance` comes from the ledger: `available` is what you can request after pending payouts."
+        "description": "**Who can use this:** signed-in vendor owners or vendor staff.\n\nDelivered orders only, counted on the Pakistan business day. `range=day` is today, `week` is the last 7 days including today (default), and `month` is the current calendar month. `balance` comes from the ledger: `awaitingCash` is the share of delivered **cash** orders whose money the rider has not yet handed in (it becomes part of `total` the moment the admin records the deposit); `available` is what you can request after pending payouts."
       }
     },
     "/api/v1/vendor/ledger": {
