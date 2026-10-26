@@ -8,7 +8,29 @@ import type { CheckoutInput, CheckoutResult, GatewayStatus, PaymentGateway, Refu
 import { isMockMode, mockCheckout } from './mock-checkout';
 import { hmacHex, parseRawBody, signaturesMatch, statusFrom, unauthenticated, verifyMockWebhook } from './gateway-support';
 
-/** JazzCash hosted checkout (TRD §13). Card/wallet credentials never reach our servers. */
+/**
+ * JazzCash's "secure hash" (from their published hosted-checkout integration guide): the `pp_` / `ppmpf_` fields sorted
+ * by name, the non-empty values joined with `&` behind the integrity salt, then HMAC-SHA256 keyed with that salt, in
+ * upper-case hex. The same rule signs what we send and what they send back.
+ */
+export function jazzCashHash(fields: Record<string, string>, integritySalt: string): string {
+  const values = Object.keys(fields)
+    .filter((k) => k !== 'pp_SecureHash' && /^(pp_|ppmpf_)/.test(k) && fields[k] !== '' && fields[k] != null)
+    .sort()
+    .map((k) => fields[k]);
+  return hmacHex(integritySalt, [integritySalt, ...values].join('&')).toUpperCase();
+}
+
+/** The response code JazzCash uses for a successful payment. Every other code is a failure. */
+export const JAZZCASH_SUCCESS_CODE = '000';
+
+/**
+ * JazzCash hosted checkout (TRD §13). Card/wallet credentials never reach our servers.
+ *
+ * Signing follows JazzCash's published rule (see jazzCashHash) and is unit-tested, but this adapter has not been run
+ * against the JazzCash sandbox, and the status-inquiry and refund endpoints are assumptions: confirm them with
+ * JazzCash before going live.
+ */
 @Injectable()
 export class JazzCashGateway implements PaymentGateway {
   readonly code = 'jazzcash' as const;
@@ -50,9 +72,10 @@ export class JazzCashGateway implements PaymentGateway {
     const body = parseRawBody(rawBody, headers['content-type']);
     const given = String(body.pp_SecureHash ?? '');
     const expected = this.sign(Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])));
-    if (!given || !signaturesMatch(expected, given)) throw unauthenticated();
-    const status = statusFrom(body.pp_ResponseCode);
-    if (!status || typeof body.pp_TxnRefNo !== 'string') throw unauthenticated();
+    if (!given || !signaturesMatch(expected, given.toUpperCase())) throw unauthenticated();
+    // A signed notification is believed either way: '000' is a payment, any other code is a decline or error.
+    if (typeof body.pp_TxnRefNo !== 'string' || body.pp_ResponseCode === undefined) throw unauthenticated();
+    const status = String(body.pp_ResponseCode) === JAZZCASH_SUCCESS_CODE ? 'PAID' : 'FAILED';
     return {
       gateway: this.code,
       gatewayRef: body.pp_TxnRefNo,
@@ -92,12 +115,7 @@ export class JazzCashGateway implements PaymentGateway {
 
   private sign(fields: Record<string, string>): string {
     const { salt } = this.required();
-    const values = Object.keys(fields)
-      .filter((k) => k !== 'pp_SecureHash' && fields[k] !== '')
-      .sort()
-      .map((k) => `${k}=${fields[k]}`)
-      .join('&');
-    return hmacHex(salt, values);
+    return jazzCashHash(fields, salt);
   }
 
   private async post(url: string, body: Record<string, string>): Promise<Record<string, unknown>> {
