@@ -2,10 +2,11 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { LedgerType, PayoutStatus, Prisma } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
-import { fmt, money, parseMoney, sum } from '../../common/money/money';
+import { fmt, money, parseMoney } from '../../common/money/money';
 import { decodeCursor, encodeCursor } from '../../common/pagination/cursor';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { LedgerService } from './ledger.service';
 import { ListPayoutsQueryDto, PayPayoutDto, RejectPayoutDto, RequestPayoutDto } from './dto/finance.dto';
 
 const PENDING = [PayoutStatus.REQUESTED, PayoutStatus.APPROVED];
@@ -17,6 +18,7 @@ export class PayoutsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly clock: Clock,
+    private readonly ledger: LedgerService,
   ) {}
 
   /** Vendor asks for money; the quote is re-checked under a lock so two requests cannot both spend the same balance. */
@@ -113,12 +115,9 @@ export class PayoutsService {
     return this.view(payout);
   }
 
+  /** What the vendor can still ask for. The same figure the earnings screen shows: there is one definition, in LedgerService. */
   private async available(tx: Prisma.TransactionClient, vendorId: string) {
-    const [entries, payouts] = await Promise.all([
-      tx.ledgerEntry.findMany({ where: { vendorId }, select: { amount: true } }),
-      tx.payout.findMany({ where: { vendorId, status: { in: PENDING } }, select: { amount: true } }),
-    ]);
-    return sum(entries.map((e) => money(e.amount))).minus(sum(payouts.map((p) => money(p.amount))));
+    return (await this.ledger.balance(vendorId, tx)).available;
   }
 
   private view(p: { id: string; amount: Prisma.Decimal; method: string; accountRef: string; status: PayoutStatus; requestedAt: Date; processedAt: Date | null; processedBy: string | null; txnRef: string | null; note: string | null }) {

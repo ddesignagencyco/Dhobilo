@@ -5,6 +5,13 @@ import { PrismaService } from '../../infra/prisma/prisma.service';
 
 const PAID_OUT = [PayoutStatus.REQUESTED, PayoutStatus.APPROVED];
 
+/**
+ * Ledger entries that move the vendor's money. COMMISSION rows are a memo of what the platform kept: the vendor's
+ * earning (`vendorEarning`) is already net of commission, so counting both would take the commission out twice.
+ * Order value = ORDER_EARNING + COMMISSION; the vendor's balance = ORDER_EARNING + REFUND + PAYOUT + ADJUSTMENT.
+ */
+const MEMO_TYPES = [LedgerType.COMMISSION];
+
 @Injectable()
 export class LedgerService {
   constructor(private readonly prisma: PrismaService) {}
@@ -36,7 +43,7 @@ export class LedgerService {
     });
   }
 
-  /** Reverses the net amount a delivered order put on the vendor's ledger (earning less commission). */
+  /** Takes back the vendor's earning for a delivered order that is refunded (the commission memo row is not part of it). */
   async refundOrderEarnings(orderId: string, note = 'Order refunded'): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
       await this.lock(tx, `ledger:refund:${orderId}`);
@@ -48,7 +55,7 @@ export class LedgerService {
       });
       const earning = entries.find((e) => e.type === LedgerType.ORDER_EARNING);
       if (!entries.length || !earning) return false;
-      const net = sum(entries.map((e) => money(e.amount)));
+      const net = money(earning.amount);
       if (net.isZero()) return false;
       await tx.ledgerEntry.create({
         data: { vendorId: earning.vendorId, orderId, type: LedgerType.REFUND, amount: net.neg(), note },
@@ -72,11 +79,11 @@ export class LedgerService {
     });
   }
 
-  /** Signed ledger total, pending/approved payouts, and what the vendor can still ask for. */
-  async balance(vendorId: string): Promise<{ total: Money; pending: Money; available: Money }> {
+  /** What the vendor is owed (signed ledger total without memo rows), payouts waiting to be paid, and what they can still ask for. */
+  async balance(vendorId: string, db: Prisma.TransactionClient | PrismaService = this.prisma): Promise<{ total: Money; pending: Money; available: Money }> {
     const [entries, payouts] = await Promise.all([
-      this.prisma.ledgerEntry.findMany({ where: { vendorId }, select: { amount: true } }),
-      this.prisma.payout.findMany({ where: { vendorId, status: { in: PAID_OUT } }, select: { amount: true } }),
+      db.ledgerEntry.findMany({ where: { vendorId, type: { notIn: MEMO_TYPES } }, select: { amount: true } }),
+      db.payout.findMany({ where: { vendorId, status: { in: PAID_OUT } }, select: { amount: true } }),
     ]);
     const total = sum(entries.map((e) => money(e.amount)));
     const pending = sum(payouts.map((p) => money(p.amount)));
