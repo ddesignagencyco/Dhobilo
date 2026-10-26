@@ -1,5 +1,11 @@
 import * as argon2 from 'argon2';
+import { createHmac } from 'node:crypto';
+import type { Job } from 'bullmq';
 import request from 'supertest';
+import { CodService } from '../src/modules/finance/cod.service';
+import { SETTLE_ORDER_JOB, SettleOrderJob } from '../src/modules/finance/finance.jobs';
+import { FinanceProcessor } from '../src/modules/finance/finance.processor';
+import { LedgerService } from '../src/modules/finance/ledger.service';
 import { OPERATION_DOCS } from '../src/docs';
 import { Clock } from '../src/common/time/clock';
 import { Role } from '@prisma/client';
@@ -286,6 +292,56 @@ describe('Swagger examples match the real API (e2e)', () => {
     await http.post('/api/v1/webhooks/courier/mock').set('x-courier-signature', mockWebhookSignature('test-courier-secret', event)).send(event).expect(200).then((r) => expectMatchesDocs('POST /webhooks/courier/{code}', r.body));
     await adminCall('patch', `/admin/cities/${basics.cityId}`, { courierPartnerId: null }).expect(200);
     await t.prisma.courierPartner.update({ where: { id: partner.id }, data: { isActive: false } });
+  });
+
+  it('money: online payment, ledger, earnings, payouts, commission and cash on delivery', async () => {
+    const ledger = t.app.get(LedgerService);
+    const processor = new FinanceProcessor(ledger, t.app.get(CodService));
+    const adminCall = (method: 'post' | 'get' | 'patch' | 'delete', path: string, body: object = {}) => http[method]('/api/v1' + path).set(admin.auth).send(method === 'get' || method === 'delete' ? undefined : body);
+    const s = await orderScenario(t, basics);
+    const owner = s.vendor.owner.auth;
+
+    // — an online payment: start it, then the gateway tells us it worked —
+    const online = await placeOrder(http, s, { paymentMethod: 'CARD' });
+    const checkout = await http.post('/api/v1/payments/initiate').set(s.customer.auth).send({ orderId: online.id }).expect(200);
+    expectMatchesDocs('POST /payments/initiate', checkout.body);
+    const raw = JSON.stringify({ gatewayRef: checkout.body.data.gatewayRef, status: 'PAID', amount: '350.00', eventId: 'evt-docs-1' });
+    const signature = createHmac('sha256', process.env.PAYMENT_MOCK_WEBHOOK_SECRET!).update(raw).digest('hex');
+    await http.post('/api/v1/webhooks/card').set('content-type', 'application/json').set('x-payment-signature', signature).send(raw).expect(200).then((r) => expectMatchesDocs('POST /webhooks/{gateway}', r.body));
+
+    // — a cash order delivered by a rider, credited to the vendor by the finance worker —
+    const rider = await createRider(t, basics, { online: false });
+    const cash = await placeOrder(http, s);
+    await t.prisma.deliveryJob.create({ data: { orderId: cash.id, jobType: 'DROP', status: 'COMPLETED', riderId: rider.rider.id, scheduledStart: NOW, scheduledEnd: new Date(NOW.getTime() + 3_600_000), completedAt: NOW, riderFee: '50.00' } });
+    await t.prisma.order.update({ where: { id: cash.id }, data: { status: 'DELIVERED', deliveredAt: NOW } });
+    await processor.process({ name: SETTLE_ORDER_JOB, data: { orderId: cash.id } } as Job<SettleOrderJob>);
+
+    // — what the vendor sees of their money —
+    await http.get('/api/v1/vendor/earnings?range=day').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/earnings', r.body));
+    await http.get('/api/v1/vendor/ledger').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/ledger', r.body));
+    const payout = await http.post('/api/v1/vendor/payouts').set(owner).send({ amount: '100.00', method: 'BANK', accountRef: 'PK36SCBL0000001123456702', note: 'Weekly payout' }).expect(201);
+    expectMatchesDocs('POST /vendor/payouts', payout.body);
+    await http.get('/api/v1/vendor/payouts').set(owner).expect(200).then((r) => expectMatchesDocs('GET /vendor/payouts', r.body));
+
+    // — the admin works the payout queue —
+    await adminCall('get', '/admin/payouts?status=REQUESTED').expect(200).then((r) => expectMatchesDocs('GET /admin/payouts', r.body));
+    await adminCall('post', `/admin/payouts/${payout.body.data.id}/approve`).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/approve', r.body));
+    await adminCall('post', `/admin/payouts/${payout.body.data.id}/pay`, { txnRef: 'BANK-889122' }).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/pay', r.body));
+    const second = await http.post('/api/v1/vendor/payouts').set(owner).send({ amount: '20.00', method: 'WALLET', accountRef: '03001234567' }).expect(201);
+    await adminCall('post', `/admin/payouts/${second.body.data.id}/reject`, { reason: 'Wallet details need updating' }).expect(200).then((r) => expectMatchesDocs('POST /admin/payouts/{id}/reject', r.body));
+
+    // — commission rules —
+    const rule = await adminCall('post', '/admin/commission-rules', { scope: 'VENDOR', vendorId: s.vendor.vendor.id, ratePct: 10 }).expect(201);
+    expectMatchesDocs('POST /admin/commission-rules', rule.body);
+    await adminCall('get', `/admin/commission-rules?vendorId=${s.vendor.vendor.id}`).expect(200).then((r) => expectMatchesDocs('GET /admin/commission-rules', r.body));
+    await adminCall('patch', `/admin/commission-rules/${rule.body.data.id}`, { ratePct: 12.5 }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/commission-rules/{id}', r.body));
+    await adminCall('delete', `/admin/commission-rules/${rule.body.data.id}`).expect(204);
+
+    // — the rider's cash, and the admin settling it —
+    await http.get('/api/v1/rider/cod').set(rider.auth).expect(200).then((r) => expectMatchesDocs('GET /rider/cod', r.body));
+    await adminCall('get', '/admin/cod/balances').expect(200).then((r) => expectMatchesDocs('GET /admin/cod/balances', r.body));
+    await adminCall('get', `/admin/cod/collections?riderId=${rider.rider.id}&settled=false`).expect(200).then((r) => expectMatchesDocs('GET /admin/cod/collections', r.body));
+    await adminCall('post', '/admin/cod/settlements', { riderId: rider.rider.id, reference: 'DEP-1024' }).expect(201).then((r) => expectMatchesDocs('POST /admin/cod/settlements', r.body));
   });
 
   it('health checks', async () => {

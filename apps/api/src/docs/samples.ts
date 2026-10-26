@@ -198,6 +198,7 @@ export const SAMPLE_BOARD_ROW = {
   total: '510.00',
   vendorEarning: '306.00',
   paymentMethod: 'COD',
+  paymentStatus: 'COD_PENDING',
   customerName: 'Ayesha Khan',
   itemCount: 1,
 };
