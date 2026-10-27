@@ -1,10 +1,62 @@
 import { ID, PHONE, SAMPLE_ADMIN_ORDER } from '../samples';
 import type { OperationDocs } from '../types';
-import { ok, page, PAGING_PARAMS } from './helpers';
+import { empty, ok, page, PAGING_PARAMS } from './helpers';
 
 const ADMIN = ['ADMIN'] as const;
 
+const ADMIN_SAMPLE = {
+  id: ID.admin,
+  email: 'finance@dhoblio.local',
+  name: 'Finance Admin',
+  adminRole: 'FINANCE',
+  status: 'ACTIVE',
+  lastLoginAt: '2026-10-26T09:30:00.000Z',
+  createdAt: '2026-10-20T08:00:00.000Z',
+};
+
 export const adminDocs: OperationDocs = {
+  'GET /admin/admins': {
+    summary: 'List admins',
+    tag: 'admin-users',
+    who: [...ADMIN],
+    description: '**Super admin only.** Every admin account with its sub-role (SUPER_ADMIN, OPERATIONS, FINANCE or SUPPORT) and status, oldest first.',
+    response: { example: ok([ADMIN_SAMPLE]) },
+  },
+  'POST /admin/admins': {
+    summary: 'Create an admin',
+    tag: 'admin-users',
+    who: [...ADMIN],
+    description:
+      '**Super admin only.** The new admin signs in with this email and password and can use only the part of the panel: OPERATIONS (vendors, riders, delivery, cities, promos, announcements, orders, complaints), FINANCE (finance, reports, analytics), SUPPORT (orders, complaints). Anything not listed for a role, such as the audit log, queues and managing admins, is super-admin only.',
+    requests: { default: { summary: 'A finance admin', value: { email: 'finance@dhoblio.local', name: 'Finance Admin', password: 'a-long-first-password', adminRole: 'FINANCE' } } },
+    response: { status: 201, example: ok(ADMIN_SAMPLE) },
+    errors: [{ status: 409, code: 'CONFLICT', when: 'An account with this email already exists.' }],
+  },
+  'PATCH /admin/admins/{id}': {
+    summary: 'Change or deactivate an admin',
+    tag: 'admin-users',
+    who: [...ADMIN],
+    description:
+      '**Super admin only.** Change the sub-role (applies on their next request) or set the status to DEACTIVATED (signs them out everywhere) or ACTIVE. You cannot change yourself, and the last active super admin cannot be demoted or deactivated.',
+    params: { id: { example: ID.admin, description: 'Admin id' } },
+    requests: { default: { summary: 'Move to support', value: { adminRole: 'SUPPORT' } }, off: { summary: 'Deactivate', value: { status: 'DEACTIVATED' } } },
+    response: { example: ok({ ...ADMIN_SAMPLE, adminRole: 'SUPPORT' }) },
+    errors: [
+      { status: 404, code: 'NOT_FOUND', when: 'Admin not found.' },
+      { status: 422, code: 'CANNOT_CHANGE_SELF', when: 'You tried to change your own role or status.' },
+      { status: 422, code: 'LAST_SUPER_ADMIN', when: 'This would leave no active super admin.' },
+    ],
+  },
+  'POST /admin/me/password': {
+    summary: 'Change my password',
+    tag: 'admin-users',
+    who: [...ADMIN],
+    description: 'Any admin, any role. Needs the current password (at least 12 characters for the new one). Signs you out of every device, so sign in again afterwards.',
+    requests: { default: { summary: 'New password', value: { currentPassword: 'ChangeMe!12345', newPassword: 'a-much-longer-password' } } },
+    response: { description: 'Changed', example: empty },
+    errors: [{ status: 401, code: 'INVALID_CREDENTIALS', when: 'The current password is wrong.' }],
+  },
+
   'GET /admin/vendors': {
     summary: 'Vendor review queue',
     tag: 'admin-vendors',

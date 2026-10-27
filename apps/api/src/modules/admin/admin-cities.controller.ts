@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateCityDto } from '../cities/dto/cities.dto';
 import { CitiesService } from '../cities/cities.service';
@@ -10,6 +11,7 @@ import { CitiesService } from '../cities/cities.service';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('cities')
 @Controller('admin/cities')
 export class AdminCitiesController {
   constructor(private readonly cities: CitiesService) {}

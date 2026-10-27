@@ -5,6 +5,7 @@ import type { Response } from 'express';
 import type { AuthUser } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged, RawResponse } from '../../common/interceptors/response-envelope.interceptor';
 import { Audit } from '../audit/audit.decorator';
@@ -14,6 +15,7 @@ import { ReportsService } from './reports.service';
 @ApiTags('admin-reports')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('reports')
 @Controller('admin/reports')
 export class AdminReportsController {
   constructor(private readonly reports: ReportsService) {}

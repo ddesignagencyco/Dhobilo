@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { VendorReviewService } from '../vendors/vendor-review.service';
@@ -11,6 +12,7 @@ import { ListVendorsQueryDto, ReasonDto } from './dto/admin-vendors.dto';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('vendors')
 @Controller('admin/vendors')
 export class AdminVendorsController {
   constructor(private readonly review: VendorReviewService) {}

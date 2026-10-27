@@ -16,6 +16,14 @@ enum Role {
   ADMIN
 }
 
+// Which part of the admin panel an ADMIN account may use (Phase 9b). Only set for role ADMIN.
+enum AdminRole {
+  SUPER_ADMIN
+  OPERATIONS
+  FINANCE
+  SUPPORT
+}
+
 enum UserStatus {
   ACTIVE
   SUSPENDED
@@ -243,6 +251,8 @@ model User {
   passwordHash      String? // admin accounts only
   name              String?
   role              Role
+  // Set exactly when role is ADMIN (database check): what the admin may do.
+  adminRole         AdminRole?
   status            UserStatus @default(ACTIVE)
   locale            Locale     @default(EN)
   referralCode      String?    @unique

@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { Audit } from '../audit/audit.decorator';
@@ -24,6 +25,7 @@ import { PayoutsService } from '../finance/payouts.service';
 @ApiTags('admin-finance')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('finance')
 @Controller('admin')
 export class AdminFinanceController {
   constructor(

@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { AdminCancelOrderDto, AdminOrdersQueryDto } from '../orders/dto/vendor-orders.dto';
@@ -11,6 +12,7 @@ import { AdminOrdersService } from '../orders/admin-orders.service';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('orders')
 @Controller('admin/orders')
 export class AdminOrdersController {
   constructor(private readonly orders: AdminOrdersService) {}

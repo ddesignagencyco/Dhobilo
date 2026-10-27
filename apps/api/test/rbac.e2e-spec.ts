@@ -113,7 +113,7 @@ describe('RBAC (e2e)', () => {
   });
 
   it('exposes AuthUser typing for handlers (compile-time check)', () => {
-    const u: AuthUser = { id: 'x', role: Role.ADMIN, sessionId: 's' };
+    const u: AuthUser = { id: 'x', role: Role.ADMIN, adminRole: 'SUPER_ADMIN', sessionId: 's' };
     expect(u.role).toBe(Role.ADMIN);
   });
 });

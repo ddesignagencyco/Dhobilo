@@ -276,7 +276,7 @@ describe('Auth (e2e)', () => {
         data: {
           phone: `+92000${Math.floor(1e6 + Math.random() * 9e6)}`,
           email,
-          role: 'ADMIN',
+          role: 'ADMIN', adminRole: 'SUPER_ADMIN',
           passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
         },
       });

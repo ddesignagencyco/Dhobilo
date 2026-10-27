@@ -443,8 +443,20 @@ describe('Swagger examples match the real API (e2e)', () => {
 
   it('admin sign-in matches its documented response', async () => {
     const email = `docs-admin-${Date.now()}@e2e.test`;
-    await t.prisma.user.create({ data: { phone: `+92000${Math.floor(1e6 + Math.random() * 9e6)}`, email, role: 'ADMIN', passwordHash: await argon2.hash('Docs-Password-1', { type: argon2.argon2id }) } });
+    await t.prisma.user.create({ data: { phone: `+92000${Math.floor(1e6 + Math.random() * 9e6)}`, email, role: 'ADMIN', adminRole: 'SUPER_ADMIN', passwordHash: await argon2.hash('Docs-Password-1', { type: argon2.argon2id }) } });
     const res = await http.post('/api/v1/auth/admin/login').send({ email, password: 'Docs-Password-1' }).expect(200);
     expectMatchesDocs('POST /auth/admin/login', res.body);
+  });
+
+  it('admin management matches its documented responses', async () => {
+    const boss = await createAdmin(t);
+    const email = `docs-fin-${Date.now()}@e2e.test`;
+    await http.get('/api/v1/admin/admins').set(boss.auth).expect(200).then((r) => expectMatchesDocs('GET /admin/admins', { data: r.body.data[0] ? [r.body.data[0]] : [] }));
+    const created = await http.post('/api/v1/admin/admins').set(boss.auth).send({ email, name: 'Finance Admin', password: 'Docs-Password-12', adminRole: 'FINANCE' }).expect(201);
+    expectMatchesDocs('POST /admin/admins', created.body);
+    await http.patch(`/api/v1/admin/admins/${created.body.data.id}`).set(boss.auth).send({ adminRole: 'SUPPORT' }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/admins/{id}', r.body));
+    const me = await createAdmin(t);
+    await t.prisma.user.update({ where: { id: me.user.id }, data: { passwordHash: await argon2.hash('Docs-Password-12', { type: argon2.argon2id }) } });
+    await http.post('/api/v1/admin/me/password').set(me.auth).send({ currentPassword: 'Docs-Password-12', newPassword: 'Docs-Password-34' }).expect(200).then((r) => expectMatchesDocs('POST /admin/me/password', r.body));
   });
 });
