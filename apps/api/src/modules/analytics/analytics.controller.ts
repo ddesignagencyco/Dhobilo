@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Queue } from 'bullmq';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { addDays } from '../../common/time/zoned';
 import { QUEUES } from '../../infra/queue/queues';
@@ -13,6 +14,7 @@ import { AnalyticsService } from './analytics.service';
 @ApiTags('admin-analytics')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('analytics')
 @Controller('admin/analytics')
 export class AdminAnalyticsController {
   constructor(

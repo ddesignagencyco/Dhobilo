@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { Audit } from '../audit/audit.decorator';
@@ -17,6 +18,7 @@ import {
 @ApiTags('admin-complaints')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('complaints')
 @Controller('admin/complaints')
 export class AdminComplaintsController {
   constructor(private readonly complaints: ComplaintsService) {}

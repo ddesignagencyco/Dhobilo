@@ -1,8 +1,9 @@
-import { Body, Controller, Param, ParseIntPipe, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateCityDto } from '../cities/dto/cities.dto';
 import { CitiesService } from '../cities/cities.service';
@@ -10,9 +11,16 @@ import { CitiesService } from '../cities/cities.service';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('cities')
 @Controller('admin/cities')
 export class AdminCitiesController {
   constructor(private readonly cities: CitiesService) {}
+
+  /** Every city with its admin settings, including the inactive ones the public list hides. */
+  @Get()
+  list() {
+    return this.cities.adminList();
+  }
 
   /** Delivery fee, active flag and order-number code for a city. */
   @Patch(':id')

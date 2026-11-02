@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
 import { ReasonDto } from '../admin/dto/admin-vendors.dto';
@@ -14,6 +15,7 @@ import { RiderReviewService } from './rider-review.service';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('delivery')
 @Controller('admin')
 export class AdminDeliveryController {
   constructor(

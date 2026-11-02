@@ -42,7 +42,7 @@ export class ReviewsService {
         select: { riderId: true },
       });
       if (!job?.riderId) {
-        throw new AppException('RIDER_REVIEW_UNAVAILABLE', 'This order was not delivered by a Dhobilo rider.', HttpStatus.UNPROCESSABLE_ENTITY);
+        throw new AppException('RIDER_REVIEW_UNAVAILABLE', 'This order was not delivered by a Dhoblio rider.', HttpStatus.UNPROCESSABLE_ENTITY);
       }
       riderId = job.riderId;
     }

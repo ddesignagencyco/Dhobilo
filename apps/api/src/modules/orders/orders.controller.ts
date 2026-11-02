@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OwnedBy } from '../../common/decorators/owned-by.decorator';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Paged, RawResponse } from '../../common/interceptors/response-envelope.interceptor';
 import { CancelOrderDto, ListOrdersQueryDto, PlaceOrderDto } from './dto/orders.dto';
@@ -83,6 +84,7 @@ export class OrdersController {
   /** Every status change with who made it. Also the polling fallback if live updates are unavailable. */
   @Get(':id/timeline')
   @Roles(...VIEWERS)
+  @AdminAreaOnly('orders')
   timeline(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.orders.timeline(user, id);
   }
@@ -97,6 +99,7 @@ export class OrdersController {
   @Sse(':id/events')
   @RawResponse()
   @Roles(...VIEWERS)
+  @AdminAreaOnly('orders')
   @UseGuards(OrderViewerGuard)
   @ApiProduces('text/event-stream')
   events(@Param('id') id: string, @Headers('last-event-id') lastEventId?: string): Observable<MessageEvent> {

@@ -52,6 +52,39 @@ export class CitiesService {
     return { id: updated.id, name: updated.name, nameUr: updated.nameUr, code: updated.code, isActive: updated.isActive, deliveryFee: fmt(money(updated.deliveryFee)), courierPartnerId: updated.courierPartnerId };
   }
 
+  /**
+   * Every city with its admin settings, active or not.
+   *
+   * The public `listActive` deliberately hides inactive cities and the operational fields. The admin
+   * panel needs both: you cannot set a delivery fee sensibly without seeing the current one, and a city
+   * that is switched off is exactly the one an admin has come to switch on.
+   */
+  adminList() {
+    return this.prisma.city
+      .findMany({
+        select: {
+          id: true,
+          name: true,
+          nameUr: true,
+          code: true,
+          isActive: true,
+          deliveryFee: true,
+          timezone: true,
+          courierPartnerId: true,
+          courierPartner: { select: { id: true, code: true, name: true, isActive: true } },
+          _count: { select: { vendors: true } },
+        },
+        orderBy: { name: 'asc' },
+      })
+      .then((cities) =>
+        cities.map((city) => ({
+          ...city,
+          // Money leaves the API as a decimal string, like everywhere else.
+          deliveryFee: fmt(money(city.deliveryFee)),
+        })),
+      );
+  }
+
   /** Active cities only: a city with isActive=false is "not available yet" for customers. */
   listActive() {
     return this.prisma.city.findMany({
