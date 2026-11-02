@@ -94,8 +94,27 @@ jobs:
       - name: E2E tests
         run: npm run test:e2e -w @dhoblio/api
 
+      - name: Build web
+        # `next build` runs TypeScript itself, so this also covers the web app's typecheck. It needs the
+        # API's openapi.json only for the committed client types, which are checked in the next step.
+        run: npm run build -w @dhoblio/web
+        env:
+          # Not contacted during a build; set so the config's zod-free fallback is never the one used.
+          API_BASE_URL: http://localhost:4000/api/v1
+
       - name: Export OpenAPI document
         run: npm run openapi -w @dhoblio/api
+
+      - name: Check the committed API client types are current
+        # The web app's typed client is generated from openapi.json and committed. If a backend change
+        # alters the contract without regenerating, this fails here rather than at runtime in the panel.
+        run: |
+          npm run api:types -w @dhoblio/web
+          if ! git diff --quiet -- apps/web/src/lib/api/schema.d.ts; then
+            echo "::error::apps/web/src/lib/api/schema.d.ts is out of date. Run: npm run api:types -w @dhoblio/web"
+            git diff --stat -- apps/web/src/lib/api/schema.d.ts
+            exit 1
+          fi
 
       - name: Upload OpenAPI document
         uses: actions/upload-artifact@v4

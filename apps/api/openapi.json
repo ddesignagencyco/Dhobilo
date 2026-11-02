@@ -251,6 +251,7 @@
                       "name": null,
                       "email": null,
                       "role": "CUSTOMER",
+                      "adminRole": null,
                       "locale": "EN",
                       "referralCode": "Q35M9QBH"
                     },
@@ -396,6 +397,7 @@
                       "name": "Ayesha Khan",
                       "email": null,
                       "role": "CUSTOMER",
+                      "adminRole": null,
                       "locale": "EN",
                       "referralCode": "Q35M9QBH"
                     },
@@ -580,6 +582,7 @@
                       "name": "Platform Admin",
                       "email": "admin@dhoblio.local",
                       "role": "ADMIN",
+                      "adminRole": "SUPER_ADMIN",
                       "locale": "EN",
                       "referralCode": null
                     },
@@ -6941,6 +6944,581 @@
         ],
         "summary": "Settle a rider’s cash",
         "description": "**Who can use this:** signed-in admins.\n\nThe rider hands in cash. Takes every unsettled collection for the rider and links it to one settlement batch. **In the same step each of those orders’ vendors is credited** (earning and commission posted to their ledger) and the order becomes fully PAID: a cash order earns the vendor nothing until its cash reaches us. Fails when there is nothing to settle."
+      }
+    },
+    "/api/v1/admin/admins": {
+      "get": {
+        "operationId": "AdminUsersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                      "email": "finance@dhoblio.local",
+                      "name": "Finance Admin",
+                      "adminRole": "FINANCE",
+                      "status": "ACTIVE",
+                      "lastLoginAt": "2026-10-26T09:30:00.000Z",
+                      "createdAt": "2026-10-20T08:00:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-users"
+        ],
+        "summary": "List admins",
+        "description": "**Who can use this:** signed-in admins.\n\n**Super admin only.** Every admin account with its sub-role (SUPER_ADMIN, OPERATIONS, FINANCE or SUPPORT) and status, oldest first."
+      },
+      "post": {
+        "operationId": "AdminUsersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "A finance admin",
+                  "value": {
+                    "email": "finance@dhoblio.local",
+                    "name": "Finance Admin",
+                    "password": "a-long-first-password",
+                    "adminRole": "FINANCE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                    "email": "finance@dhoblio.local",
+                    "name": "Finance Admin",
+                    "adminRole": "FINANCE",
+                    "status": "ACTIVE",
+                    "lastLoginAt": "2026-10-26T09:30:00.000Z",
+                    "createdAt": "2026-10-20T08:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CONFLICT": {
+                    "summary": "CONFLICT: An account with this email already exists.",
+                    "value": {
+                      "error": {
+                        "code": "CONFLICT",
+                        "message": "An account with this email already exists.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-users"
+        ],
+        "summary": "Create an admin",
+        "description": "**Who can use this:** signed-in admins.\n\n**Super admin only.** The new admin signs in with this email and password and can use only the part of the panel: OPERATIONS (vendors, riders, delivery, cities, promos, announcements, orders, complaints), FINANCE (finance, reports, analytics), SUPPORT (orders, complaints). Anything not listed for a role, such as the audit log, queues and managing admins, is super-admin only."
+      }
+    },
+    "/api/v1/admin/admins/{id}": {
+      "patch": {
+        "operationId": "AdminUsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+            "description": "Admin id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Move to support",
+                  "value": {
+                    "adminRole": "SUPPORT"
+                  }
+                },
+                "off": {
+                  "summary": "Deactivate",
+                  "value": {
+                    "status": "DEACTIVATED"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "d8f0a2b4-7c9e-4d1f-8b3a-5e7c9f1b3d53",
+                    "email": "finance@dhoblio.local",
+                    "name": "Finance Admin",
+                    "adminRole": "SUPPORT",
+                    "status": "ACTIVE",
+                    "lastLoginAt": "2026-10-26T09:30:00.000Z",
+                    "createdAt": "2026-10-20T08:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "NOT_FOUND": {
+                    "summary": "NOT_FOUND: Admin not found.",
+                    "value": {
+                      "error": {
+                        "code": "NOT_FOUND",
+                        "message": "Admin not found.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Understood, but cannot be processed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "CANNOT_CHANGE_SELF": {
+                    "summary": "CANNOT_CHANGE_SELF: You tried to change your own role or status.",
+                    "value": {
+                      "error": {
+                        "code": "CANNOT_CHANGE_SELF",
+                        "message": "You tried to change your own role or status.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "LAST_SUPER_ADMIN": {
+                    "summary": "LAST_SUPER_ADMIN: This would leave no active super admin.",
+                    "value": {
+                      "error": {
+                        "code": "LAST_SUPER_ADMIN",
+                        "message": "This would leave no active super admin.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-users"
+        ],
+        "summary": "Change or deactivate an admin",
+        "description": "**Who can use this:** signed-in admins.\n\n**Super admin only.** Change the sub-role (applies on their next request) or set the status to DEACTIVATED (signs them out everywhere) or ACTIVE. You cannot change yourself, and the last active super admin cannot be demoted or deactivated."
+      }
+    },
+    "/api/v1/admin/me/password": {
+      "post": {
+        "operationId": "AdminSelfController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeOwnPasswordDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "New password",
+                  "value": {
+                    "currentPassword": "ChangeMe!12345",
+                    "newPassword": "a-much-longer-password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_CREDENTIALS": {
+                    "summary": "INVALID_CREDENTIALS: The current password is wrong.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_CREDENTIALS",
+                        "message": "The current password is wrong.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-users"
+        ],
+        "summary": "Change my password",
+        "description": "**Who can use this:** signed-in admins.\n\nAny admin, any role. Needs the current password (at least 12 characters for the new one). Signs you out of every device, so sign in again afterwards."
       }
     },
     "/api/v1/orders": {
@@ -23021,6 +23599,10 @@
       "description": "Admin: preview an audience, send an announcement by push, SMS or email, and follow its delivery."
     },
     {
+      "name": "admin-users",
+      "description": "Admin: create admins with a sub-role (super admin, operations, finance, support), change or deactivate them, and change your own password."
+    },
+    {
       "name": "admin-queues",
       "description": "Admin: health of the background queues, and retrying jobs that failed."
     },
@@ -23154,6 +23736,18 @@
         "properties": {}
       },
       "SettleCodDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateAdminDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ChangeOwnPasswordDto": {
         "type": "object",
         "properties": {}
       },
