@@ -250,8 +250,8 @@
 - [ ] **FE-5.5** Proof capture: camera photo with compression, or OTP entry (FR-R5)
 - [ ] **FE-5.6** Rider earnings and jobs completed (FR-R6)
 - [ ] **FE-5.7** Customer app: show rider name/photo/status on tracking screen (+ rider position if enabled)
-- [x] **FE-5.8** Admin: rider approval queue, rider list, dispatch board (unassigned jobs, reassign) (FR-A2) (rider approval queue with inline approve/reject/suspend/reactivate (dispatch board still to do))
-- [ ] **FE-5.9** Admin: courier-partner toggle per city (FR-R7)
+- [x] **FE-5.8** Admin: rider approval queue, rider list, dispatch board (unassigned jobs, reassign) (FR-A2) (rider approval queue with inline approve/reject/suspend/reactivate (dispatch board still to do)) (rider approval queue plus the dispatch board with assign, unassign, mark-failed and redispatch)
+- [x] **FE-5.9** Admin: courier-partner toggle per city (FR-R7) (courier partner per city, set from the city dialog (null hands the city back to our own riders))
 
 ### QA
 - [ ] **QA-5.1** Playwright: full order from placement → pickup → process → drop with proof
@@ -289,8 +289,8 @@
 - [ ] **FE-6.4** Vendor earnings dashboard: period switcher, totals, commission, per-order table (FR-V8)
 - [ ] **FE-6.5** Vendor payout request (bank IBAN / wallet), history, status (FR-V9)
 - [ ] **FE-6.6** Rider COD screen: cash to deposit, history
-- [ ] **FE-6.7** Admin: commission configuration UI with effective dates (FR-A3)
-- [ ] **FE-6.8** Admin: payments list, payout approval queue, COD settlement recording, refund action
+- [x] **FE-6.7** Admin: commission configuration UI with effective dates (FR-A3) (commission rules with scope, effective dates and the vendor-beats-category-beats-global precedence stated on screen)
+- [x] **FE-6.8** Admin: payments list, payout approval queue, COD settlement recording, refund action (payout queue (approve/reject/pay with a transaction reference), cash-collection balances and settlement recording)
 
 ### QA
 - [ ] **QA-6.1** Gateway sandbox E2E per method (success, fail, timeout, abandon)
@@ -319,10 +319,10 @@
 - [ ] **FE-7.2** Ratings display on vendor cards/detail; reviews list
 - [ ] **FE-7.3** Complaint/redo form on order detail with photo upload; thread view (FR-C13)
 - [ ] **FE-7.4** Vendor complaint inbox + reply (FR-V10)
-- [ ] **FE-7.5** Admin dispute console: complaint queue, order context, decision actions (FR-A5)
+- [x] **FE-7.5** Admin dispute console: complaint queue, order context, decision actions (FR-A5) (dispute console: queue, order context, thread, assign-to-me and refund/redo/reject)
 - [ ] **FE-7.6** Promo code field in cart/checkout with live validation and savings display (FR-C14)
 - [ ] **FE-7.7** Referral screen: share code via WhatsApp deep link, status of rewards (FR-C14)
-- [ ] **FE-7.8** Admin promo management UI (FR-A6)
+- [x] **FE-7.8** Admin promo management UI (FR-A6) (admin promo management with create, edit, enable/disable and delete)
 
 ### QA
 - [ ] **QA-7.1** Playwright: deliver → review → complaint → vendor response → admin resolution
@@ -346,10 +346,10 @@
 - [x] **BE-8.7** Tests: report totals match source tables; announcement batching respects provider limits (totals checked against the tables; 100,000-row CSV and XLSX; stagger and retry behaviour)
 
 ### FE
-- [ ] **FE-8.1** Admin dashboard: KPI cards + charts (orders, revenue, active users, top vendors), city/date filters (FR-A4)
-- [ ] **FE-8.2** Reports page: choose report + range, request, download when ready (FR-A8)
-- [ ] **FE-8.3** Announcement composer with segment preview, send confirmation, history (FR-A7)
-- [ ] **FE-8.4** Audit log viewer (filter/search/export)
+- [x] **FE-8.1** Admin dashboard: KPI cards + charts (orders, revenue, active users, top vendors), city/date filters (FR-A4) (KPI tiles plus orders, GMV, revenue and top-vendor charts with city and date filters; chart palette validated against the real surfaces)
+- [x] **FE-8.2** Reports page: choose report + range, request, download when ready (FR-A8) (reports page: choose report, format and range, then download via the signed link; polls only while a file is building)
+- [x] **FE-8.3** Announcement composer with segment preview, send confirmation, history (FR-A7) (announcement composer with audience preview, the confirm-the-count check the API requires, and history)
+- [x] **FE-8.4** Audit log viewer (filter/search/export) (audit log viewer with action, entity and date filters and expandable before/after snapshots)
 - [ ] **FE-8.5** Vendor dashboard: today's orders, earnings summary, rating trend
 
 ### QA
@@ -473,5 +473,5 @@
 | 1 | 0 | | | | TRD §20 items 1–3 |
 | 2 | | | | | |
 | 21-22 | 7 | Reviews, complaints with redo, promos and referrals; full unit and e2e suites green | Phase 8 | Real payment credentials and live Cloudinary checks pending; redo rider compensation not automated | Redo compensation policy |
-| 24 | 0/1-5 FE | Started apps/web. Phase 0 FE foundation (App Router, Tailwind v4 tokens, shadcn-style primitives, en/ur with RTL, BFF proxy keeping tokens server-side, refresh-rotation-safe session, role-driven admin shell). Admin screens: login, vendor review queue and detail with audited CNIC reveal, rider approval queue, orders search and detail with manual cancel. packages/shared added with two drift guards against the API. Fixed two pre-existing e2e tests; suite now 627/627 locally. | Remaining admin screens: dispatch board, payouts, cash collection, commission, complaints, promos, announcements, analytics dashboard, reports, audit log, admin users, cities, queues | No admin list endpoint documents its query parameters and most document responses as `{type: object}`, so FE response types are hand-written (X-2). Admin copy is English only for now; who reviews Urdu for the customer app (FE-10.1)? |
+| 24 | 0 + admin FE | Started apps/web and completed the **admin panel**: all 17 screens (login, dashboard, vendors, riders, orders, dispatch, complaints, payouts, cash collection, commission, promos, announcements, reports, audit log, admin users, cities, queues) on a shared Phase 0 FE foundation — App Router, Tailwind v4 tokens, shadcn-style primitives, en/ur with RTL, BFF proxy keeping tokens server-side, refresh-rotation-safe session, role-driven shell. packages/shared added with two drift guards against the API. Charts are hand-rolled SVG with a palette validated against the real surfaces. Added `GET /admin/cities` to the API (the panel could not show current city settings without it) with its own e2e and Swagger contract check. Fixed two pre-existing e2e tests. Suites: 57 shared, 285 API unit, 629 API e2e, all green. | Phase 9 FE: JS/route budgets, offline audit, axe pass, Playwright + Lighthouse CI, PWA baseline. Then the customer, vendor and rider UIs. | Admin copy is English only for now — who reviews Urdu for the customer app (FE-10.1)? No admin list endpoint documents its query parameters and most document responses as `{type: object}`, so FE response types are hand-written (X-2). |
 | 23 | 8 | Admin analytics with nightly rollup, vendor analytics, CSV/XLSX reports, announcements with rate-limited fan-out, audit-log search; full unit and e2e suites green | Phase 9 | Report files live in Postgres (move to object storage before large scale); no email when a report is ready; admin frontend not started | Where report files should live |

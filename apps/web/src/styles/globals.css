@@ -59,6 +59,25 @@
   --sidebar-accent-foreground: oklch(0.28 0.03 250);
   --sidebar-border: oklch(0.91 0.01 247);
   --sidebar-ring: oklch(0.52 0.1 196);
+
+  /*
+   * Chart palette.
+   *
+   * Validated, not chosen by eye: these two hues pass all five checks of the data-viz validator on the
+   * card surface (#ffffff light, #121921 dark) — lightness band, chroma floor, CVD separation
+   * (worst adjacent dE 13.5 protan), normal-vision floor (dE 28.0) and 3:1 contrast.
+   *
+   * Note series-1 is NOT --primary. The brand teal oklch(0.52 0.1 196) fails the chroma floor at 0.089
+   * and reads gray in a chart, so the chart step is a more saturated teal of the same hue.
+   *
+   * Only two categorical slots exist on purpose: no admin chart here plots more than two series. Adding
+   * a third means re-running scripts/validate_palette.js on the new ordering, not picking a nice colour.
+   */
+  --chart-surface: #ffffff;
+  --chart-1: #00989b;
+  --chart-2: #eb6834;
+  --chart-grid: oklch(0.93 0.004 247);
+  --chart-axis: oklch(0.65 0.015 250);
 }
 
 .dark {
@@ -104,6 +123,13 @@
   --sidebar-accent-foreground: oklch(0.97 0.005 247);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.7 0.11 196);
+
+  /* Dark steps are selected for the dark surface and validated as their own set, not flipped. */
+  --chart-surface: #121921;
+  --chart-1: #00a7a9;
+  --chart-2: #d95926;
+  --chart-grid: oklch(1 0 0 / 10%);
+  --chart-axis: oklch(0.6 0.02 250);
 }
 
 @theme inline {
@@ -141,6 +167,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-surface: var(--chart-surface);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

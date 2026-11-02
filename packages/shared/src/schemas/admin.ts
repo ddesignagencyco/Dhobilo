@@ -1,4 +1,15 @@
 import { z } from 'zod';
+
+/*
+ * Each schema exports two types.
+ *
+ *   XInput  — what the form holds while it is being filled in. Anything behind `z.coerce` is `unknown`
+ *             here, because a number field really does start life as a string in the DOM.
+ *   X       — what the schema produces once it parses, which is what goes on the wire.
+ *
+ * react-hook-form needs both: `useForm<XInput, unknown, X>`. Passing only the output type makes the
+ * resolver's generics disagree with the field registrations and the errors are unreadable.
+ */
 import {
   AdminRole,
   CommissionScope,
@@ -38,12 +49,14 @@ export const reasonSchema = z.object({
     .max(500),
 });
 export type ReasonInput = z.infer<typeof reasonSchema>;
+export type ReasonForm = z.input<typeof reasonSchema>;
 
 /** finance.dto.ts — RejectPayoutDto. Shorter minimum than a vendor reason; this one is internal. */
 export const rejectPayoutSchema = z.object({
   reason: z.string().trim().min(3, { message: 'Give a short reason.' }).max(300),
 });
 export type RejectPayoutInput = z.infer<typeof rejectPayoutSchema>;
+export type RejectPayoutForm = z.input<typeof rejectPayoutSchema>;
 
 /** finance.dto.ts — PayPayoutDto. */
 export const payPayoutSchema = z.object({
@@ -54,6 +67,7 @@ export const payPayoutSchema = z.object({
     .max(100),
 });
 export type PayPayoutInput = z.infer<typeof payPayoutSchema>;
+export type PayPayoutForm = z.input<typeof payPayoutSchema>;
 
 /** finance.dto.ts — SettleCodDto. */
 export const settleCodSchema = z.object({
@@ -61,6 +75,7 @@ export const settleCodSchema = z.object({
   reference: z.string().trim().max(100).optional().or(z.literal('')),
 });
 export type SettleCodInput = z.infer<typeof settleCodSchema>;
+export type SettleCodForm = z.input<typeof settleCodSchema>;
 
 /** finance.dto.ts — CreateCommissionRuleDto. */
 export const createCommissionRuleSchema = z
@@ -86,6 +101,7 @@ export const createCommissionRuleSchema = z
     path: ['categoryId'],
   });
 export type CreateCommissionRuleInput = z.infer<typeof createCommissionRuleSchema>;
+export type CreateCommissionRuleForm = z.input<typeof createCommissionRuleSchema>;
 
 export const updateCommissionRuleSchema = z.object({
   ratePct: z.coerce
@@ -97,6 +113,7 @@ export const updateCommissionRuleSchema = z.object({
   effectiveFrom: z.string().optional(),
 });
 export type UpdateCommissionRuleInput = z.infer<typeof updateCommissionRuleSchema>;
+export type UpdateCommissionRuleForm = z.input<typeof updateCommissionRuleSchema>;
 
 /** promos.dto.ts — CreatePromoDto. */
 export const createPromoSchema = z
@@ -131,6 +148,7 @@ export const createPromoSchema = z
     path: ['value'],
   });
 export type CreatePromoInput = z.infer<typeof createPromoSchema>;
+export type CreatePromoForm = z.input<typeof createPromoSchema>;
 
 /** promos.dto.ts — UpdatePromoDto. `code` and `discountType` are immutable server-side. */
 export const updatePromoSchema = z.object({
@@ -145,6 +163,7 @@ export const updatePromoSchema = z.object({
   isActive: z.boolean().optional(),
 });
 export type UpdatePromoInput = z.infer<typeof updatePromoSchema>;
+export type UpdatePromoForm = z.input<typeof updatePromoSchema>;
 
 /** announcements.dto.ts — SegmentDto. */
 export const TARGET_ROLES = [Role.CUSTOMER, Role.VENDOR_OWNER, Role.VENDOR_STAFF, Role.RIDER] as const;
@@ -167,6 +186,7 @@ export const segmentSchema = z
     path: ['inactiveForDays'],
   });
 export type SegmentInput = z.infer<typeof segmentSchema>;
+export type SegmentForm = z.input<typeof segmentSchema>;
 
 /** announcements.dto.ts — CreateAnnouncementDto. */
 export const createAnnouncementSchema = z
@@ -185,6 +205,7 @@ export const createAnnouncementSchema = z
     path: ['bodyUr'],
   });
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;
+export type CreateAnnouncementForm = z.input<typeof createAnnouncementSchema>;
 
 /** reports.dto.ts — CreateReportDto. */
 export const REPORT_TYPES = ['ORDERS', 'PAYMENTS', 'PAYOUTS', 'COD', 'VENDORS'] as const;
@@ -204,6 +225,7 @@ export const createReportSchema = z
     path: ['to'],
   });
 export type CreateReportInput = z.infer<typeof createReportSchema>;
+export type CreateReportForm = z.input<typeof createReportSchema>;
 
 /** complaints.dto.ts — ResolveComplaintDto. */
 export const COMPLAINT_OUTCOMES = ['REFUND', 'REDO', 'REJECT'] as const;
@@ -219,6 +241,7 @@ export const resolveComplaintSchema = z
     path: ['note'],
   });
 export type ResolveComplaintInput = z.infer<typeof resolveComplaintSchema>;
+export type ResolveComplaintForm = z.input<typeof resolveComplaintSchema>;
 
 /** admin-users.dto.ts — CreateAdminDto. */
 export const createAdminSchema = z.object({
@@ -228,6 +251,7 @@ export const createAdminSchema = z.object({
   adminRole: z.enum([AdminRole.SUPER_ADMIN, AdminRole.OPERATIONS, AdminRole.FINANCE, AdminRole.SUPPORT]),
 });
 export type CreateAdminInput = z.infer<typeof createAdminSchema>;
+export type CreateAdminForm = z.input<typeof createAdminSchema>;
 
 /** admin-users.dto.ts — UpdateAdminDto. The API only accepts ACTIVE or DEACTIVATED here. */
 export const updateAdminSchema = z.object({
@@ -237,6 +261,7 @@ export const updateAdminSchema = z.object({
   status: z.enum(['ACTIVE', 'DEACTIVATED']).optional(),
 });
 export type UpdateAdminInput = z.infer<typeof updateAdminSchema>;
+export type UpdateAdminForm = z.input<typeof updateAdminSchema>;
 
 /** admin-users.dto.ts — ChangeOwnPasswordDto. */
 export const changePasswordSchema = z
@@ -254,6 +279,7 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordForm = z.input<typeof changePasswordSchema>;
 
 /** cities.dto.ts — UpdateCityDto. */
 export const updateCitySchema = z.object({
@@ -275,6 +301,7 @@ export const updateCitySchema = z.object({
   courierPartnerId: z.string().uuid().nullable().optional(),
 });
 export type UpdateCityInput = z.infer<typeof updateCitySchema>;
+export type UpdateCityForm = z.input<typeof updateCitySchema>;
 
 /** The payout method a vendor chose, shown read-only in the admin queue. */
 export const PAYOUT_METHODS = [PayoutMethod.BANK, PayoutMethod.WALLET] as const;

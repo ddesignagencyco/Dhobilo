@@ -146,6 +146,29 @@ export const adminDocs: OperationDocs = {
     response: { example: ok({ id: ID.vendor, businessName: 'Sparkle Laundry', status: 'APPROVED', availability: 'CLOSED', rejectionReason: null, approvedAt: '2026-10-20T08:00:00.000Z' }) },
     errors: [{ status: 409, code: 'VENDOR_INVALID_TRANSITION', when: 'A approved vendor cannot be moved to approved.' }],
   },
+  'GET /admin/cities': {
+    summary: 'Cities and their settings',
+    tag: 'admin-cities',
+    who: [...ADMIN],
+    description:
+      'Every city with its operational settings, **including inactive ones** that the public `GET /cities` hides. `deliveryFee` is a decimal string; `vendors` counts the vendors registered in the city. Use this to see current values before changing them with `PATCH /admin/cities/{id}`.',
+    response: {
+      example: ok([
+        {
+          id: 1,
+          name: 'Lahore',
+          nameUr: 'لاہور',
+          code: 'LHR',
+          isActive: true,
+          deliveryFee: '175.50',
+          timezone: 'Asia/Karachi',
+          courierPartnerId: null,
+          courierPartner: null,
+          _count: { vendors: 23 },
+        },
+      ]),
+    },
+  },
   'PATCH /admin/cities/{id}': {
     summary: 'City settings',
     tag: 'admin-cities',

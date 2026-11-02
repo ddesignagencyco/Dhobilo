@@ -139,9 +139,40 @@ figure (`lib/admin/counts.ts`).
 - **Status colours are semantic.** `components/admin/status-badge.tsx` is the only place that decides them.
 - **No concatenated i18n keys.** `t(\`x.${action}\`)` is invisible to grep and silently renders the key.
 
+## Charts
+
+`src/components/charts` is hand-rolled SVG — no Recharts or d3. Four forms (stat tile, time series,
+ranked bars) did not justify the bundle against the TRD §16.2 budget, and rolling them keeps the mark
+specs exact.
+
+The two chart hues in `globals.css` are **validated, not chosen**. They clear all five checks of the
+data-viz validator against this app's real card surfaces (`#ffffff` light, `#121921` dark): lightness
+band, chroma floor, CVD separation (worst adjacent ΔE 13.5 protan), normal-vision floor (ΔE 28.0) and
+3:1 contrast. Note `--chart-1` is deliberately **not** `--primary`: the brand teal
+`oklch(0.52 0.1 196)` fails the chroma floor at 0.089 and reads gray in a chart.
+
+Two categorical slots exist because no admin chart plots more than two series. **Adding a third means
+re-running the validator on the new ordering**, not picking a colour that looks nice.
+
+Rules worth not breaking:
+
+- **One y-axis, ever.** GMV and commission are separate charts because they are an order of magnitude
+  apart; on one scale commission flattens onto the baseline. A second y-axis is never the answer.
+- **Zero baseline, never truncated.**
+- A legend for two or more series; a single series is named by the card title instead.
+- Labels are selective — the endpoint, not a number on every point.
+
 ## Not done yet
 
-Admin screens still to build: dispatch board, payouts, cash collection, commission, complaints, promos,
-announcements, analytics dashboard, reports, audit log, admin users, cities, queues. Also the whole of
-Phase 9 FE (budgets, offline audit, RTL/a11y passes, Playwright and Lighthouse CI) — `test:e2e` is wired
-but has no specs.
+All 17 admin screens are built. Still open:
+
+- **Phase 9 FE** — JS/route budgets (FE-9.1; the largest client chunk currently gzips to ~70 KB, but
+  per-route first-load has not been measured against the 170 KB target), offline behaviour audit,
+  the full RTL/Urdu pass with a native speaker, the axe accessibility pass, and the cross-browser matrix.
+- **Playwright and Lighthouse CI** (FE-0.9, QA-9.7) — `test:e2e` is wired but has no specs.
+- **PWA baseline** (FE-0.7) — no manifest or service worker yet.
+- **Urdu admin copy** — `ur.json` mirrors every `en.json` key (614 each, parity enforced), but the admin
+  strings are English by agreement. Filling them needs no code change.
+- next-intl ships the **whole** message catalogue to the client. Fine at this size; worth splitting per
+  route when the customer app lands, since it will add far more strings.
+- Customer, vendor and rider UIs.

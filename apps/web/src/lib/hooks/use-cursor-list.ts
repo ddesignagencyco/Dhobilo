@@ -30,13 +30,24 @@ export function useCursorList<T>({
   query?: Record<string, unknown>;
   limit?: number;
   enabled?: boolean;
-  /** Set for boards that must stay live, e.g. dispatch. */
-  refetchInterval?: number;
+  /**
+   * Set for boards that must stay live, e.g. dispatch. The function form lets a screen poll only while
+   * there is something to wait for — see Reports, which polls while a file is still being built and
+   * stops once everything is READY.
+   */
+  refetchInterval?: number | ((pages: CursorPage<T>[] | undefined) => number | false);
 }) {
   const result = useInfiniteQuery({
     queryKey: key,
     enabled,
-    refetchInterval,
+    // The cast keeps the public signature in terms of CursorPage<T>: TanStack types the callback's
+    // `query` with its own internal generics, which do not unify with ours through a wrapper.
+    refetchInterval: (
+      typeof refetchInterval === 'function'
+        ? ((query: { state: { data?: { pages: CursorPage<T>[] } } }) =>
+            refetchInterval(query.state.data?.pages))
+        : refetchInterval
+    ) as number | undefined,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam, signal }) => {
       const { data, meta } = await bff<T[]>(path, {

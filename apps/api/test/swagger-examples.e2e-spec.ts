@@ -202,6 +202,13 @@ describe('Swagger examples match the real API (e2e)', () => {
     const other = await createVendorFixture(t, basics.cityId, { status: 'PENDING' });
     await http.post(`/api/v1/admin/vendors/${other.vendor.id}/reject`).set(admin.auth).send({ reason: 'The CNIC photo is blurry. Please upload a clear one.' }).expect(200).then((r) => expectMatchesDocs('POST /admin/vendors/{id}/reject', r.body));
     await http.patch(`/api/v1/admin/cities/${basics.cityId}`).set(admin.auth).send({ deliveryFee: 150 }).expect(200).then((r) => expectMatchesDocs('PATCH /admin/cities/{id}', r.body));
+    // The admin list, which unlike the public GET /cities carries the operational fields and the
+    // inactive cities. Trimmed to one row so the documented example can be a single-element array.
+    await http
+      .get('/api/v1/admin/cities')
+      .set(admin.auth)
+      .expect(200)
+      .then((r) => expectMatchesDocs('GET /admin/cities', { data: r.body.data[0] ? [r.body.data[0]] : [] }));
   });
 
   it('delivery: the rider app, the dispatch board, courier partners and the customer’s view', async () => {

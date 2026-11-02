@@ -198,22 +198,37 @@ export interface OrderDeliveryLeg {
   rider: { name: string | null; photoUrl: string | null } | null;
 }
 
+/** GET /admin/delivery/jobs — the dispatch board. */
+export interface DeliveryJobParty {
+  role: string;
+  name: string | null;
+  /** Masked for the customer and vendor on this board. */
+  phone: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
 export interface DeliveryJob {
   id: string;
-  type: JobType;
+  jobType: JobType;
   status: JobStatus;
-  orderId: string;
-  orderNumber?: string;
-  riderId: string | null;
-  rider?: { id: string; name: string | null; phone: string | null } | null;
-  windowStart?: string | null;
-  windowEnd?: string | null;
+  order: { id: string; orderNo: string; status: OrderStatus; cityId: number };
+  rider: { id: string; name: string | null; phone: string | null } | null;
+  partnerId: string | null;
+  partnerRef: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  riderFee: string | null;
+  from: DeliveryJobParty | null;
+  to: DeliveryJobParty | null;
   attempts?: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface DeliverySummary {
   jobs: Partial<Record<JobStatus, number>>;
+  /** Jobs the dispatcher should look at now: stuck, failed or out of attempts. */
   needAttention: number;
   onlineRiders: number;
 }
@@ -223,86 +238,103 @@ export interface CourierPartner {
   code: string;
   name: string;
   isActive: boolean;
+  cities?: { id: number; name: string }[];
 }
 
 export interface AdminPayout {
   id: string;
-  vendorId: string;
-  vendor?: { id: string; businessName: string };
   amount: string;
   method: PayoutMethod;
-  /** Only the last 4 digits of the account are returned. */
+  /** Only the last four digits reach the client. */
   accountRef: string;
   status: PayoutStatus;
-  note: string | null;
-  txnRef: string | null;
-  rejectionReason?: string | null;
   requestedAt: string;
-  decidedAt?: string | null;
-  paidAt?: string | null;
+  processedAt: string | null;
+  processedBy: string | null;
+  txnRef: string | null;
+  note: string | null;
+  vendor: { businessName: string } | null;
 }
 
+/** GET /admin/cod/balances — cash each rider is holding. Not paginated. */
 export interface CodBalance {
   riderId: string;
-  rider?: { id: string; name: string | null; phone: string | null };
-  /** Cash the rider is holding and has not deposited. */
-  outstanding: string;
+  name: string | null;
+  phone: string | null;
   orders: number;
+  amount: string;
 }
 
 export interface CodCollection {
   id: string;
-  riderId: string;
   orderId: string;
-  orderNumber?: string;
+  orderNo: string;
+  riderId: string;
+  riderName: string | null;
+  riderPhone: string | null;
   amount: string;
-  settled: boolean;
-  settledAt: string | null;
-  reference?: string | null;
   collectedAt: string;
+  /** null until an admin records the rider's deposit. */
+  settlementId: string | null;
 }
 
 export interface CommissionRule {
   id: string;
   scope: 'GLOBAL' | 'CATEGORY' | 'VENDOR';
   vendorId: string | null;
-  vendor?: { id: string; businessName: string } | null;
   categoryId: number | null;
-  category?: { id: number; name: string } | null;
-  /** A percentage, already scaled: "15" means 15%. */
+  /** A percentage already scaled: "15.00" means 15%. */
   ratePct: string;
   effectiveFrom: string;
-  createdAt: string;
+  createdById: string | null;
+  vendor: { businessName: string } | null;
+  category: { name: string } | null;
 }
 
 export interface ServiceCategory {
   id: number;
   name: string;
   nameUr?: string | null;
-  serviceType?: string;
+}
+
+/** Cloudinary attachments come with a short-lived signed link; the raw url is not publicly reachable. */
+export interface ComplaintAttachment {
+  publicId: string;
+  url: string;
+  format: string;
+  signedUrl: string | null;
 }
 
 export interface AdminComplaint {
   id: string;
   orderId: string;
-  orderNumber?: string;
+  customerId: string;
+  vendorId: string;
   type: 'COMPLAINT' | 'REDO';
   status: ComplaintStatus;
-  subject?: string | null;
+  subject: string | null;
+  description: string | null;
+  attachments: ComplaintAttachment[];
+  resolution: string | null;
   assignedToId: string | null;
-  outcome?: string | null;
+  resolvedAt: string | null;
   createdAt: string;
-  customer?: { id: string; name: string | null; phone: string | null };
-  vendor?: { id: string; businessName: string };
+  updatedAt?: string;
+  order?: { orderNo: string };
+  vendor?: { businessName: string };
+  customer?: { name: string | null; phone: string | null };
+  assignedTo?: { id: string; name: string | null } | null;
+  messages?: ComplaintMessage[];
 }
 
 export interface ComplaintMessage {
   id: string;
-  body: string;
+  authorId: string | null;
   authorRole: string;
-  authorName?: string | null;
+  authorName: string | null;
+  body: string;
   createdAt: string;
-  attachments?: { id: string; signedUrl: string | null }[];
+  attachments?: ComplaintAttachment[];
 }
 
 export interface AdminPromo {
@@ -313,18 +345,26 @@ export interface AdminPromo {
   maxDiscount: string | null;
   minOrderAmount: string | null;
   maxUses: number | null;
-  usedCount: number;
   perUserLimit: number;
   validFrom: string;
   validTo: string;
   cityId: number | null;
+  /** Set when the promo is a personal referral reward rather than a public campaign. */
+  owner: { id: string; name: string | null } | null;
   isActive: boolean;
+  redemptions: number;
   createdAt: string;
 }
 
+/** POST /admin/announcements/preview — how many people a segment reaches. */
 export interface AnnouncementPreview {
+  segment: Record<string, unknown>;
+  /** People matching the segment. */
   recipients: number;
-  perChannel?: Partial<Record<string, number>>;
+  /** Of those, how many can actually be reached on the chosen channels after opt-outs. */
+  reachable: number;
+  byRole?: Record<string, number>;
+  byChannel?: Record<string, number>;
 }
 
 export interface Announcement {
@@ -333,52 +373,96 @@ export interface Announcement {
   body: string;
   titleUr: string | null;
   bodyUr: string | null;
-  status: 'QUEUED' | 'SENDING' | 'SENT' | 'FAILED';
+  segment: Record<string, unknown>;
   channels: string[];
-  recipients: number;
-  sentCount?: number;
+  status: 'QUEUED' | 'SENDING' | 'SENT' | 'FAILED';
+  recipientCount: number;
+  messagesQueued: number;
+  error: string | null;
+  sentById: string | null;
   createdAt: string;
-  createdById?: string;
+  completedAt: string | null;
 }
 
 export interface ReportJob {
   id: string;
   type: 'ORDERS' | 'PAYMENTS' | 'PAYOUTS' | 'COD' | 'VENDORS';
   format: 'CSV' | 'XLSX';
+  params: { from?: string; to?: string; cityId?: number | null; vendorId?: string | null };
   status: 'QUEUED' | 'RUNNING' | 'READY' | 'FAILED' | 'EXPIRED';
-  from: string | null;
-  to: string | null;
-  cityId: number | null;
-  rows: number | null;
+  rowCount: number | null;
+  byteSize: number | null;
+  fileName: string | null;
   error: string | null;
-  /** Present only while READY; HMAC-signed and valid for 10 minutes. */
-  downloadUrl: string | null;
-  expiresAt: string | null;
   createdAt: string;
+  completedAt: string | null;
+  /** When the file itself is deleted (7 days). */
+  expiresAt: string | null;
+  /** Present only while READY. HMAC-signed and good for ten minutes. */
+  download: { url: string; expiresAt: string } | null;
 }
 
 export interface AuditLogEntry {
   id: string;
+  createdAt: string;
   action: string;
   entity: string;
   entityId: string | null;
-  actorId: string | null;
+  actor: { id: string; name: string | null; role: string } | null;
   actorRole: string | null;
-  actor?: { id: string; name: string | null; email: string | null } | null;
+  before: unknown;
+  after: unknown;
   ip: string | null;
   requestId: string | null;
-  meta?: unknown;
-  createdAt: string;
 }
 
 export interface AdminUser {
   id: string;
-  name: string | null;
   email: string | null;
+  name: string | null;
   adminRole: 'SUPER_ADMIN' | 'OPERATIONS' | 'FINANCE' | 'SUPPORT';
   status: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
-  lastLoginAt?: string | null;
+  lastLoginAt: string | null;
   createdAt: string;
+}
+
+/** GET /admin/cities — includes inactive cities and the operational fields the public list omits. */
+export interface AdminCity {
+  id: number;
+  name: string;
+  nameUr: string | null;
+  code: string | null;
+  isActive: boolean;
+  deliveryFee: string;
+  timezone: string;
+  courierPartnerId: string | null;
+  courierPartner: { id: string; code: string; name: string; isActive: boolean } | null;
+  _count: { vendors: number };
+}
+
+export interface QueueFailure {
+  id: string;
+  name: string;
+  reason: string;
+  attemptsMade: number;
+  failedAt: string;
+}
+
+export interface QueueHealth {
+  queue: string;
+  waiting: number;
+  active: number;
+  delayed: number;
+  failed: number;
+  stuck: number;
+  oldestWaitingSec: number;
+  recentFailures: QueueFailure[];
+  healthy: boolean;
+}
+
+export interface QueuesReport {
+  healthy: boolean;
+  queues: QueueHealth[];
 }
 
 export interface AnalyticsTotals {
@@ -415,23 +499,22 @@ export interface AnalyticsOverview {
   series: AnalyticsDay[];
 }
 
+/** GET /admin/analytics/vendors — the leaderboard, already ranked by the API. */
 export interface TopVendor {
+  rank: number;
   vendorId: string;
   businessName: string;
-  cityId?: number;
-  orders: number;
+  cityId: number | null;
+  city: string | null;
+  ordersDelivered: number;
   gmv: string;
-  revenue?: string;
-  ratingAvg?: string;
+  revenue: string;
+  vendorEarnings: string;
+  ratingAvg: string | null;
+  ratingCount: number;
 }
 
-export interface QueueHealth {
-  name: string;
-  waiting: number;
-  active: number;
-  completed: number;
-  failed: number;
-  delayed: number;
-  stuck?: number;
-  latestFailures?: { id: string; name: string; failedReason: string; attemptsMade: number }[];
+export interface TopVendorsResponse {
+  range: { from: string; to: string; cityId: number | null };
+  vendors: TopVendor[];
 }
