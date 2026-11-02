@@ -30,6 +30,47 @@ describe('Admin city settings (e2e)', () => {
     expect(Number((await t.prisma.city.findUniqueOrThrow({ where: { id: cityId } })).deliveryFee)).toBe(100);
   });
 
+  describe('GET /admin/cities', () => {
+    it('is admin only', async () => {
+      await http.get('/api/v1/admin/cities').expect(401);
+      for (const role of [Role.CUSTOMER, Role.VENDOR_OWNER, Role.VENDOR_STAFF, Role.RIDER]) {
+        const { auth } = await createUserWithToken(t, role);
+        await http.get('/api/v1/admin/cities').set(auth).expect(403);
+      }
+    });
+
+    it('returns the admin settings, and the inactive cities the public list hides', async () => {
+      // The panel needs to see a paused city: that is the one an admin has come to switch back on.
+      const paused = await t.prisma.city.upsert({
+        where: { name: 'Multan' },
+        update: { isActive: false, deliveryFee: 120, code: 'MUX' },
+        create: { name: 'Multan', code: 'MUX', deliveryFee: 120, isActive: false },
+      });
+
+      const res = await http.get('/api/v1/admin/cities').set(admin.auth).expect(200);
+      const cities = res.body.data as Array<Record<string, unknown>>;
+
+      const multan = cities.find((c) => c.id === paused.id);
+      expect(multan).toMatchObject({
+        name: 'Multan',
+        code: 'MUX',
+        isActive: false,
+        // Money is a decimal string here, as everywhere else in the API.
+        deliveryFee: '120.00',
+        courierPartnerId: null,
+      });
+      expect(multan).toHaveProperty('_count.vendors');
+
+      // The public list must stay unchanged: customers never see a paused city.
+      const publicList = await http.get('/api/v1/cities').expect(200);
+      expect((publicList.body.data as Array<{ id: number }>).some((c) => c.id === paused.id)).toBe(false);
+
+      // Sorted by name so the panel does not have to.
+      const names = cities.map((c) => c.name as string);
+      expect(names).toEqual([...names].sort());
+    });
+  });
+
   it('changes the delivery fee, which shows in the very next estimate, and writes an audit row', async () => {
     const v = await createLiveVendor(t, { ...basics, cityId }, { items: [{ name: 'Shirt', price: 100 }] });
     const customer = await createCustomer(t);

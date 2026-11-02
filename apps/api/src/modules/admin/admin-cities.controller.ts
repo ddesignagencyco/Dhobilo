@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseIntPipe, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import type { AuthUser, AuthedRequest } from '../../common/auth/auth-user';
@@ -15,6 +15,12 @@ import { CitiesService } from '../cities/cities.service';
 @Controller('admin/cities')
 export class AdminCitiesController {
   constructor(private readonly cities: CitiesService) {}
+
+  /** Every city with its admin settings, including the inactive ones the public list hides. */
+  @Get()
+  list() {
+    return this.cities.adminList();
+  }
 
   /** Delivery fee, active flag and order-number code for a city. */
   @Patch(':id')

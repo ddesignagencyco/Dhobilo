@@ -772,6 +772,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/cities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cities and their settings
+         * @description **Who can use this:** signed-in admins.
+         *
+         *     Every city with its operational settings, **including inactive ones** that the public `GET /cities` hides. `deliveryFee` is a decimal string; `vendors` counts the vendors registered in the city. Use this to see current values before changing them with `PATCH /admin/cities/{id}`.
+         */
+        get: operations["AdminCitiesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/cities/{id}": {
         parameters: {
             query?: never;
@@ -5882,6 +5904,64 @@ export interface operations {
             };
             /** @description Conflict with the current state */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminCitiesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "id": 1,
+                     *           "name": "Lahore",
+                     *           "nameUr": "لاہور",
+                     *           "code": "LHR",
+                     *           "isActive": true,
+                     *           "deliveryFee": "175.50",
+                     *           "timezone": "Asia/Karachi",
+                     *           "courierPartnerId": null,
+                     *           "courierPartner": null,
+                     *           "_count": {
+                     *             "vendors": 23
+                     *           }
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in, but not allowed to do this */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

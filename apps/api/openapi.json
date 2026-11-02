@@ -4809,6 +4809,96 @@
         "description": "**Who can use this:** signed-in admins.\n\nSUSPENDED → APPROVED. The shop stays **Closed** until the vendor chooses to open it again."
       }
     },
+    "/api/v1/admin/cities": {
+      "get": {
+        "operationId": "AdminCitiesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "Lahore",
+                      "nameUr": "لاہور",
+                      "code": "LHR",
+                      "isActive": true,
+                      "deliveryFee": "175.50",
+                      "timezone": "Asia/Karachi",
+                      "courierPartnerId": null,
+                      "courierPartner": null,
+                      "_count": {
+                        "vendors": 23
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-cities"
+        ],
+        "summary": "Cities and their settings",
+        "description": "**Who can use this:** signed-in admins.\n\nEvery city with its operational settings, **including inactive ones** that the public `GET /cities` hides. `deliveryFee` is a decimal string; `vendors` counts the vendors registered in the city. Use this to see current values before changing them with `PATCH /admin/cities/{id}`."
+      }
+    },
     "/api/v1/admin/cities/{id}": {
       "patch": {
         "operationId": "AdminCitiesController_update",
