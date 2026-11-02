@@ -78,7 +78,22 @@ describe('admin roles (e2e)', () => {
         http.patch(`/api/v1/admin/admins/${b.user.id}`).set(a.auth).send({ adminRole: 'SUPPORT' }),
         http.patch(`/api/v1/admin/admins/${a.user.id}`).set(b.auth).send({ adminRole: 'SUPPORT' }),
       ]);
-      expect([r1.status, r2.status].sort()).toEqual([200, 422]);
+
+      /*
+       * Exactly one wins. The loser can be refused in either of two legitimate ways, depending on how the
+       * two requests interleave, so asserting one specific code makes this test flaky:
+       *
+       *  422 LAST_SUPER_ADMIN — the loser reached the service and the row lock showed it would leave zero.
+       *  403                  — the winner committed first, and JwtAuthGuard (which reloads adminRole on
+       *                         every request) already saw the loser as SUPPORT, so the super-admin-only
+       *                         area refused it before any business rule ran.
+       *
+       * What actually matters is the invariant below: a super admin is always left standing.
+       */
+      const statuses = [r1.status, r2.status].sort();
+      expect(statuses[0]).toBe(200);
+      expect([403, 422]).toContain(statuses[1]);
+
       const left = await t.prisma.user.count({ where: { adminRole: 'SUPER_ADMIN', status: 'ACTIVE' } });
       expect(left).toBe(1);
     } finally {
