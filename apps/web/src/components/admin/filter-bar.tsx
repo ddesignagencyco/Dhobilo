@@ -42,9 +42,18 @@ export function SearchFilter({
   const t = useTranslations('common');
   const [local, setLocal] = useState(value);
 
-  // Keep in step when the parent clears all filters.
-  useEffect(() => setLocal(value), [value]);
+  /*
+   * Keep in step when the parent changes the value under us — "Clear filters" is the case that matters.
+   * Adjusted during render, not in an effect: the effect version renders the stale text once before
+   * correcting it, so a cleared filter visibly flickers back. (React's documented derived-state pattern.)
+   */
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setLocal(value);
+  }
 
+  // The debounce itself genuinely belongs in an effect: it owns a timer, which is an external system.
   useEffect(() => {
     if (local === value) return;
     const id = setTimeout(() => onChange(local), delay);

@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -50,13 +50,22 @@ export function ActionDialog({
   const [value, setValue] = useState('');
   const [touched, setTouched] = useState(false);
 
-  // Reset between openings, or the previous rejection's reason would be pre-filled for the next vendor.
-  useEffect(() => {
+  /*
+   * Reset between openings, or the previous rejection's reason would be pre-filled for the next vendor.
+   *
+   * Adjusted during render rather than in an effect. This is React's documented pattern for "a prop
+   * changed, so derived state must change": setState during render is handled in the same pass, whereas
+   * an effect commits a render with the stale value first — which here means a flash of the last
+   * admin's reason. It is also what react-hooks/set-state-in-effect is pointing at.
+   */
+  const [lastOpen, setLastOpen] = useState(open);
+  if (open !== lastOpen) {
+    setLastOpen(open);
     if (open) {
       setValue('');
       setTouched(false);
     }
-  }, [open]);
+  }
 
   const minLength = reason?.minLength ?? 5;
   const required = reason?.required ?? true;
