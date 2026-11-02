@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, P
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Paged } from '../../common/interceptors/response-envelope.interceptor';
+import { AdminAreaOnly } from '../../common/decorators/admin-area.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Audit } from '../audit/audit.decorator';
 import { CreatePromoDto, ListPromosQueryDto, UpdatePromoDto } from './dto/promos.dto';
@@ -10,6 +11,7 @@ import { PromotionsService } from './promotions.service';
 @ApiTags('admin-promos')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
+@AdminAreaOnly('promos')
 @Controller('admin/promos')
 export class AdminPromosController {
   constructor(private readonly promos: PromotionsService) {}

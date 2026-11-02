@@ -17,7 +17,7 @@ const reflectorReturning = (value: unknown) =>
   ({ get: () => value, getAllAndOverride: () => value }) as unknown as Reflector;
 
 describe('RolesGuard', () => {
-  const user = (role: Role) => ({ id: 'u1', role, sessionId: 's1' });
+  const user = (role: Role) => ({ id: 'u1', role, adminRole: role === Role.ADMIN ? ('SUPER_ADMIN' as const) : null, sessionId: 's1' });
 
   it('allows any authenticated user when no roles are required', () => {
     expect(new RolesGuard(reflectorReturning(undefined)).canActivate(ctx(user(Role.CUSTOMER)))).toBe(true);

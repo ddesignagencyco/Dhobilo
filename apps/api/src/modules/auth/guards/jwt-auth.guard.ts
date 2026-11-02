@@ -40,14 +40,14 @@ export class JwtAuthGuard implements CanActivate {
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, role: true, status: true },
+      select: { id: true, role: true, adminRole: true, status: true },
     });
     if (!user) throw this.unauthenticated();
     if (user.status !== UserStatus.ACTIVE) {
       throw new AppException('ACCOUNT_SUSPENDED', 'This account is not active.', HttpStatus.FORBIDDEN);
     }
 
-    req.user = { id: user.id, role: user.role, sessionId: payload.sid };
+    req.user = { id: user.id, role: user.role, adminRole: user.adminRole, sessionId: payload.sid };
     return true;
   }
 

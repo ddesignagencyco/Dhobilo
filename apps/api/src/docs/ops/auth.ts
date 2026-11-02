@@ -36,7 +36,7 @@ export const authDocs: OperationDocs = {
     },
     response: {
       description: 'Signed in',
-      example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: PHONE.e164, name: null, email: null, role: 'CUSTOMER', locale: 'EN', referralCode: 'Q35M9QBH' }, isNewUser: true }),
+      example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: PHONE.e164, name: null, email: null, role: 'CUSTOMER', adminRole: null, locale: 'EN', referralCode: 'Q35M9QBH' }, isNewUser: true }),
     },
     errors: [
       { status: 400, code: 'INVALID_OTP', when: 'The code is invalid or has expired.' },
@@ -52,7 +52,7 @@ export const authDocs: OperationDocs = {
       'Every refresh **rotates** the refresh token. If an already-used refresh token is ever replayed, the whole login is revoked as a precaution ' +
       'and the user must sign in again.',
     requests: { default: { summary: 'Cookie-less clients send the refresh token', value: { refreshToken: 'k3p9...refresh-token...Zq' } }, cookie: { summary: 'Browsers: empty body, cookie does the work', value: {} } },
-    response: { description: 'New tokens', example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: PHONE.e164, name: 'Ayesha Khan', email: null, role: 'CUSTOMER', locale: 'EN', referralCode: 'Q35M9QBH' }, isNewUser: false }) },
+    response: { description: 'New tokens', example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: PHONE.e164, name: 'Ayesha Khan', email: null, role: 'CUSTOMER', adminRole: null, locale: 'EN', referralCode: 'Q35M9QBH' }, isNewUser: false }) },
     errors: [{ status: 401, code: 'UNAUTHENTICATED', when: 'Please sign in again.' }],
   },
   'POST /auth/logout': {
@@ -69,7 +69,7 @@ export const authDocs: OperationDocs = {
       'For platform staff only. 5 wrong passwords lock the account for 15 minutes. The error is the same for an unknown email and a wrong password.\n\n' +
       '> Development admin: `admin@dhoblio.local` / `ChangeMe!12345`.',
     requests: { default: { summary: 'Development admin', value: { email: 'admin@dhoblio.local', password: 'ChangeMe!12345' } } },
-    response: { description: 'Signed in', example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: '+920000000000', name: 'Platform Admin', email: 'admin@dhoblio.local', role: 'ADMIN', locale: 'EN', referralCode: null }, isNewUser: false }) },
+    response: { description: 'Signed in', example: ok({ accessToken: TOKEN, expiresIn: 900, user: { id: ID.user, phone: '+920000000000', name: 'Platform Admin', email: 'admin@dhoblio.local', role: 'ADMIN', adminRole: 'SUPER_ADMIN', locale: 'EN', referralCode: null }, isNewUser: false }) },
     errors: [
       { status: 401, code: 'INVALID_CREDENTIALS', when: 'Incorrect email or password.' },
       { status: 429, code: 'ACCOUNT_LOCKED', when: 'Too many failed sign-ins. Try again later.' },

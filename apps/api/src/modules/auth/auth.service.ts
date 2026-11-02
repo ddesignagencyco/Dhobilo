@@ -25,7 +25,7 @@ export interface AuthResult {
   isNewUser: boolean;
 }
 
-export type PublicUser = Pick<User, 'id' | 'phone' | 'name' | 'email' | 'role' | 'locale' | 'referralCode'>;
+export type PublicUser = Pick<User, 'id' | 'phone' | 'name' | 'email' | 'role' | 'adminRole' | 'locale' | 'referralCode'>;
 
 export const toPublicUser = (u: User): PublicUser => ({
   id: u.id,
@@ -33,6 +33,7 @@ export const toPublicUser = (u: User): PublicUser => ({
   name: u.name,
   email: u.email,
   role: u.role,
+  adminRole: u.adminRole,
   locale: u.locale,
   referralCode: u.referralCode,
 });

@@ -2,7 +2,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { INestApplication, Type } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
-import { Role, VendorStatus } from '@prisma/client';
+import { AdminRole, Role, VendorStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import type { Test as SuperTest } from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -63,10 +63,10 @@ export async function clearRateLimits(redis: Redis): Promise<void> {
 export async function createUserWithToken(
   t: TestApp,
   role: Role,
-  extra: { status?: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED' } = {},
+  extra: { status?: 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'; adminRole?: AdminRole } = {},
 ) {
   const user = await t.prisma.user.create({
-    data: { phone: randomPhone(), role, status: extra.status ?? 'ACTIVE', referralCode: randomUUID().slice(0, 8).toUpperCase() },
+    data: { phone: randomPhone(), role, adminRole: role === Role.ADMIN ? (extra.adminRole ?? 'SUPER_ADMIN') : null, status: extra.status ?? 'ACTIVE', referralCode: randomUUID().slice(0, 8).toUpperCase() },
   });
   const accessToken = await t.app
     .get(JwtService)
@@ -154,7 +154,7 @@ export function fakeCloudinary() {
 }
 
 /** Admin user + token. */
-export const createAdmin = (t: TestApp) => createUserWithToken(t, Role.ADMIN);
+export const createAdmin = (t: TestApp, adminRole: AdminRole = 'SUPER_ADMIN') => createUserWithToken(t, Role.ADMIN, { adminRole });
 
 // ───────────── Phase 3 fixtures ─────────────
 
