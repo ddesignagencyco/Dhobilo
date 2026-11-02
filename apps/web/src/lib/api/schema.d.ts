@@ -2691,7 +2691,7 @@ export interface paths {
          * Review the vendor and/or rider
          * @description **Who can use this:** signed-in customers.
          *
-         *     Rate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhobilo rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction.
+         *     Rate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhoblio rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction.
          */
         post: operations["ReviewsController_create"];
         delete?: never;

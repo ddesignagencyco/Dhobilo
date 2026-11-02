@@ -19,7 +19,7 @@ export const reviewDocs: OperationDocs = {
     tag: 'reviews',
     who: ['CUSTOMER'],
     description:
-      'Rate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhobilo rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction.',
+      'Rate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhoblio rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction.',
     params: { orderId: { example: ID.order } },
     requests: {
       default: {
@@ -40,7 +40,7 @@ export const reviewDocs: OperationDocs = {
       { status: 404, code: 'ORDER_NOT_FOUND', when: 'The order does not exist or is not yours.' },
       { status: 409, code: 'ORDER_NOT_DELIVERED', when: 'The order has not been delivered yet.' },
       { status: 409, code: 'REVIEW_EXISTS', when: 'You already reviewed this target for this order.' },
-      { status: 422, code: 'RIDER_REVIEW_UNAVAILABLE', when: 'This order was not delivered by a Dhobilo rider.' },
+      { status: 422, code: 'RIDER_REVIEW_UNAVAILABLE', when: 'This order was not delivered by a Dhoblio rider.' },
     ],
   },
   'GET /vendors/{vendorId}/reviews': {

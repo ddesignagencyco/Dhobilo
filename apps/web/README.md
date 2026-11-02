@@ -134,6 +134,10 @@ figure (`lib/admin/counts.ts`).
 
 - **RTL:** logical properties only — `ms-*`/`me-*`/`ps-*`/`pe-*`/`start-*`/`end-*`, and `text-start`, never
   `text-left`. Check every screen at `/ur/...`.
+- **Urdu copy:** write it against [`docs/Dhoblio-URDU-GLOSSARY.md`](../../docs/Dhoblio-URDU-GLOSSARY.md),
+  which is enforced by `apps/api/src/common/urdu-glossary.spec.ts` — brand spelling, Pakistani register
+  (آرڈر, not حکم نامہ), آپ never تم, Latin digits. **Add a glossary row before inventing a term.** The
+  API's shipping notification templates are the reference implementation; a term that exists there wins.
 - **Skeletons, not spinners** (TRD §16.2). On 3G a spinner says nothing about what is coming.
 - **Errors show the request ID.** It is the handle support needs to find the line in the API's log.
 - **Status colours are semantic.** `components/admin/status-badge.tsx` is the only place that decides them.
