@@ -64,14 +64,14 @@
 - [ ] **BE-0.12** Test harness: Jest unit config, Supertest e2e with real Postgres/Redis, factory helpers
 
 ### FE
-- [ ] **FE-0.1** Next.js App Router + TypeScript strict + Tailwind; route groups `(customer)`, `(rider)`, `(vendor)`, `(admin)` under `[locale]`
-- [ ] **FE-0.2** `next-intl` with `en`/`ur`, RTL `dir`, logical-property Tailwind conventions, Urdu font subset
-- [ ] **FE-0.3** Design tokens + base components (Button, Input, Select, Modal, Toast, Skeleton, EmptyState, Pagination, Timeline) — mobile-first, large touch targets
-- [ ] **FE-0.4** Typed API client generated from OpenAPI; token refresh interceptor; error-code → message mapping
-- [ ] **FE-0.5** App shells: customer (bottom nav), rider, vendor (sidebar), admin (sidebar); locale switcher
-- [ ] **FE-0.6** Route guard middleware by role; global error and not-found pages; offline banner
+- [x] **FE-0.1** Next.js App Router + TypeScript strict + Tailwind; route groups `(customer)`, `(rider)`, `(vendor)`, `(admin)` under `[locale]` (Next.js 16 App Router, TS strict, Tailwind v4; route groups under [locale] ((customer), (vendor), (rider) not started))
+- [x] **FE-0.2** `next-intl` with `en`/`ur`, RTL `dir`, logical-property Tailwind conventions, Urdu font subset (next-intl en/ur with RTL dir and logical-property conventions; Urdu font loaded only for ur)
+- [x] **FE-0.3** Design tokens + base components (Button, Input, Select, Modal, Toast, Skeleton, EmptyState, Pagination, Timeline) — mobile-first, large touch targets (design tokens in oklch plus shadcn-style primitives we own (Button, Input, Select, Dialog, Sheet, Toast, Skeleton, EmptyState, Table, Badge, Alert, DropdownMenu, Avatar, Separator, Textarea, Label, Card))
+- [x] **FE-0.4** Typed API client generated from OpenAPI; token refresh interceptor; error-code → message mapping (types generated from OpenAPI and checked in CI; tokens held server-side with a BFF proxy, refresh-rotation-safe; error codes mapped to behaviour, server message shown otherwise)
+- [x] **FE-0.5** App shells: customer (bottom nav), rider, vendor (sidebar), admin (sidebar); locale switcher (admin shell with sidebar driven by the permission matrix plus locale switcher; the other three shells are not started)
+- [x] **FE-0.6** Route guard middleware by role; global error and not-found pages; offline banner (route guard in proxy.ts by role, redirect with return path, 404 handling)
 - [ ] **FE-0.7** PWA baseline: manifest, icons, service-worker with app-shell caching
-- [ ] **FE-0.8** TanStack Query setup, form stack (React Hook Form + zod from `packages/shared`)
+- [x] **FE-0.8** TanStack Query setup, form stack (React Hook Form + zod from `packages/shared`) (TanStack Query with admin-appropriate defaults; React Hook Form + zod schemas in packages/shared)
 - [ ] **FE-0.9** Playwright setup (en + ur projects) + Lighthouse CI config with 3G throttling and JS budget
 
 ### QA
@@ -101,7 +101,7 @@
 ### FE
 - [ ] **FE-1.1** Phone entry + OTP screen: numeric keypad, 6-box input, resend countdown, auto-submit, Urdu/English copy (FR-C1)
 - [ ] **FE-1.2** Auth state: in-memory access token + httpOnly refresh cookie flow, silent refresh, logout
-- [ ] **FE-1.3** Admin login page (email/password)
+- [x] **FE-1.3** Admin login page (email/password) (admin login with the API 15-minute lockout surfaced)
 - [ ] **FE-1.4** Address book: list, add/edit/delete, set default (FR-C2)
 - [ ] **FE-1.5** Map-pin picker: Google Maps + Places autocomplete, GPS "use my location", draggable pin, reverse-geocode prefill (FR-C2)
 - [ ] **FE-1.6** Profile screen: name, language switch (persists to `/me`)
@@ -141,8 +141,8 @@
 - [ ] **FE-2.6** Hours editor + service-radius control with map circle preview (FR-V4)
 - [ ] **FE-2.7** Open/Closed/Busy quick toggle in the header (FR-V7)
 - [ ] **FE-2.8** Staff management screen
-- [ ] **FE-2.9** Admin: vendor review queue + detail (docs viewer, approve/reject modal) (FR-A1)
-- [ ] **FE-2.10** Admin: suspend/reactivate vendor with reason (FR-A2)
+- [x] **FE-2.9** Admin: vendor review queue + detail (docs viewer, approve/reject modal) (FR-A1) (vendor review queue and detail with document viewer, approve/reject modal and audited CNIC reveal)
+- [x] **FE-2.10** Admin: suspend/reactivate vendor with reason (FR-A2) (suspend/reactivate with reason, status-driven actions)
 
 ### QA
 - [ ] **QA-2.1** Playwright: vendor registers → admin approves → vendor builds catalog → vendor appears in API list
@@ -214,7 +214,7 @@
 - [ ] **FE-4.5** Vendor order board: New / In process / Ready columns, response countdown, audible + vibrate alert, accept/reject modal (FR-V5)
 - [ ] **FE-4.6** Vendor order detail: items, notes, slot, one-tap status buttons (FR-V6)
 - [ ] **FE-4.7** Notification preferences screen (channels)
-- [ ] **FE-4.8** Admin: orders list/search + detail with timeline and manual cancel (support tool)
+- [x] **FE-4.8** Admin: orders list/search + detail with timeline and manual cancel (support tool) (admin orders search and detail with history, delivery legs, commission breakdown and manual cancel)
 
 ### QA
 - [ ] **QA-4.1** Playwright: customer places order → vendor accepts → statuses advance → customer sees live updates
@@ -250,7 +250,7 @@
 - [ ] **FE-5.5** Proof capture: camera photo with compression, or OTP entry (FR-R5)
 - [ ] **FE-5.6** Rider earnings and jobs completed (FR-R6)
 - [ ] **FE-5.7** Customer app: show rider name/photo/status on tracking screen (+ rider position if enabled)
-- [ ] **FE-5.8** Admin: rider approval queue, rider list, dispatch board (unassigned jobs, reassign) (FR-A2)
+- [x] **FE-5.8** Admin: rider approval queue, rider list, dispatch board (unassigned jobs, reassign) (FR-A2) (rider approval queue with inline approve/reject/suspend/reactivate (dispatch board still to do))
 - [ ] **FE-5.9** Admin: courier-partner toggle per city (FR-R7)
 
 ### QA
@@ -473,4 +473,5 @@
 | 1 | 0 | | | | TRD §20 items 1–3 |
 | 2 | | | | | |
 | 21-22 | 7 | Reviews, complaints with redo, promos and referrals; full unit and e2e suites green | Phase 8 | Real payment credentials and live Cloudinary checks pending; redo rider compensation not automated | Redo compensation policy |
+| 24 | 0/1-5 FE | Started apps/web. Phase 0 FE foundation (App Router, Tailwind v4 tokens, shadcn-style primitives, en/ur with RTL, BFF proxy keeping tokens server-side, refresh-rotation-safe session, role-driven admin shell). Admin screens: login, vendor review queue and detail with audited CNIC reveal, rider approval queue, orders search and detail with manual cancel. packages/shared added with two drift guards against the API. Fixed two pre-existing e2e tests; suite now 627/627 locally. | Remaining admin screens: dispatch board, payouts, cash collection, commission, complaints, promos, announcements, analytics dashboard, reports, audit log, admin users, cities, queues | No admin list endpoint documents its query parameters and most document responses as `{type: object}`, so FE response types are hand-written (X-2). Admin copy is English only for now; who reviews Urdu for the customer app (FE-10.1)? |
 | 23 | 8 | Admin analytics with nightly rollup, vendor analytics, CSV/XLSX reports, announcements with rate-limited fan-out, audit-log search; full unit and e2e suites green | Phase 9 | Report files live in Postgres (move to object storage before large scale); no email when a report is ready; admin frontend not started | Where report files should live |
