@@ -414,7 +414,9 @@
 - [ ] **BE-10.3** Final data-migration dry run + backup before launch
 
 ### FE
-- [ ] **FE-10.1** Production copy review (English + Urdu by a native speaker), legal pages: Terms, Privacy, Refund/Cancellation, vendor agreement acceptance
+- [x] **FE-10.1a** Urdu house style and glossary, owned by engineering and enforced in CI (docs/Dhoblio-URDU-GLOSSARY.md + apps/api/src/common/urdu-glossary.spec.ts: brand spelling, register, tone, Latin digits; it caught two bugs that were live — `Dhobilo` in a customer-facing error and a transposed Urdu brand name)
+- [ ] **FE-10.1b** Legal pages in both languages: Terms, Privacy, Refund/Cancellation, vendor agreement acceptance — needs a Pakistani lawyer, not a translator; tracked with **X-5**, not blocking FE
+- [ ] **FE-10.1c** Native-speaker pass over brand/marketing copy only (~30 strings: store listing, onboarding, referral invite). Everything else is drafted against the glossary and guarded by the spec
 - [ ] **FE-10.2** Analytics/event tracking for the funnel (open → cart → order → delivered)
 - [ ] **FE-10.3** In-app support/contact entry points (WhatsApp deep link)
 
@@ -432,7 +434,7 @@
 
 - [ ] **X-1** Weekly: dependency updates, `npm audit`, rotate any exposed keys
 - [ ] **X-2** Keep OpenAPI, ERD, and TRD in sync with code (update docs in the same PR as the change)
-- [ ] **X-3** Maintain bilingual message catalog; no hard-coded strings
+- [ ] **X-3** Maintain bilingual message catalog; no hard-coded strings (web: en/ur key parity is enforced at 614 keys each; Urdu terminology is enforced by `urdu-glossary.spec.ts` — add a glossary row before inventing a term)
 - [ ] **X-4** Keep k6 smoke in CI on staging after each deploy
 - [ ] **X-5** Legal/compliance: SECP registration, SBP/PTA review, vendor agreement, data-protection policy (SRS §10.1) — owner: business side
 
@@ -473,5 +475,5 @@
 | 1 | 0 | | | | TRD §20 items 1–3 |
 | 2 | | | | | |
 | 21-22 | 7 | Reviews, complaints with redo, promos and referrals; full unit and e2e suites green | Phase 8 | Real payment credentials and live Cloudinary checks pending; redo rider compensation not automated | Redo compensation policy |
-| 24 | 0 + admin FE | Started apps/web and completed the **admin panel**: all 17 screens (login, dashboard, vendors, riders, orders, dispatch, complaints, payouts, cash collection, commission, promos, announcements, reports, audit log, admin users, cities, queues) on a shared Phase 0 FE foundation — App Router, Tailwind v4 tokens, shadcn-style primitives, en/ur with RTL, BFF proxy keeping tokens server-side, refresh-rotation-safe session, role-driven shell. packages/shared added with two drift guards against the API. Charts are hand-rolled SVG with a palette validated against the real surfaces. Added `GET /admin/cities` to the API (the panel could not show current city settings without it) with its own e2e and Swagger contract check. Fixed two pre-existing e2e tests. Suites: 57 shared, 285 API unit, 629 API e2e, all green. | Phase 9 FE: JS/route budgets, offline audit, axe pass, Playwright + Lighthouse CI, PWA baseline. Then the customer, vendor and rider UIs. | Admin copy is English only for now — who reviews Urdu for the customer app (FE-10.1)? No admin list endpoint documents its query parameters and most document responses as `{type: object}`, so FE response types are hand-written (X-2). |
+| 24 | 0 + admin FE | Started apps/web and completed the **admin panel**: all 17 screens (login, dashboard, vendors, riders, orders, dispatch, complaints, payouts, cash collection, commission, promos, announcements, reports, audit log, admin users, cities, queues) on a shared Phase 0 FE foundation — App Router, Tailwind v4 tokens, shadcn-style primitives, en/ur with RTL, BFF proxy keeping tokens server-side, refresh-rotation-safe session, role-driven shell. packages/shared added with two drift guards against the API. Charts are hand-rolled SVG with a palette validated against the real surfaces. Added `GET /admin/cities` to the API (the panel could not show current city settings without it) with its own e2e and Swagger contract check. Fixed two pre-existing e2e tests. Suites: 57 shared, 285 API unit, 629 API e2e, all green. | Phase 9 FE: JS/route budgets, offline audit, axe pass, Playwright + Lighthouse CI, PWA baseline. Then the customer, vendor and rider UIs. | Urdu review resolved: engineering owns the drafts against docs/Dhoblio-URDU-GLOSSARY.md, enforced in CI; the only human sign-off left is a lawyer for the legal pages (X-5) and a native speaker for ~30 brand strings. No admin list endpoint documents its query parameters and most document responses as `{type: object}`, so FE response types are hand-written (X-2). |
 | 23 | 8 | Admin analytics with nightly rollup, vendor analytics, CSV/XLSX reports, announcements with rate-limited fan-out, audit-log search; full unit and e2e suites green | Phase 9 | Report files live in Postgres (move to object storage before large scale); no email when a report is ready; admin frontend not started | Where report files should live |

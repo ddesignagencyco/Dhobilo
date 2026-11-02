@@ -18829,11 +18829,11 @@
                 },
                 "examples": {
                   "RIDER_REVIEW_UNAVAILABLE": {
-                    "summary": "RIDER_REVIEW_UNAVAILABLE: This order was not delivered by a Dhobilo rider.",
+                    "summary": "RIDER_REVIEW_UNAVAILABLE: This order was not delivered by a Dhoblio rider.",
                     "value": {
                       "error": {
                         "code": "RIDER_REVIEW_UNAVAILABLE",
-                        "message": "This order was not delivered by a Dhobilo rider.",
+                        "message": "This order was not delivered by a Dhoblio rider.",
                         "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
                       }
                     }
@@ -18852,7 +18852,7 @@
           "reviews"
         ],
         "summary": "Review the vendor and/or rider",
-        "description": "**Who can use this:** signed-in customers.\n\nRate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhobilo rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction."
+        "description": "**Who can use this:** signed-in customers.\n\nRate a delivered order from 1 to 5 stars with an optional comment. Send `vendor`, `rider`, or both. A rider review is only possible when the order was delivered by a Dhoblio rider. One review per target per order; sending it twice returns `REVIEW_EXISTS`. Vendor and rider averages update in the same transaction."
       }
     },
     "/api/v1/vendors/{vendorId}/reviews": {

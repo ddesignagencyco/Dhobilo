@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "ڈھوبیلو",
+    "appName": "ڈھوبلیو",
     "adminPanel": "Admin",
     "loading": "Loading…",
     "save": "Save",
@@ -78,7 +78,7 @@
   },
   "login": {
     "title": "ایڈمن سائن اِن",
-    "subtitle": "ڈھوبیلو آپریشنز پینل",
+    "subtitle": "ڈھوبلیو آپریشنز پینل",
     "email": "ای میل",
     "emailPlaceholder": "you@dhoblio.com",
     "password": "پاس ورڈ",
