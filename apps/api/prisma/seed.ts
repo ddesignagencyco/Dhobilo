@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { Availability, CommissionScope, DocType, PrismaClient, Role, ServiceType, VendorStatus } from '@prisma/client';
+import { AdminRole, Availability, CommissionScope, DocType, PrismaClient, Role, ServiceType, VendorStatus } from '@prisma/client';
 import { FieldCrypto, parseKeyList } from '../src/common/crypto/field-crypto';
 
 const prisma = new PrismaClient();
@@ -159,6 +159,7 @@ async function main() {
       email,
       name: 'Platform Admin',
       role: Role.ADMIN,
+      adminRole: AdminRole.SUPER_ADMIN,
       passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
       phoneVerifiedAt: new Date(),
     },
