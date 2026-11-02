@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/admin/status-badge';
-import { bffData } from '@/lib/api/bff';
 import type { AdminVendorDetail } from '@/lib/api/types';
 import { formatDateTime, humanise } from '@/lib/format';
 import { useAdminMutation } from '@/lib/hooks/use-admin-mutation';

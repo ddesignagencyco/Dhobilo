@@ -12,7 +12,7 @@ import { LoadMore } from '@/components/admin/load-more';
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/admin/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { bffData } from '@/lib/api/bff';

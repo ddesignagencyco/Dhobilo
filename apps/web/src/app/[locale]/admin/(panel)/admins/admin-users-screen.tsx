@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, ShieldCheck, UserCog } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AdminRole } from '@dhoblio/shared';
 import { ActionDialog } from '@/components/admin/action-dialog';

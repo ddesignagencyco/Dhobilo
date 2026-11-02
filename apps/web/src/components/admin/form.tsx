@@ -66,7 +66,7 @@ export function Field({
  * instead of in a toast. Anything whose field has no matching input is returned so the caller can show it
  * at form level rather than dropping it.
  */
-export function applyServerFieldErrors<T extends Record<string, unknown>>(
+export function applyServerFieldErrors(
   fieldErrors: { field: string; messages: string[] }[],
   knownFields: readonly string[],
   setError: (name: never, error: { type: string; message: string }) => void,
