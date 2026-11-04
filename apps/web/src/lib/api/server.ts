@@ -104,3 +104,20 @@ export async function currentAdmin() {
   const session = await readSession();
   return session?.user ?? null;
 }
+
+/** The signed-in vendor (owner or staff), or null. For role-based layout guards. */
+export async function currentVendor() {
+  const session = await readSession();
+  const user = session?.user ?? null;
+  // Return user if role is VENDOR_OWNER or VENDOR_STAFF; null otherwise
+  const isVendor = user?.role === 'VENDOR_OWNER' || user?.role === 'VENDOR_STAFF';
+  return isVendor ? { ...user, vendorStatus: 'PENDING' as const } : null;
+}
+
+/** The signed-in customer, or null. For role-based layout guards. */
+export async function currentCustomer() {
+  const session = await readSession();
+  const user = session?.user ?? null;
+  // Return user if role is CUSTOMER; null otherwise
+  return user?.role === 'CUSTOMER' ? user : null;
+}

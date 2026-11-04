@@ -716,5 +716,19 @@
       "rateLimited": "Too many attempts. Try again in a little while.",
       "unreachable": "Could not reach the server. Try again."
     }
+  },
+  "vendor": {
+    "panel": "Vendor",
+    "nav": {
+      "openMenu": "Open menu",
+      "orders": "Orders",
+      "catalog": "Catalog",
+      "hours": "Hours",
+      "earnings": "Earnings",
+      "ledger": "Ledger",
+      "payouts": "Payouts",
+      "staff": "Staff",
+      "profile": "Profile"
+    }
   }
 }

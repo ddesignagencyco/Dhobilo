@@ -34,6 +34,7 @@ const intlMiddleware = createIntlMiddleware(routing);
 
 const SESSION_COOKIE = 'dh_admin_session';
 const CUSTOMER_SESSION_COOKIE = 'dh_customer_session';
+const VENDOR_SESSION_COOKIE = 'dh_vendor_session';
 const API_BASE_URL = (process.env.API_BASE_URL ?? 'http://localhost:4000/api/v1').replace(/\/$/, '');
 
 /** Reachable without a session. Everything else under /admin requires one. */
@@ -41,6 +42,9 @@ const PUBLIC_ADMIN_PATHS = ['/admin/login'];
 
 /** The customer sign-in lives outside the customer shell, like /admin/login. */
 const PUBLIC_CUSTOMER_PATHS = ['/login'];
+
+/** The vendor sign-in lives outside the vendor shell. */
+const PUBLIC_VENDOR_PATHS = ['/login'];
 
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -135,11 +139,73 @@ async function handleCustomer(request: NextRequest, locale: string, rest: string
   return response;
 }
 
+/**
+ * Vendor guard. Similar to customer guard but for vendor routes (/vendor/*).
+ */
+async function handleVendor(request: NextRequest, locale: string, rest: string) {
+  const isPublic = PUBLIC_VENDOR_PATHS.some((p) => rest === p || rest.startsWith(`${p}/`));
+  let session = parseSession(request.cookies.get(VENDOR_SESSION_COOKIE)?.value);
+
+  if (!session) {
+    if (isPublic) return NextResponse.next();
+    return redirectTo(request, `/${locale}/login`, {
+      next: `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    });
+  }
+
+  // A customer or rider account must not get a vendor shell full of 403s.
+  const isVendor = session.user.role === 'VENDOR_OWNER' || session.user.role === 'VENDOR_STAFF';
+  if (!isVendor) {
+    const bounce = redirectTo(request, `/${locale}/login`, { error: 'not_vendor' });
+    bounce.cookies.set(VENDOR_SESSION_COOKIE, '', { ...SESSION_COOKIE_OPTIONS, maxAge: 0 });
+    return bounce;
+  }
+
+  let rotated: MiddlewareSession | null = null;
+
+  if (needsRefresh(session)) {
+    const outcome = await refreshInMiddleware(session, API_BASE_URL);
+
+    if (outcome.status === 'dead') {
+      const params: Record<string, string> = { error: 'expired' };
+      if (!isPublic) params.next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+      const bounce = redirectTo(request, `/${locale}/login`, params);
+      bounce.cookies.set(VENDOR_SESSION_COOKIE, '', { ...SESSION_COOKIE_OPTIONS, maxAge: 0 });
+      return bounce;
+    }
+
+    if (outcome.status === 'refreshed') {
+      rotated = outcome.session;
+      session = outcome.session;
+      request.cookies.set(VENDOR_SESSION_COOKIE, JSON.stringify(outcome.session));
+    }
+  }
+
+  const response = isPublic ? redirectTo(request, `/${locale}`) : NextResponse.next();
+
+  if (rotated) {
+    response.cookies.set(VENDOR_SESSION_COOKIE, JSON.stringify(rotated), SESSION_COOKIE_OPTIONS);
+  }
+
+  return response;
+}
+
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { locale, rest } = stripLocale(pathname);
 
-  // Not an admin route: locale detection first, then the customer guard.
+  // Vendor routes: /vendor/*
+  if (rest.startsWith('/vendor')) {
+    if (!locale) {
+      const target = `/${preferredLocale(request)}${rest}`;
+      const url = request.nextUrl.clone();
+      url.pathname = target;
+      return NextResponse.redirect(url);
+    }
+    return handleVendor(request, locale, rest);
+  }
+
+  // Not an admin or vendor route: locale detection first, then the customer guard.
   if (!rest.startsWith('/admin')) {
     if (!locale) return intlMiddleware(request);
     return handleCustomer(request, locale, rest);
