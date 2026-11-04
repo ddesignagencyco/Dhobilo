@@ -8,13 +8,19 @@ export interface CartContextValue {
   clearCart: () => void;
 }
 
+interface CartAction {
+  type: 'ADD_ITEM' | 'UPDATE_QUANTITY' | 'REMOVE_ITEM' | 'CLEAR' | 'SET';
+  payload?: Record<string, unknown>;
+}
+
 /**
  * Reducer for cart state (immutable updates).
  */
-export function cartReducer(state: Cart | null, action: any): Cart | null {
+export function cartReducer(state: Cart | null, action: CartAction): Cart | null {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const { vendorId, itemId, quantity } = action.payload;
+      const payload = action.payload as { vendorId: string; itemId: string; quantity: number };
+      const { vendorId, itemId, quantity } = payload;
       // Different vendor: replace cart
       if (state && state.vendorId !== vendorId) {
         return { vendorId, items: [{ itemId, quantity }] };
@@ -31,7 +37,8 @@ export function cartReducer(state: Cart | null, action: any): Cart | null {
     }
     case 'UPDATE_QUANTITY': {
       if (!state) return state;
-      const { itemId, quantity } = action.payload;
+      const payload = action.payload as { itemId: string; quantity: number };
+      const { itemId, quantity } = payload;
       if (quantity <= 0) {
         return { ...state, items: state.items.filter((i) => i.itemId !== itemId) };
       }
@@ -39,12 +46,13 @@ export function cartReducer(state: Cart | null, action: any): Cart | null {
     }
     case 'REMOVE_ITEM': {
       if (!state) return state;
-      return { ...state, items: state.items.filter((i) => i.itemId !== action.payload.itemId) };
+      const payload = action.payload as { itemId: string };
+      return { ...state, items: state.items.filter((i) => i.itemId !== payload.itemId) };
     }
     case 'CLEAR':
       return null;
     case 'SET':
-      return action.payload;
+      return (action.payload as Cart | null) || null;
     default:
       return state;
   }

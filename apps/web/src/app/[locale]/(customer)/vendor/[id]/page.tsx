@@ -7,13 +7,45 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata = { title: 'Vendor Details' };
 
+interface VendorHours {
+  closed: boolean;
+  start?: string;
+  end?: string;
+}
+
+interface CatalogItem {
+  id: string;
+  nameEn: string;
+  nameUr?: string;
+  price: string;
+  turnaroundHours: number;
+}
+
+interface VendorData {
+  name: string;
+  rating?: number;
+  ratingCount?: number;
+  serviceRadiusKm?: number;
+  openNow: boolean;
+  hours?: Record<string, VendorHours>;
+  catalog?: Record<string, CatalogItem[]>;
+}
+
 async function VendorDetail({ vendorId }: { vendorId: string }) {
+  let vendor: VendorData | null = null;
   try {
     const result = await apiClient.get(`/vendors/${vendorId}`);
-    const vendor = result.data as any;
+    vendor = result.data;
+  } catch {
+    notFound();
+  }
 
-    return (
-      <div className="space-y-6">
+  if (!vendor) {
+    notFound();
+  }
+
+  return (
+    <div className="space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-semibold">{vendor.name}</h1>
@@ -43,7 +75,7 @@ async function VendorDetail({ vendorId }: { vendorId: string }) {
               Hours
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-              {Object.entries(vendor.hours as Record<string, any>).map(([day, hours]: [string, any]) => (
+              {Object.entries(vendor.hours || {}).map(([day, hours]) => (
                 <div key={day} className="flex justify-between">
                   <span className="capitalize text-muted-foreground">{day}</span>
                   <span>{hours.closed ? 'Closed' : `${hours.start} – ${hours.end}`}</span>
@@ -57,11 +89,11 @@ async function VendorDetail({ vendorId }: { vendorId: string }) {
         {vendor.catalog && (
           <div className="border-t pt-4">
             <h2 className="text-lg font-semibold mb-4">Services</h2>
-            {Object.entries(vendor.catalog as Record<string, any[]>).map(([category, items]) => (
+            {Object.entries(vendor.catalog || {}).map(([category, items]) => (
               <div key={category} className="mb-6">
                 <h3 className="font-medium mb-2 text-base capitalize">{category}</h3>
                 <div className="space-y-2">
-                  {items.map((item: any) => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex justify-between items-start p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{item.nameEn}</p>
@@ -77,9 +109,6 @@ async function VendorDetail({ vendorId }: { vendorId: string }) {
         )}
       </div>
     );
-  } catch {
-    notFound();
-  }
 }
 
 export default async function VendorDetailPage({

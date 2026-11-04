@@ -1,8 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { Star, MapPin, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Star, MapPin } from 'lucide-react';
 
 interface VendorCardProps {
   id: string;
