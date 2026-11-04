@@ -47,9 +47,9 @@ export interface BffOptions {
   headers?: Record<string, string>;
 }
 
-function bffUrl(path: string, query?: Record<string, unknown>): string {
+function bffUrl(base: string, path: string, query?: Record<string, unknown>): string {
   const clean = path.startsWith('/') ? path : `/${path}`;
-  const url = new URL(`/api/bff${clean}`, window.location.origin);
+  const url = new URL(`${base}${clean}`, window.location.origin);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null || value === '') continue;
@@ -74,9 +74,13 @@ function handleSessionExpiry(): never {
 }
 
 export async function bff<T>(path: string, options: BffOptions = {}): Promise<BffResult<T>> {
+  return bffAt('/api/bff', path, options);
+}
+
+async function bffAt<T>(base: string, path: string, options: BffOptions = {}): Promise<BffResult<T>> {
   const { method = 'GET', query, body, signal, headers = {} } = options;
 
-  const response = await fetch(bffUrl(path, query), {
+  const response = await fetch(bffUrl(base, path, query), {
     method,
     headers: {
       Accept: 'application/json',
@@ -116,4 +120,13 @@ export async function bff<T>(path: string, options: BffOptions = {}): Promise<Bf
 /** Convenience for TanStack Query, which only wants the payload. */
 export async function bffData<T>(path: string, options: BffOptions = {}): Promise<T> {
   return (await bff<T>(path, options)).data;
+}
+
+/** Customer app variants: same client, different session cookie behind the proxy. */
+export async function customerBff<T>(path: string, options: BffOptions = {}): Promise<BffResult<T>> {
+  return bffAt('/api/customer/bff', path, options);
+}
+
+export async function customerBffData<T>(path: string, options: BffOptions = {}): Promise<T> {
+  return (await customerBff<T>(path, options)).data;
 }

@@ -1,7 +1,8 @@
 # Dhoblio web (`apps/web`)
 
-Next.js 16 App Router app holding all four role UIs. The **admin panel** is built; `(customer)`,
-`(vendor)` and `(rider)` are not started yet.
+Next.js 16 App Router app holding all four role UIs. The **admin panel** and the **customer app's**
+foundation (OTP sign-in, shell, home/city selection, orders placeholder, profile) are built; `(vendor)`
+and `(rider)` are not started yet.
 
 This file is the handover note for anyone adding a new role UI — mainly the decisions that are easy to
 undo by accident.
@@ -16,13 +17,14 @@ npm run db:migrate && npm run db:seed
 # API on :4000
 npm run api:build && node apps/api/dist/main.js
 
-# Web on :3000
+# Web on :3001
 echo 'API_BASE_URL=http://localhost:4000/api/v1' > apps/web/.env.local
 npm run dev -w @dhoblio/web
 ```
 
 Sign in at `/en/admin/login` with the seeded admin (`admin@dhoblio.local`, password from
-`SEED_ADMIN_PASSWORD`, default `ChangeMe!12345`).
+`SEED_ADMIN_PASSWORD`, default `ChangeMe!12345`). Customers sign in at `/en/login` with a phone number
+and the development OTP `123456` when `OTP_BYPASS=true`.
 
 ## Layout
 
@@ -31,16 +33,21 @@ src/
   app/
     [locale]/
       layout.tsx              # html/lang/dir, fonts, next-intl + TanStack Query providers
+      login/                  # customer phone + OTP (outside the customer shell)
+      (customer)/             # authenticated customer shell: top bar, bottom nav
       admin/
         login/                # outside the panel shell on purpose (see "Route groups")
         (panel)/              # the authenticated shell: sidebar, header, user menu
-    api/bff/[...path]/        # the browser's only route to the API
+    api/bff/[...path]/        # the admin browser's only route to the API
+    api/customer/bff/[...path]/ # the customer browser's route to the API (separate cookie)
   components/ui/              # shadcn-style primitives (we own these files)
   components/admin/           # panel-specific building blocks
+  components/customer/        # bottom nav and city picker
   i18n/                       # next-intl routing, navigation, request config
   lib/
     api/                      # server client, BFF client, errors, types
-    auth/                     # session cookie, refresh, server actions
+    auth/                     # admin session cookie, refresh, server actions
+    customer/                 # customer session, server helpers, server actions, types
     admin/                    # nav definition and sidebar counts
   messages/{en,ur}.json
   proxy.ts                    # Next 16's middleware: locale, guard, token refresh
@@ -58,12 +65,14 @@ tokens in its own `httpOnly` cookie on the web origin.
 Consequences, all deliberate:
 
 - No token is readable from JavaScript, so an XSS in a chart library cannot exfiltrate a session.
-- The browser talks only to `/api/bff/*`, which attaches the token server-side. Same origin, no CORS.
+- The browser talks only to `/api/bff/*` (admin) or `/api/customer/bff/*` (customer), which attach the
+  token server-side. Same origin, no CORS.
 - Web and API can live on unrelated domains with no SameSite negotiation.
 
-**If you build the customer app:** the same BFF works, but think about whether a customer UI needs
-server-side session at all — a PWA that must work offline may want a different trade-off. Do not weaken
-the admin side to share one.
+**The customer app reuses the pattern with a separate cookie** (`dh_customer_session`, not
+`dh_admin_session`) and its own BFF route. That separation is deliberate: an admin signed in on the same
+browser must not become a customer, and a customer token must never be accepted by an admin route. Both
+cookies follow the same rotation rules below. Do not merge them.
 
 ### Refresh-token rotation is the sharp edge
 
@@ -81,17 +90,16 @@ presented again — that is how it detects theft. Two consequences:
 
 `(panel)/layout.tsx` redirects to the login page when there is no session. If the login page were inside
 that layout it would redirect to itself — an immediate loop. That is why login lives at
-`admin/login/` and everything authenticated lives in `admin/(panel)/`.
+`admin/login/` and everything authenticated lives in `admin/(panel)/`. The customer app follows the same
+split: `login/` is public and `(customer)/` holds the authenticated shell.
 
 ### next-intl does not run on admin routes
 
-`proxy.ts` sends customer/vendor/rider routes through next-intl's middleware but handles `/admin/*` itself.
-next-intl was redirecting an already-correct `/en/admin/login` back to itself. The panel does not need
-what it offers — an admin URL always carries its locale — so prefixing is a two-line decision in the
-proxy. Translations are unaffected: they come from `setRequestLocale` plus `NextIntlClientProvider`.
-
-**Keep next-intl's middleware for the customer app.** Locale detection from `Accept-Language` genuinely
-matters there.
+`proxy.ts` sends non-admin routes through next-intl's middleware (so `Accept-Language` detection and
+prefixing still work), then applies the customer guard. It handles `/admin/*` itself: next-intl was
+redirecting an already-correct `/en/admin/login` back to itself, and an admin URL always carries its
+locale. Translations are unaffected either way: they come from `setRequestLocale` plus
+`NextIntlClientProvider`.
 
 ### `typedRoutes` is off
 
@@ -168,15 +176,19 @@ Rules worth not breaking:
 
 ## Not done yet
 
-All 17 admin screens are built. Still open:
+All 17 admin screens and the customer foundation (login, shell, home/city, orders placeholder, profile)
+are built. Still open:
 
 - **Phase 9 FE** — JS/route budgets (FE-9.1; the largest client chunk currently gzips to ~70 KB, but
   per-route first-load has not been measured against the 170 KB target), offline behaviour audit,
   the full RTL/Urdu pass with a native speaker, the axe accessibility pass, and the cross-browser matrix.
 - **Playwright and Lighthouse CI** (FE-0.9, QA-9.7) — `test:e2e` is wired but has no specs.
 - **PWA baseline** (FE-0.7) — no manifest or service worker yet.
-- **Urdu admin copy** — `ur.json` mirrors every `en.json` key (614 each, parity enforced), but the admin
-  strings are English by agreement. Filling them needs no code change.
+- **Urdu admin copy** — `ur.json` mirrors every `en.json` key (664 each, parity enforced). Customer
+  strings are translated; the admin strings are still English by agreement. Filling them needs no code
+  change.
 - next-intl ships the **whole** message catalogue to the client. Fine at this size; worth splitting per
-  route when the customer app lands, since it will add far more strings.
-- Customer, vendor and rider UIs.
+  route now that the customer app has landed, since it adds most of the new strings.
+- **Customer discovery** — addresses and the map-pin picker (FE-1.4, FE-1.5), then discovery, cart,
+  slots and checkout (FE-3.x).
+- Vendor and rider UIs.

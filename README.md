@@ -8,7 +8,7 @@ Product and technical specs live in [docs/](docs/): [SRS](docs/Dhoblio-SRS.md), 
 
 ## Status
 
-Backend only; the frontend (`apps/web`) has not been started.
+The backend is feature-complete for the MVP (Phases 0–9b). In `apps/web`, the **admin panel** is built and the **customer app** has its foundation, OTP sign-in, home/city selection and profile; the **vendor and rider UIs are not started**.
 
 - Phase 0 (Foundation): done.
 - Phase 1 (Auth, users, addresses): backend done. The real SMS gateway adapter waits on choosing a provider (mock provider works).
@@ -21,6 +21,7 @@ Backend only; the frontend (`apps/web`) has not been started.
 - Phase 9 (Hardening): partly done. Per-route and global rate limits, strict headers/CORS/cookies with a CSRF origin check, database pool settings, graceful shutdown with two replicas behind a load balancer, queue-health alerts and admin view, a retention job, backup/restore scripts with a drilled restore, k6 load scripts, and three performance fixes found by load testing (timezone formatter, city order-counter lock, retryable 503 instead of 500 on database overload). Not done: staging load/stress/soak/chaos runs (the 200-user order test misses its latency budget on the development PC), ZAP scan, pen-test, PITR drill. See [docs/Dhoblio-OPS.md](docs/Dhoblio-OPS.md).
 - Phase 8 (Admin analytics, reports and announcements): backend done. Platform analytics (overview, orders, revenue, top vendors) by city and date range on Pakistan business days, read from daily summary tables that a nightly job fills (a missing day is filled on demand; today is always live) and cross-checked against the orders table in tests; a vendor-facing analytics view; CSV and Excel reports (orders, payments, payouts, cash collections, vendors) built in the background with a 250,000-row cap, masked phone numbers, spreadsheet-formula protection and short-lived signed download links (a 100,000-row export takes about 35 s and does not stall the API); admin announcements by role, city and activity with an audience preview, a confirm-the-count safety check and per-channel rate limits (push 200/s, SMS 20/s, email 10/s); and an audit-log search API. Report files are stored in Postgres for now and kept 7 days; nobody is emailed when a report is ready.
 - Phase 7 (Reviews, complaints, promos and referrals): backend done. Post-delivery vendor and rider reviews with transactional rating aggregates, complaints with photos and vendor/admin threads, refund/redo/reject resolution with linked redo jobs, atomic promo redemption with per-user and global limits, admin promo management, and referral rewards on the referee's first delivered order. Every route is documented in Swagger. All unit and e2e suites pass locally against Dockerized Postgres and Redis.
+- Frontend (`apps/web`): Phase 0 foundation plus the complete **admin panel** — 17 screens (login, dashboard, vendors, riders, orders, dispatch, complaints, payouts, cash collection, commission, promos, announcements, reports, audit log, admin users, cities, queues) on a shared App Router foundation with Tailwind v4 tokens and owned shadcn-style primitives. English/Urdu with RTL, a BFF proxy that keeps tokens server-side, refresh-rotation-safe sessions, and a role-driven shell. Charts are hand-rolled SVG with a validated palette. The **customer app** now has its shell (bottom nav), phone/OTP sign-in with resend and auto-submit, city selection with a "not available in your city yet" state, an orders placeholder and a profile with name and language. Vendor and rider UIs are next.
 
 ### API so far (`/api/v1`)
 
@@ -98,11 +99,11 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Unit and e2e test harness | `src/**/*.spec.ts`, `apps/api/test` |
 | CI: install, Prisma generate/validate, lint (when configured), typecheck, unit + e2e tests, API build, OpenAPI artifact | `.github/workflows/ci.yml` |
 
-Next: finish Phase 9 on staging (load, stress, soak, chaos, security scan), then admin roles. See the [tracker](docs/Dhoblio-TRACKER.md).
+Next: customer discovery, cart and checkout (then vendor and rider), then finish Phase 9 on staging (load, stress, soak, chaos, security scan). See the [tracker](docs/Dhoblio-TRACKER.md).
 
 ## Stack
 
-TypeScript (strict), Node.js 22+, NestJS 11, PostgreSQL 16, Prisma 6, Redis 7 + BullMQ, Docker Compose, npm workspaces.
+TypeScript (strict), Node.js 22+, NestJS 11, PostgreSQL 16, Prisma 6, Redis 7 + BullMQ, Next.js 16 (App Router), React 19, Tailwind v4, next-intl, TanStack Query, React Hook Form + zod, Docker Compose, npm workspaces.
 
 ## Quick start
 
@@ -118,6 +119,15 @@ npm run api:dev             # API on http://localhost:4000
 ```
 
 The root `.env` is read by the API and by the `db:*` scripts. Open http://localhost:4000/api/v1/docs for the Swagger UI and http://localhost:8025 for MailHog.
+
+### Web app
+
+```bash
+echo 'API_BASE_URL=http://localhost:4000/api/v1' > apps/web/.env.local
+npm run dev -w @dhoblio/web     # web on http://localhost:3001
+```
+
+Customers sign in at http://localhost:3001/en/login with a phone number and the development OTP `123456` (when `OTP_BYPASS=true`); admins sign in at http://localhost:3001/en/admin/login with the seeded admin. See [`apps/web/README.md`](apps/web/README.md) for the panel's conventions and handover notes.
 
 ### Everything in Docker
 
@@ -139,6 +149,8 @@ From the repo root:
 |---|---|
 | `npm run api:dev` | API in watch mode |
 | `npm run api:build` | Compile the API to `apps/api/dist/` |
+| `npm run dev -w @dhoblio/web` | Web app (admin panel + customer app) in watch mode on port 3001 |
+| `npm run build -w @dhoblio/web` | Production build of the web app |
 | `npm run db:migrate` | Generate the Prisma client and apply migrations |
 | `npm run db:seed` | Seed cities, categories, admin user, global commission and demo vendors |
 | `npm run lint` / `npm run typecheck` / `npm test` | Run across all workspaces (`--if-present`) |
@@ -156,7 +168,7 @@ From `apps/api` (the root `api:*` shortcuts run the first two):
 
 ## CI
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `dev`, `main` and `phase-*`, and on pull requests to `dev` and `main`. It uses Node 22 with throwaway PostgreSQL 16 and Redis 7 services and runs: install, Prisma generate + schema validation, lint (once workspace lint scripts exist), typecheck, unit tests, API build, the full e2e suite, and uploads the generated `openapi.json` as an artifact.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `dev`, `main` and `phase-*`, and on pull requests to `dev` and `main`. It uses Node 22 with throwaway PostgreSQL 16 and Redis 7 services and runs: install, Prisma generate + schema validation, lint, typecheck, unit tests, API build, the full e2e suite, and uploads the generated `openapi.json` as an artifact.
 
 ## Layout
 
@@ -166,8 +178,17 @@ apps/api/            NestJS backend (API + worker share one codebase)
   src/common/        envelope, errors, filters, pipes, logging
   src/config/        zod env validation
   src/infra/         prisma, redis, queues, mail, cloudinary
-  src/modules/       feature modules (audit, health so far)
+  src/modules/       feature modules (auth, orders, payments, delivery, ...)
   test/              e2e tests
+apps/web/            Next.js App Router app (admin panel + customer auth/shell; vendor, rider next)
+  src/app/[locale]/  route groups and screens (admin; (customer) shell, home, orders, profile; login)
+  src/app/api/bff/   the admin browser's only route to the API (tokens stay server-side)
+  src/app/api/customer/bff/  the customer browser's BFF route (separate session cookie)
+  src/components/    owned UI primitives, admin and customer pieces, charts
+  src/lib/           API clients, auth/customer sessions, hooks, helpers
+  src/messages/      en + ur catalogues
+  src/proxy.ts       locale routing, admin/customer guards, token refresh
+packages/shared/     shared zod schemas, money helpers, admin permission mirror
 packages/config/     shared TypeScript presets
 docker/              Dockerfiles
 docs/                SRS, TRD, ERD, tracker

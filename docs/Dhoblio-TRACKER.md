@@ -64,7 +64,7 @@
 - [ ] **BE-0.12** Test harness: Jest unit config, Supertest e2e with real Postgres/Redis, factory helpers
 
 ### FE
-- [x] **FE-0.1** Next.js App Router + TypeScript strict + Tailwind; route groups `(customer)`, `(rider)`, `(vendor)`, `(admin)` under `[locale]` (Next.js 16 App Router, TS strict, Tailwind v4; route groups under [locale] ((customer), (vendor), (rider) not started))
+- [x] **FE-0.1** Next.js App Router + TypeScript strict + Tailwind; route groups `(customer)`, `(rider)`, `(vendor)`, `(admin)` under `[locale]` (Next.js 16 App Router, TS strict, Tailwind v4; route groups under [locale] ((customer) shell + OTP sign-in; (vendor) and (rider) not started))
 - [x] **FE-0.2** `next-intl` with `en`/`ur`, RTL `dir`, logical-property Tailwind conventions, Urdu font subset (next-intl en/ur with RTL dir and logical-property conventions; Urdu font loaded only for ur)
 - [x] **FE-0.3** Design tokens + base components (Button, Input, Select, Modal, Toast, Skeleton, EmptyState, Pagination, Timeline) — mobile-first, large touch targets (design tokens in oklch plus shadcn-style primitives we own (Button, Input, Select, Dialog, Sheet, Toast, Skeleton, EmptyState, Table, Badge, Alert, DropdownMenu, Avatar, Separator, Textarea, Label, Card))
 - [x] **FE-0.4** Typed API client generated from OpenAPI; token refresh interceptor; error-code → message mapping (types generated from OpenAPI and checked in CI; tokens held server-side with a BFF proxy, refresh-rotation-safe; error codes mapped to behaviour, server message shown otherwise)
@@ -99,13 +99,13 @@
 - [x] **BE-1.11** Tests: OTP rate-limit, expiry, brute-force, refresh reuse, RBAC matrix for every role
 
 ### FE
-- [ ] **FE-1.1** Phone entry + OTP screen: numeric keypad, 6-box input, resend countdown, auto-submit, Urdu/English copy (FR-C1)
-- [ ] **FE-1.2** Auth state: in-memory access token + httpOnly refresh cookie flow, silent refresh, logout
+- [x] **FE-1.1** Phone entry + OTP screen: numeric keypad, 6-box input, resend countdown, auto-submit, Urdu/English copy (FR-C1) (customer login at `/[locale]/login`: 6-box code input with paste and auto-submit, resend countdown, phone change, dev code 123456 hinted outside production)
+- [x] **FE-1.2** Auth state: in-memory access token + httpOnly refresh cookie flow, silent refresh, logout (separate customer session cookie behind `/api/customer/bff`; refresh rotation in middleware and server actions; sign-out revokes the API session)
 - [x] **FE-1.3** Admin login page (email/password) (admin login with the API 15-minute lockout surfaced)
 - [ ] **FE-1.4** Address book: list, add/edit/delete, set default (FR-C2)
 - [ ] **FE-1.5** Map-pin picker: Google Maps + Places autocomplete, GPS "use my location", draggable pin, reverse-geocode prefill (FR-C2)
-- [ ] **FE-1.6** Profile screen: name, language switch (persists to `/me`)
-- [ ] **FE-1.7** City selection / detection with "not available in your city yet" state
+- [x] **FE-1.6** Profile screen: name, language switch (persists to `/me`) (name saved through a server action; language buttons persist `EN`/`UR` and move locale; phone read-only)
+- [x] **FE-1.7** City selection / detection with "not available in your city yet" state (active cities from `GET /cities`, cookie preference, "my city is not listed" warning)
 
 ### QA
 - [ ] **QA-1.1** Playwright: login (OTP bypass) → add address → logout, en + ur

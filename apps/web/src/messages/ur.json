@@ -654,5 +654,67 @@
     "someUnhealthyBody": "Affected: {names}.",
     "empty": "No queues reporting",
     "dlqNote": "Jobs that exhaust their retries stay in the failed set, which is the dead-letter store. Ops is alerted separately by email."
+  },
+  "customer": {
+    "brand": "ڈھوبلیو",
+    "tagline": "کپڑے دھونے اور ڈرائی کلیننگ کی سہولت، آپ کے دروازے سے۔",
+    "nav": {
+      "label": "مینو",
+      "home": "ہوم",
+      "orders": "آرڈرز",
+      "profile": "پروفائل"
+    },
+    "home": {
+      "greeting": "خوش آمدید، {name}",
+      "greetingGuest": "خوش آمدید",
+      "city": "شہر",
+      "chooseCity": "اپنا شہر منتخب کریں",
+      "noCity": "ہم ابھی آپ کے شہر میں دستیاب نہیں ہیں۔",
+      "noCityHint": "ہم جلد وہاں پہنچ رہے ہیں۔",
+      "cityNotListed": "میرا شہر فہرست میں نہیں ہے",
+      "cityLoadError": "شہروں کی فہرست لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+      "nextTitle": "اپنا پہلا آرڈر دیں",
+      "nextBody": "کپڑے دھونے کا آرڈر دیں، پک اپ سے ڈیلیوری تک سب ہم سنبھال لیں گے۔",
+      "ordersCta": "آرڈرز دیکھیں"
+    },
+    "orders": {
+      "title": "میرے آرڈرز",
+      "empty": "ابھی کوئی آرڈر نہیں",
+      "emptyHint": "آپ کے آرڈر یہاں نظر آئیں گے۔",
+      "browse": "آرڈر دیں"
+    },
+    "profile": {
+      "title": "پروفائل",
+      "name": "نام",
+      "phone": "فون نمبر",
+      "language": "زبان",
+      "save": "محفوظ کریں",
+      "saving": "محفوظ ہو رہا ہے…",
+      "saved": "آپ کی تفصیلات محفوظ ہو گئیں۔",
+      "namePlaceholder": "اپنا نام لکھیں",
+      "signOut": "سائن آؤٹ"
+    },
+    "login": {
+      "expired": "آپ کا سیشن ختم ہو گیا۔ دوبارہ سائن ان کریں۔",
+      "notCustomer": "یہ نمبر دکان یا عملے کے اکاؤنٹ کا ہے۔ درست ایپ استعمال کریں۔",
+      "devHint": "ڈویلپمنٹ میں کوڈ 123456 ہے۔",
+      "phoneTitle": "فون نمبر سے سائن ان کریں",
+      "codeTitle": "کوڈ درج کریں",
+      "phone": "فون نمبر",
+      "phonePlaceholder": "03xx xxxxxxx",
+      "sendCode": "کوڈ بھیجیں",
+      "sending": "بھیجا جا رہا ہے…",
+      "codeSentTo": "کوڈ بھیجا گیا:",
+      "codeDigit": "کوڈ ہندسہ",
+      "verify": "تصدیق کریں",
+      "verifying": "تصدیق ہو رہی ہے…",
+      "resend": "کوڈ دوبارہ بھیجیں",
+      "resendIn": "دوبارہ بھیجیں ({seconds} سیکنڈ)",
+      "changeNumber": "نمبر تبدیل کریں",
+      "invalidCode": "کوڈ غلط ہے یا اس کی مدت ختم ہو گئی ہے۔ نیا کوڈ منگوائیں۔",
+      "invalidPhone": "درست فون نمبر درج کریں۔",
+      "rateLimited": "بہت زیادہ کوششیں۔ تھوڑی دیر بعد کوشش کریں۔",
+      "unreachable": "سرور سے رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں۔"
+    }
   }
 }

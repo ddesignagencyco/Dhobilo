@@ -27,8 +27,8 @@ const notoUrdu = Noto_Nastaliq_Urdu({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'Dhoblio Admin', template: '%s · Dhoblio Admin' },
-  description: 'Dhoblio operations panel',
+  title: { default: 'Dhoblio', template: '%s · Dhoblio' },
+  description: 'Laundry and dry cleaning, picked up from your door.',
   robots: { index: false, follow: false },
 };
 
