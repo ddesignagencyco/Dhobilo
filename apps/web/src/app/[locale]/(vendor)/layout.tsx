@@ -13,7 +13,7 @@ export default async function VendorLayout({
   }
 
   return (
-    <VendorShell vendorName={vendor.name} vendorStatus={vendor.vendorStatus || 'PENDING'}>
+    <VendorShell vendorName={vendor.name || 'Shop'} vendorStatus={vendor.vendorStatus || 'PENDING'}>
       {children}
     </VendorShell>
   );
