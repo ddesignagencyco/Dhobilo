@@ -1,4 +1,3 @@
-import { getTranslations } from 'next-intl/server';
-export default async function Page() {
-  return <div><h1 className='text-2xl font-bold'>ledger</h1></div>;
+export default async function LedgerPage() {
+  return <div><h1 className="text-2xl font-bold">Ledger</h1></div>;
 }

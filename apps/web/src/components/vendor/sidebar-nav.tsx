@@ -28,7 +28,7 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   { href: '/vendor/ledger', labelKey: 'vendor.nav.ledger', icon: <DollarSignIcon className="size-4" /> },
   { href: '/vendor/payouts', labelKey: 'vendor.nav.payouts', icon: <DollarSignIcon className="size-4" /> },
   { href: '/vendor/staff', labelKey: 'vendor.nav.staff', icon: <UsersIcon className="size-4" /> },
-  { href: '/vendor/profile', labelKey: 'vendor.nav.profile', icon: <SettingsIcon className="size-4" /> },
+  { href: '/vendor/settings', labelKey: 'vendor.nav.profile', icon: <SettingsIcon className="size-4" /> },
 ];
 
 export function VendorSidebarNav({ onNavigate }: { onNavigate?: () => void }) {

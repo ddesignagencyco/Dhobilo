@@ -21,6 +21,8 @@ export default [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
       ],
+      // Disable Next.js rule that has regex parsing bug with route groups containing parentheses
+      '@next/next/no-html-link-for-pages': 'off',
     },
   },
   {
