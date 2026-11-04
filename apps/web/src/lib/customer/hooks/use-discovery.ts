@@ -4,7 +4,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { discoveryQueryKeys } from '../queries';
 
-type DiscoveryFilters = {
+export type DiscoveryFilters = {
   serviceType?: string;
   minRating?: number;
   maxPrice?: number;
