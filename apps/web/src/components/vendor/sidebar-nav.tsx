@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
 import {
-  HomeIcon,
   ShoppingBagIcon,
   LayoutGridIcon,
   ClockIcon,

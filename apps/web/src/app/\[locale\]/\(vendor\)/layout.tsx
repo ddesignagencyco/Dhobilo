@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { VendorShell } from '@/components/vendor/vendor-shell';
 import { currentVendor } from '@/lib/api/server';
 

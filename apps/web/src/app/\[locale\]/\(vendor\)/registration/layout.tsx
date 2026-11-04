@@ -2,10 +2,8 @@ import { WizardHeader } from '@/components/vendor/wizard/wizard-header';
 
 export default async function RegistrationLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
   // Parse step from URL if available (placeholder; client will handle step routing)
   const currentStep = 1; // Default to step 1

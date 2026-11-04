@@ -21,7 +21,7 @@ export function VendorShell({
   vendorStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
 }) {
   const t = useTranslations();
-  const pathname = usePathname();
+  const _pathname = usePathname();
 
   return (
     <div className="bg-muted/30 min-h-dvh">
