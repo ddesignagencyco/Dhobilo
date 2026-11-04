@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { VendorShell } from '@/components/vendor/vendor-shell';
 import { currentVendor } from '@/lib/api/server';
 
@@ -20,11 +20,6 @@ export default async function VendorLayout({
   // Fetch current vendor from /me endpoint
   const vendor = await currentVendor();
   if (!vendor) {
-    redirect(`/${locale}/login`);
-  }
-
-  // Only allow VENDOR role
-  if (vendor.role !== 'VENDOR') {
     redirect(`/${locale}/login`);
   }
 

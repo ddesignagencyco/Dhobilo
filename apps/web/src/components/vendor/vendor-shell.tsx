@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Link, usePathname } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { UserMenu } from '@/components/admin/user-menu';
 import { MobileNav } from '@/components/admin/mobile-nav';
 import { VendorSidebarNav } from './sidebar-nav';
@@ -21,7 +21,6 @@ export function VendorShell({
   vendorStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
 }) {
   const t = useTranslations();
-  const pathname = usePathname();
 
   return (
     <div className="bg-muted/30 min-h-dvh">

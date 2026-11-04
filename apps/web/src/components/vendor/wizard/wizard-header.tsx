@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { CheckCircle2Icon } from 'lucide-react';
 
 interface Step {
@@ -16,7 +15,6 @@ const STEPS: Step[] = [
 ];
 
 export function WizardHeader({ currentStep }: { currentStep: number }) {
-  const t = useTranslations('vendor.registration');
 
   return (
     <div className="mb-8">
