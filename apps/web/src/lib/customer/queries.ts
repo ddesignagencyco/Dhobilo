@@ -13,6 +13,8 @@ export const cartQueryKeys = {
 export const checkoutQueryKeys = {
   all: ['checkout'] as const,
   draft: () => [...checkoutQueryKeys.all, 'draft'] as const,
+  estimates: () => [...checkoutQueryKeys.all, 'estimate'] as const,
+  estimate: (cart: any, vendorId?: string) => [...checkoutQueryKeys.estimates(), { cart, vendorId }] as const,
 };
 
 export const orderQueryKeys = {
