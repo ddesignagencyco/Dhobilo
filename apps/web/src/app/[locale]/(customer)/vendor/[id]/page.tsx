@@ -34,7 +34,7 @@ interface VendorData {
 async function VendorDetail({ vendorId }: { vendorId: string }) {
   let vendor: VendorData | null = null;
   try {
-    const result = await apiClient.get(`/vendors/${vendorId}`);
+    const result = await apiClient.get<VendorData>(`/vendors/${vendorId}`);
     vendor = result.data;
   } catch {
     notFound();
