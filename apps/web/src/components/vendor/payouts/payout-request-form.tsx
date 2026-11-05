@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 const payoutSchema = z.object({
-  iban: z.string().regex(/^PK\d{2}\w{4}\d{21}$/, 'Invalid IBAN'),
-  amount: z.string().transform(Number).pipe(z.number().positive()),
+  iban: z.string().min(1, 'IBAN required').regex(/^PK/, 'Invalid IBAN'),
+  amount: z.string().min(1, 'Amount required'),
 });
 
 type PayoutForm = z.infer<typeof payoutSchema>;
@@ -23,11 +23,13 @@ export function PayoutRequestForm({ availableBalance }: { availableBalance: numb
 
   const form = useForm<PayoutForm>({
     resolver: zodResolver(payoutSchema),
+    defaultValues: { iban: '', amount: '' },
   });
 
-  const onSubmit = async (data: PayoutForm) => {
-    if (data.amount > availableBalance) {
-      form.setError('amount', { message: t('insufficientBalance') });
+  const onSubmit = (data: PayoutForm) => {
+    const amount = parseFloat(data.amount);
+    if (amount > availableBalance) {
+      toast.error(t('insufficientBalance'));
       return;
     }
     toast.success(t('payoutRequested'));
