@@ -3,43 +3,36 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api/client';
 import { discoveryQueryKeys } from '../queries';
+import type { VendorCard } from '../types';
 
 export type DiscoveryFilters = {
+  cityId?: number;
+  q?: string;
   serviceType?: string;
   minRating?: number;
   maxPrice?: number;
   sortBy?: 'distance' | 'rating' | 'price';
 };
 
-interface VendorCard {
-  id: string;
-  name: string;
-  rating?: number;
-  ratingCount?: number;
-  distance?: number;
-  minPrice?: string;
-  openNow: boolean;
+interface DiscoveryResult {
+  items: VendorCard[];
+  nextCursor: string | null;
 }
 
-interface DiscoveryResponse {
-  vendors: VendorCard[];
-  meta?: {
-    nextCursor?: string | null;
-  };
-}
+export function useDiscovery(lat: number, lng: number, filters: DiscoveryFilters = {}) {
+  const { sortBy = 'distance', ...rest } = filters;
 
-export function useDiscovery(filters: DiscoveryFilters = {}) {
   return useInfiniteQuery({
-    queryKey: discoveryQueryKeys.list(filters),
+    queryKey: discoveryQueryKeys.list({ lat, lng, ...rest, sort: sortBy }),
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const params: Record<string, unknown> = { ...filters };
-      if (pageParam) params.cursor = pageParam;
-
-      const result = await apiClient.get<DiscoveryResponse>('/vendors', { params });
+      const result = await apiClient.get<DiscoveryResult>('/vendors', {
+        params: { lat, lng, sort: sortBy, ...rest, cursor: pageParam },
+      });
       return result.data;
     },
-    getNextPageParam: (lastPage) => (lastPage.meta?.nextCursor as string | undefined) ?? undefined,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
+    staleTime: 1000 * 60 * 5,
   });
 }

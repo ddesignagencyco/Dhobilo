@@ -1,7 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Suspense } from 'react';
-import { VendorList } from '@/components/customer/discovery/vendor-list';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DiscoveryView } from '@/components/customer/discovery/discovery-view';
 
 export const metadata = { title: 'Discover Vendors' };
 
@@ -38,10 +36,7 @@ export default async function DiscoveryPage({
         {/* TODO: Add filter/sort buttons here in Task 3 extension */}
       </div>
 
-      {/* Vendor list with suspense fallback */}
-      <Suspense fallback={<Skeleton className="h-96" />}>
-        <VendorList filters={filters} />
-      </Suspense>
+      <DiscoveryView filters={filters} />
     </div>
   );
 }

@@ -1,46 +1,41 @@
 'use client';
 
+import { MapPin, Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { formatMoney } from '@dhoblio/shared';
 import { Link } from '@/i18n/navigation';
-import { Star, MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import type { VendorCard as VendorCardType } from '@/lib/customer/types';
 
-interface VendorCardProps {
-  id: string;
-  name: string;
-  rating?: number;
-  ratingCount?: number;
-  distance?: number;
-  minPrice?: string;
-  openNow: boolean;
-}
+export function VendorCard({ vendor }: { vendor: VendorCardType }) {
+  const t = useTranslations('customer.discovery');
 
-export function VendorCard({ id, name, rating, ratingCount, distance, minPrice, openNow }: VendorCardProps) {
   return (
-    <Link href={`/vendor/${id}`}>
-      <div className="group relative overflow-hidden rounded-lg border bg-card p-4 transition-all hover:shadow-md">
-        {/* Badge */}
-        {!openNow && <div className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground px-2 py-1 rounded text-xs font-medium">Closed</div>}
+    <Link href={`/vendor/${vendor.id}`} className="block">
+      <div className="bg-card hover:shadow-md group relative overflow-hidden rounded-lg border p-4 transition-all">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="line-clamp-1 text-base font-semibold">{vendor.businessName}</h3>
+          {vendor.minTurnaroundHours > 0 ? (
+            <Badge variant="muted">{t('turnaroundHours', { hours: vendor.minTurnaroundHours })}</Badge>
+          ) : null}
+        </div>
 
-        {/* Header */}
-        <h3 className="font-semibold text-base line-clamp-1">{name}</h3>
+        {vendor.description ? (
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{vendor.description}</p>
+        ) : null}
 
-        {/* Rating */}
-        {rating !== undefined && (
-          <div className="flex items-center gap-1 mt-2">
-            <Star className="size-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">{rating.toFixed(1)}</span>
-            {ratingCount !== undefined && <span className="text-xs text-muted-foreground">({ratingCount})</span>}
-          </div>
-        )}
+        <div className="mt-2 flex items-center gap-1">
+          <Star className="size-4 fill-yellow-400 text-yellow-400" aria-hidden />
+          <span className="text-sm font-medium">{vendor.ratingAvg.toFixed(1)}</span>
+          <span className="text-muted-foreground text-xs">({vendor.ratingCount})</span>
+        </div>
 
-        {/* Details */}
-        <div className="flex flex-col gap-1 mt-3 text-sm text-muted-foreground">
-          {distance !== undefined && (
-            <div className="flex items-center gap-1">
-              <MapPin className="size-4" />
-              <span>{distance.toFixed(1)} km away</span>
-            </div>
-          )}
-          {minPrice !== undefined && <div className="flex items-center gap-1">Starting from Rs {minPrice}</div>}
+        <div className="text-muted-foreground mt-3 flex flex-col gap-1 text-sm">
+          <span className="flex items-center gap-1">
+            <MapPin className="size-4" aria-hidden />
+            {t('distance', { km: vendor.distanceKm.toFixed(1) })}
+          </span>
+          <span>{t('startingFrom', { price: formatMoney(vendor.minPrice) })}</span>
         </div>
       </div>
     </Link>
