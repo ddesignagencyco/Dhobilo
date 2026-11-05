@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { AdminRole, Availability, CommissionScope, DocType, PrismaClient, Role, ServiceType, VendorStatus } from '@prisma/client';
+import { AdminRole, Availability, CommissionScope, DocType, PrismaClient, RiderStatus, Role, ServiceType, VendorStatus } from '@prisma/client';
 import { FieldCrypto, parseKeyList } from '../src/common/crypto/field-crypto';
 
 const prisma = new PrismaClient();
@@ -126,6 +126,130 @@ async function seedDemoVendors() {
   console.log(`Demo vendors ready (${demos.length}); owners sign in with +923000000011 ... via the OTP bypass code`);
 }
 
+/**
+ * One demo account per non-admin role so the whole flow (customer → vendor → rider → admin) can be
+ * walked through on a fresh database. All of them sign in with phone + the dev OTP bypass; the email
+ * is there for identification/reporting and matches the `demo-*@dhoblio.local` pattern.
+ */
+async function seedDemoAccounts() {
+  const crypto = demoCrypto();
+  if (!crypto) {
+    console.warn('Skipping demo accounts: ENC_KEY_BASE64 / HMAC_KEY_BASE64 are not set in the environment');
+    return;
+  }
+  const lahore = await prisma.city.findFirst({ where: { name: 'Lahore' } });
+  if (!lahore) {
+    console.warn('Skipping demo accounts: Lahore city is missing');
+    return;
+  }
+
+  // Customer — the default address makes checkout work without a detour through the profile page.
+  const customer = await prisma.user.upsert({
+    where: { phone: '+923000000001' },
+    update: {},
+    create: {
+      phone: '+923000000001',
+      email: 'customer@dhoblio.local',
+      name: 'Demo Customer',
+      role: Role.CUSTOMER,
+      phoneVerifiedAt: new Date(),
+      referralCode: 'DEMOC100',
+    },
+  });
+  const hasAddress = await prisma.address.findFirst({ where: { userId: customer.id, deletedAt: null } });
+  if (!hasAddress) {
+    await prisma.address.create({
+      data: {
+        userId: customer.id,
+        label: 'Home',
+        line1: '12 Gulberg Main Boulevard',
+        area: 'Gulberg III',
+        cityId: lahore.id,
+        lat: CITY_CENTRES.Lahore.lat,
+        lng: CITY_CENTRES.Lahore.lng,
+        isDefault: true,
+      },
+    });
+  }
+
+  // Vendor staff — attached to the first demo laundry. The owner (demo vendor 1) manages the catalog.
+  const staff = await prisma.user.upsert({
+    where: { phone: '+923000000031' },
+    update: {},
+    create: {
+      phone: '+923000000031',
+      email: 'staff@dhoblio.local',
+      name: 'Demo Staff',
+      role: Role.VENDOR_STAFF,
+      phoneVerifiedAt: new Date(),
+      referralCode: 'DEMOS100',
+    },
+  });
+  const vendor = await prisma.vendor.findFirst({ where: { owner: { phone: '+923000000011' } } });
+  if (vendor) {
+    await prisma.vendorStaff.upsert({
+      where: { vendorId_userId: { vendorId: vendor.id, userId: staff.id } },
+      update: {},
+      create: { vendorId: vendor.id, userId: staff.id },
+    });
+  }
+
+  // Rider — approved and online in Lahore so dispatch has someone to offer jobs to immediately.
+  const riderUser = await prisma.user.upsert({
+    where: { phone: '+923000000021' },
+    update: {},
+    create: {
+      phone: '+923000000021',
+      email: 'rider@dhoblio.local',
+      name: 'Demo Rider',
+      role: Role.RIDER,
+      phoneVerifiedAt: new Date(),
+      referralCode: 'DEMOR100',
+    },
+  });
+  const cnic = '3520200000042'; // 13 digits, not a real CNIC
+  await prisma.rider.upsert({
+    where: { userId: riderUser.id },
+    update: {},
+    create: {
+      userId: riderUser.id,
+      cityId: lahore.id,
+      status: RiderStatus.APPROVED,
+      cnicEnc: crypto.encrypt(cnic, 'rider.cnic'),
+      cnicHash: crypto.hash('cnic', cnic),
+      isOnline: true,
+      lastLat: CITY_CENTRES.Lahore.lat,
+      lastLng: CITY_CENTRES.Lahore.lng,
+      lastSeenAt: new Date(),
+      approvedAt: new Date(),
+    },
+  });
+
+  console.log('Demo accounts ready: customer +923000000001, staff +923000000031, rider +923000000021');
+}
+
+/** Sub-role admins so each area of the panel (operations, finance, support) can be tested. */
+async function seedDemoAdmins(password: string) {
+  const demos = [
+    { email: 'ops@dhoblio.local', phone: '+920000000001', name: 'Operations Admin', adminRole: AdminRole.OPERATIONS },
+    { email: 'finance@dhoblio.local', phone: '+920000000002', name: 'Finance Admin', adminRole: AdminRole.FINANCE },
+    { email: 'support@dhoblio.local', phone: '+920000000003', name: 'Support Admin', adminRole: AdminRole.SUPPORT },
+  ];
+  const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+  for (const admin of demos) {
+    await prisma.user.upsert({
+      where: { phone: admin.phone },
+      update: {},
+      create: {
+        ...admin,
+        role: Role.ADMIN,
+        passwordHash,
+        phoneVerifiedAt: new Date(),
+      },
+    });
+  }
+}
+
 function adminCredentials() {
   const email = process.env.SEED_ADMIN_EMAIL;
   const password = process.env.SEED_ADMIN_PASSWORD;
@@ -170,7 +294,11 @@ async function main() {
     await prisma.commissionRule.create({ data: { scope: CommissionScope.GLOBAL, ratePct: GLOBAL_COMMISSION_PCT } });
   }
 
-  if (process.env.NODE_ENV !== 'production') await seedDemoVendors();
+  if (process.env.NODE_ENV !== 'production') {
+    await seedDemoAdmins(password);
+    await seedDemoVendors();
+    await seedDemoAccounts();
+  }
 
   console.log(`Seed complete (admin: ${email})`);
 }

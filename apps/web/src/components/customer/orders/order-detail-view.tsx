@@ -31,10 +31,10 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
   const tracking = useOrderTracking(orderId, !!order.data && order.isSuccess);
   const delivery = useOrderDelivery(orderId);
   const riderLegs = delivery.data?.filter((leg) => leg.handledBy === 'RIDER') ?? [];
-  const riderLeg = riderLegs.find((leg) => leg.status === 'OUT_FOR_DELIVERY') ?? riderLegs[riderLegs.length - 1];
+  const riderLeg = riderLegs.find((leg) => leg.status === 'IN_TRANSIT') ?? riderLegs[riderLegs.length - 1];
   const rider = riderLeg?.rider;
   const riderStatus = riderLeg?.status;
-  const riderLocationQuery = useRiderLocation(orderId, !!riderLeg && riderLeg.status === 'OUT_FOR_DELIVERY');
+  const riderLocationQuery = useRiderLocation(orderId, !!riderLeg && riderLeg.status === 'IN_TRANSIT');
   const liveStatus = tracking.last?.to ?? order.data?.status ?? 'PLACED';
   const timelineEntries: OrderTimelineEntry[] = [
     ...(timeline.data ?? []),
