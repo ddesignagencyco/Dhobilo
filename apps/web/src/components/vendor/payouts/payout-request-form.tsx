@@ -57,7 +57,7 @@ export function PayoutRequestForm({ availableBalance }: { availableBalance: numb
           <label className="text-sm font-medium">{t('bankIban')}</label>
           <Input
             {...form.register('iban')}
-            placeholder="PK94 ABCD 0123 4567 8900 1234 567"
+            placeholder="PK94ABCD..."
             className="mt-1"
           />
           {form.formState.errors.iban && (
@@ -71,10 +71,8 @@ export function PayoutRequestForm({ availableBalance }: { availableBalance: numb
             <span className="absolute left-3 top-2.5 text-muted-foreground">Rs.</span>
             <Input
               {...form.register('amount')}
-              type="number"
               placeholder="0.00"
               className="pl-10"
-              step="0.01"
             />
           </div>
           {form.formState.errors.amount && (
