@@ -15,7 +15,6 @@ const STEPS: Step[] = [
 ];
 
 export function WizardHeader({ currentStep }: { currentStep: number }) {
-
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2 md:gap-4">

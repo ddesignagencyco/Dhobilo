@@ -5,3 +5,4 @@ export * from './constants';
 export * from './money';
 export * from './schemas/admin';
 export * from './schemas/vendor';
+export * from './schemas/customer';

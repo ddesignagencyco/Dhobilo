@@ -1,37 +1,33 @@
 /**
- * Browser API client for vendor routes.
- * Wraps the BFF proxy which handles vendor session (VENDOR_SESSION_COOKIE).
- * For vendor API calls, use customerBff (same pattern as other non-admin users).
+ * Browser API client for customer routes.
+ * Wraps the BFF proxy which handles the customer session (CUSTOMER_SESSION_COOKIE).
  */
 
-import { customerBffData } from './bff';
+import { customerBff } from './bff';
+
+interface RequestOptions {
+  params?: Record<string, unknown>;
+  headers?: Record<string, string>;
+}
 
 export const apiClient = {
-  async get<T>(path: string, options?: { params?: Record<string, unknown> }) {
-    const query = options?.params ? new URLSearchParams(Object.entries(options.params).map(([k, v]) => [k, String(v)])).toString() : '';
-    const fullPath = query ? `${path}?${query}` : path;
-    const data = await customerBffData<T>(fullPath);
-    return { data };
+  get<T>(path: string, options?: RequestOptions) {
+    return customerBff<T>(path, { query: options?.params, headers: options?.headers });
   },
 
-  async post<T>(path: string, body?: unknown) {
-    const data = await customerBffData<T>(path, {
-      method: 'POST',
-      body,
-    });
-    return { data };
+  post<T>(path: string, body?: unknown, options?: RequestOptions) {
+    return customerBff<T>(path, { method: 'POST', body, headers: options?.headers });
   },
 
-  async patch<T>(path: string, body?: unknown) {
-    const data = await customerBffData<T>(path, {
-      method: 'PATCH',
-      body,
-    });
-    return { data };
+  put<T>(path: string, body?: unknown, options?: RequestOptions) {
+    return customerBff<T>(path, { method: 'PUT', body, headers: options?.headers });
   },
 
-  async delete<T>(path: string) {
-    const data = await customerBffData<T>(path, { method: 'DELETE' });
-    return { data };
+  patch<T>(path: string, body?: unknown, options?: RequestOptions) {
+    return customerBff<T>(path, { method: 'PATCH', body, headers: options?.headers });
+  },
+
+  delete<T>(path: string) {
+    return customerBff<T>(path, { method: 'DELETE' });
   },
 };
