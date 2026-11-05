@@ -1,66 +1,105 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CatalogItem } from '@dhoblio/shared';
-import { apiClient } from '@/lib/api/client';
+import { vendorApiClient as apiClient } from '@/lib/api/client';
+
+export const SERVICE_TYPES = ['WASH_FOLD', 'WASH_IRON', 'DRY_CLEAN', 'IRON_ONLY', 'OTHER'] as const;
+export type ServiceType = (typeof SERVICE_TYPES)[number];
+
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  nameUr: string | null;
+}
+
+export interface VendorCatalogItem {
+  id: string;
+  categoryId: number;
+  category: ServiceCategory;
+  itemName: string;
+  itemNameUr: string | null;
+  serviceType: ServiceType;
+  price: string;
+  turnaroundHours: number;
+  isActive: boolean;
+}
+
+export interface CatalogItemInput {
+  categoryId: number;
+  itemName: string;
+  itemNameUr?: string;
+  serviceType: ServiceType;
+  price: number;
+  turnaroundHours: number;
+  isActive?: boolean;
+}
+
+export interface ImportRowInput {
+  itemName: string;
+  itemNameUr?: string;
+  category: string;
+  serviceType: string;
+  price: number;
+  turnaroundHours: number;
+  isActive?: boolean;
+}
+
+const catalogKey = ['vendor', 'catalog'] as const;
 
 export function useCatalogItems() {
   return useQuery({
-    queryKey: ['vendor', 'catalog'],
-    queryFn: async () => {
-      const response = await apiClient.get('/vendor/catalog/items');
-      return response.data ?? [];
-    },
+    queryKey: catalogKey,
+    queryFn: async () => (await apiClient.get<VendorCatalogItem[]>('/vendor/catalog/items')).data ?? [],
+  });
+}
+
+export function useServiceCategories() {
+  return useQuery({
+    queryKey: ['vendor', 'service-categories'],
+    queryFn: async () => (await apiClient.get<ServiceCategory[]>('/service-categories')).data ?? [],
+    staleTime: 1000 * 60 * 60,
   });
 }
 
 export function useCreateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (item: CatalogItem) => {
-      const response = await apiClient.post('/vendor/catalog/items', item);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor', 'catalog'] });
-    },
+    mutationFn: async (item: CatalogItemInput) =>
+      (await apiClient.post<VendorCatalogItem>('/vendor/catalog/items', item)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
   });
 }
 
-export function useUpdateCatalogItem(id: string) {
+export function useUpdateCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (item: Partial<CatalogItem>) => {
-      const response = await apiClient.patch(`/vendor/catalog/items/${id}`, item);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor', 'catalog'] });
-    },
+    mutationFn: async ({ id, ...item }: Partial<CatalogItemInput> & { id: string }) =>
+      (await apiClient.patch<VendorCatalogItem>(`/vendor/catalog/items/${id}`, item)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
   });
 }
 
-export function useDeleteCatalogItem(id: string) {
+export function useDeleteCatalogItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/vendor/catalog/items/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor', 'catalog'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
   });
 }
 
 export function useBulkImport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { items: CatalogItem[] }) => {
-      const response = await apiClient.post('/vendor/catalog/import', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['vendor', 'catalog'] });
-    },
+    mutationFn: async (items: ImportRowInput[]) =>
+      (
+        await apiClient.post<{
+          created: number;
+          updated: number;
+          total: number;
+        }>('/vendor/catalog/import', { items })
+      ).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: catalogKey }),
   });
 }

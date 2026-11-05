@@ -1,11 +1,7 @@
 import createIntlMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
-import {
-  type MiddlewareSession,
-  needsRefresh,
-  refreshInMiddleware,
-} from './lib/auth/middleware-refresh';
+import { type MiddlewareSession, needsRefresh, refreshInMiddleware } from './lib/auth/middleware-refresh';
 
 /**
  * Next 16's `proxy` convention (what earlier versions called `middleware`).
@@ -45,6 +41,10 @@ const PUBLIC_CUSTOMER_PATHS = ['/login'];
 
 /** The vendor sign-in lives outside the vendor shell. */
 const PUBLIC_VENDOR_PATHS = ['/login'];
+
+function isVendorPath(rest: string): boolean {
+  return rest === '/shop' || rest.startsWith('/shop/');
+}
 
 const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -140,7 +140,7 @@ async function handleCustomer(request: NextRequest, locale: string, rest: string
 }
 
 /**
- * Vendor guard. Similar to customer guard but for vendor routes (/vendor/*).
+ * Vendor guard. Similar to customer guard but for vendor routes (/shop/*).
  */
 async function handleVendor(request: NextRequest, locale: string, rest: string) {
   const isPublic = PUBLIC_VENDOR_PATHS.some((p) => rest === p || rest.startsWith(`${p}/`));
@@ -194,8 +194,8 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { locale, rest } = stripLocale(pathname);
 
-  // Vendor routes: /vendor/*
-  if (rest.startsWith('/vendor')) {
+  // Vendor panel pages live under the /shop prefix (a path prefix, not a route group, so they cannot collide with customer routes).
+  if (isVendorPath(rest)) {
     if (!locale) {
       const target = `/${preferredLocale(request)}${rest}`;
       const url = request.nextUrl.clone();
@@ -203,6 +203,11 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     return handleVendor(request, locale, rest);
+  }
+
+  // Rider pages guard themselves in the layout (their own session cookie); here only the locale is settled.
+  if (rest === '/rider' || rest.startsWith('/rider/')) {
+    return locale ? NextResponse.next() : intlMiddleware(request);
   }
 
   // Not an admin or vendor route: locale detection first, then the customer guard.

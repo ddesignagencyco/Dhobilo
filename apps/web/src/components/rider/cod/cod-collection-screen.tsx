@@ -1,117 +1,75 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { useTranslations } from "next-intl";
+import { formatMoney } from "@dhoblio/shared";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { useRiderCod } from "@/lib/rider/hooks";
 
 export function CodCollectionScreen() {
-  const t = useTranslations('rider.cod');
-  const [balance, setBalance] = useState(8750);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [showDepositForm, setShowDepositForm] = useState(false);
+  const t = useTranslations("rider.cod");
+  const { data, isLoading, isError } = useRiderCod();
 
-  const codHistory = [
-    { id: 'ORD001', amount: 2500, collectedAt: '2 hours ago', status: 'COLLECTED' },
-    { id: 'ORD002', amount: 1850, collectedAt: '4 hours ago', status: 'COLLECTED' },
-    { id: 'ORD003', amount: 3400, collectedAt: 'Today, 9:30 AM', status: 'COLLECTED' },
-  ];
-
-  const handleDeposit = () => {
-    const amount = parseFloat(depositAmount);
-    if (!amount || amount <= 0) {
-      toast.error(t('invalidAmount'));
-      return;
-    }
-    toast.success(t('depositSubmitted'));
-    setBalance((prev) => prev - amount);
-    setDepositAmount('');
-    setShowDepositForm(false);
-  };
+  if (isLoading) return <Card className="bg-muted h-48 animate-pulse" />;
+  if (isError || !data) {
+    return (
+      <Card className="p-6">
+        <p>{t("error")}</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-200">
-        <p className="text-sm text-muted-foreground font-medium">{t('cashBalance')}</p>
-        <p className="text-4xl font-bold mt-3">Rs. {balance.toLocaleString()}</p>
-        <p className="text-xs text-muted-foreground mt-2">
-          {t('hint')}: {balance > 0 ? t('readyToDeposit') : t('noCash')}
+      <Card className="p-6">
+        <p className="text-muted-foreground text-sm font-medium">
+          {t("cashBalance")}
+        </p>
+        <p className="mt-3 text-4xl font-bold">
+          {formatMoney(data.cashInHand)}
+        </p>
+        <p className="text-muted-foreground mt-2 text-xs">
+          {data.unsettledOrders} {t("unsettled")}
         </p>
       </Card>
 
-      {!showDepositForm ? (
-        <Button
-          onClick={() => setShowDepositForm(true)}
-          className="w-full"
-          size="lg"
-          disabled={balance === 0}
-        >
-          {t('depositCash')}
-        </Button>
-      ) : (
-        <Card className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('amount')}</label>
-              <div className="relative mt-2">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">Rs.</span>
-                <Input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="pl-10"
-                  max={balance}
-                  step="50"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('available')}: Rs. {balance.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDepositForm(false)}
-                className="flex-1"
-              >
-                {t('cancel')}
-              </Button>
-              <Button onClick={handleDeposit} className="flex-1">
-                {t('confirmDeposit')}
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <div>
-        <h3 className="font-semibold mb-4">{t('collectionHistory')}</h3>
-        <div className="space-y-3">
-          {codHistory.map((entry) => (
-            <Card key={entry.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{entry.id}</p>
-                  <p className="text-sm text-muted-foreground">{entry.collectedAt}</p>
+        <h3 className="mb-4 font-semibold">{t("collectionHistory")}</h3>
+        {data.collections.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t("noCash")}</p>
+        ) : (
+          <div className="space-y-3">
+            {data.collections.map((entry) => (
+              <Card key={entry.id} className="p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium break-words">{entry.orderNo}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {new Date(entry.collectedAt).toLocaleString("en-PK", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                  </div>
+                  <div className="text-end">
+                    <p className="font-semibold">{formatMoney(entry.amount)}</p>
+                    <Badge
+                      className="mt-1"
+                      variant={entry.settled ? "secondary" : "default"}
+                    >
+                      {entry.settled ? t("settled") : t("collected")}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">Rs. {entry.amount.toLocaleString()}</p>
-                  <Badge className="mt-1">{t('collected')}</Badge>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="text-xs text-muted-foreground bg-muted/50 p-4 rounded-lg">
-        <p className="font-medium mb-2">{t('notice')}</p>
-        <p>{t('noticeText')}</p>
+      <div className="text-muted-foreground bg-muted/50 rounded-lg p-4 text-xs">
+        <p className="mb-2 font-medium">{t("notice")}</p>
+        <p>{t("noticeText")}</p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { RiderEarningsView } from '@/components/rider/earnings/rider-earnings-view';
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { RiderEarningsView } from "@/components/rider/earnings/rider-earnings-view";
 
-export const metadata = { title: 'My Earnings' };
+export const metadata = { title: "My Earnings" };
 
 export default async function RiderEarningsPage({
   params,
@@ -10,13 +10,13 @@ export default async function RiderEarningsPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('rider.earnings');
+  const t = await getTranslations("rider.earnings");
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <RiderEarningsView />

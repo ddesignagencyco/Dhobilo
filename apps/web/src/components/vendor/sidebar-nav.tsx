@@ -20,23 +20,68 @@ interface VendorNavItem {
 }
 
 const VENDOR_NAV_ITEMS: VendorNavItem[] = [
-  { href: '/vendor/orders', labelKey: 'vendor.nav.orders', icon: <ShoppingBagIcon className="size-4" /> },
-  { href: '/vendor/catalog', labelKey: 'vendor.nav.catalog', icon: <LayoutGridIcon className="size-4" /> },
-  { href: '/vendor/hours', labelKey: 'vendor.nav.hours', icon: <ClockIcon className="size-4" /> },
-  { href: '/vendor/earnings', labelKey: 'vendor.nav.earnings', icon: <BarChart3Icon className="size-4" /> },
-  { href: '/vendor/ledger', labelKey: 'vendor.nav.ledger', icon: <DollarSignIcon className="size-4" /> },
-  { href: '/vendor/payouts', labelKey: 'vendor.nav.payouts', icon: <DollarSignIcon className="size-4" /> },
-  { href: '/vendor/staff', labelKey: 'vendor.nav.staff', icon: <UsersIcon className="size-4" /> },
-  { href: '/vendor/settings', labelKey: 'vendor.nav.profile', icon: <SettingsIcon className="size-4" /> },
+  {
+    href: '/shop/orders',
+    labelKey: 'vendor.nav.orders',
+    icon: <ShoppingBagIcon className="size-4" />,
+  },
+  {
+    href: '/shop/catalog',
+    labelKey: 'vendor.nav.catalog',
+    icon: <LayoutGridIcon className="size-4" />,
+  },
+  {
+    href: '/shop/hours',
+    labelKey: 'vendor.nav.hours',
+    icon: <ClockIcon className="size-4" />,
+  },
+  {
+    href: '/shop/earnings',
+    labelKey: 'vendor.nav.earnings',
+    icon: <BarChart3Icon className="size-4" />,
+  },
+  {
+    href: '/shop/ledger',
+    labelKey: 'vendor.nav.ledger',
+    icon: <DollarSignIcon className="size-4" />,
+  },
+  {
+    href: '/shop/payouts',
+    labelKey: 'vendor.nav.payouts',
+    icon: <DollarSignIcon className="size-4" />,
+  },
+  {
+    href: '/shop/staff',
+    labelKey: 'vendor.nav.staff',
+    icon: <UsersIcon className="size-4" />,
+  },
+  {
+    href: '/shop/settings',
+    labelKey: 'vendor.nav.profile',
+    icon: <SettingsIcon className="size-4" />,
+  },
 ];
 
-export function VendorSidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function VendorSidebarNav({
+  onNavigate,
+  restricted = false,
+  isOwner = true,
+}: {
+  onNavigate?: () => void;
+  /** Vendor not yet approved: nothing to navigate to. */
+  restricted?: boolean;
+  isOwner?: boolean;
+}) {
   const t = useTranslations();
   const pathname = usePathname();
 
   // Remove locale prefix from pathname for comparison
-  // usePathname from next-intl returns path without locale: /vendor/orders
+  // usePathname from next-intl returns path without locale: /shop/orders
   const currentPath = pathname;
+
+  const items = VENDOR_NAV_ITEMS.filter((item) => isOwner || item.href !== '/shop/staff');
+
+  if (restricted) return null;
 
   const isActive = (itemHref: string) => {
     // Exact match or starts with for sub-routes
@@ -46,7 +91,7 @@ export function VendorSidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-6 p-3" aria-label={t('nav.openMenu')}>
       <div className="flex flex-col gap-1">
-        {VENDOR_NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const active = isActive(item.href);
           return (
             <Link

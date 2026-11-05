@@ -28,8 +28,8 @@ export function useOrders() {
     queryKey: orderQueryKeys.list(),
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const result = await apiClient.get<OrderListResponse>('/orders', { params: { cursor: pageParam } });
-      return result.data;
+      const result = await apiClient.get<OrderSummaryView[]>('/orders', { params: { cursor: pageParam } });
+      return { items: result.data, nextCursor: (result.meta?.nextCursor as string | null | undefined) ?? null } satisfies OrderListResponse;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     staleTime: 1000 * 30,

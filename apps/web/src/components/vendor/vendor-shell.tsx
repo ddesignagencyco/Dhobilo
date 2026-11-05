@@ -1,9 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
-import { UserMenu } from '@/components/admin/user-menu';
-import { MobileNav } from '@/components/admin/mobile-nav';
+import { Link, usePathname } from '@/i18n/navigation';
+import { VendorUserMenu } from './vendor-user-menu';
+import { VendorMobileNav } from './vendor-mobile-nav';
+import { type BlockedStatus, VendorStatusScreen } from './vendor-status-screen';
 import { VendorSidebarNav } from './sidebar-nav';
 import { AvailabilityToggle } from './forms/availability-toggle';
 
@@ -15,53 +16,65 @@ export function VendorShell({
   children,
   vendorName,
   vendorStatus,
+  rejectionReason,
+  isOwner,
 }: {
   children: React.ReactNode;
   vendorName: string;
-  vendorStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  vendorStatus: 'UNREGISTERED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  rejectionReason: string | null;
+  isOwner: boolean;
 }) {
   const t = useTranslations();
+  const pathname = usePathname();
+  const restricted = vendorStatus !== 'APPROVED';
+  const onRegister = pathname === '/shop/register' || pathname.startsWith('/shop/register/');
+  const canRegisterNow = vendorStatus === 'UNREGISTERED' || vendorStatus === 'REJECTED';
+  const showStatus = restricted && !(onRegister && canRegisterNow);
 
   return (
     <div className="bg-muted/30 min-h-dvh">
-      {/* Desktop sidebar: fixed, scrollable */}
-      <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-64 overflow-y-auto border-e lg:block">
-        <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-5">
-          <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg text-sm font-semibold">
-            D
-          </span>
-          <Link href="/vendor" className="font-semibold tracking-tight">
-            {t('common.appName')}
-          </Link>
-          <span className="text-muted-foreground ms-auto text-xs">{t('vendor.panel')}</span>
-        </div>
-        <VendorSidebarNav onNavigate={undefined} />
-      </aside>
+      {!restricted ? (
+        <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-64 overflow-y-auto border-e lg:block">
+          <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-5">
+            <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg text-sm font-semibold">
+              D
+            </span>
+            <Link href="/shop/orders" className="font-semibold tracking-tight">
+              {t('common.appName')}
+            </Link>
+            <span className="text-muted-foreground ms-auto text-xs">{t('vendor.panel')}</span>
+          </div>
+          <VendorSidebarNav isOwner={isOwner} />
+        </aside>
+      ) : null}
 
-      {/* Main content area */}
-      <div className="lg:ps-64">
-        {/* Header: sticky, with mobile nav, availability toggle, user menu */}
+      <div className={restricted ? '' : 'lg:ps-64'}>
         <header className="bg-background/95 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-4 backdrop-blur">
-          <MobileNav adminRole={null} />
+          <VendorMobileNav restricted={restricted} isOwner={isOwner} />
 
-          <Link href="/vendor" className="font-semibold lg:hidden">
-            {t('common.appName')}
-          </Link>
+          <span className="truncate font-semibold" data-testid="vendor-name">
+            {vendorName}
+          </span>
 
-          {/* Availability toggle (only show if vendor is APPROVED) */}
           {vendorStatus === 'APPROVED' && (
-            <div className="hidden sm:block ms-auto">
+            <div className="ms-auto hidden sm:block">
               <AvailabilityToggle />
             </div>
           )}
 
-          <div className="ms-auto flex items-center gap-2">
-            <UserMenu name={vendorName} email="" adminRole={null} />
+          <div className={vendorStatus === 'APPROVED' ? 'flex items-center gap-2' : 'ms-auto flex items-center gap-2'}>
+            <VendorUserMenu name={vendorName} />
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="mx-auto w-full max-w-[1600px] p-4 sm:p-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
+          {showStatus ? (
+            <VendorStatusScreen status={vendorStatus as BlockedStatus} reason={rejectionReason} isOwner={isOwner} />
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

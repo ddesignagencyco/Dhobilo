@@ -7,6 +7,8 @@ import { ApiError, ApiUnreachableError } from '../api/errors';
 import { apiFetch } from '../api/fetch';
 import { routing } from '@/i18n/routing';
 import { mutateCustomerApi } from './server';
+import { isVendorRole, writeVendorSession } from '../vendor/session';
+import { writeRiderSession } from '../rider/session';
 import {
   type CustomerSessionUser,
   clearCustomerSession,
@@ -16,7 +18,10 @@ import {
 } from './session';
 
 const phoneSchema = z.string().trim().min(10).max(20);
-const codeSchema = z.string().trim().regex(/^\d{6}$/);
+const codeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/);
 
 export interface OtpState {
   step?: 'phone' | 'code';
@@ -48,14 +53,15 @@ function safeReturnTo(next: string | undefined, locale: string): string {
 }
 
 /** Send a 6-digit SMS code. Returns the code step on success; never throws for a user-facing error. */
-export async function requestOtp(
-  _locale: string,
-  _prev: OtpState,
-  formData: FormData,
-): Promise<OtpState> {
+export async function requestOtp(_locale: string, _prev: OtpState, formData: FormData): Promise<OtpState> {
   const parsed = phoneSchema.safeParse(formData.get('phone'));
   if (!parsed.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter a valid phone number.' } };
+    return {
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'Enter a valid phone number.',
+      },
+    };
   }
 
   try {
@@ -65,7 +71,11 @@ export async function requestOtp(
       retries: 0,
     });
 
-    return { step: 'code', phone: parsed.data, expiresInSeconds: data.expiresInSeconds };
+    return {
+      step: 'code',
+      phone: parsed.data,
+      expiresInSeconds: data.expiresInSeconds,
+    };
   } catch (error) {
     return { step: 'phone', error: toError(error) };
   }
@@ -82,7 +92,9 @@ export async function verifyOtp(
   const code = codeSchema.safeParse(formData.get('code'));
 
   if (!phone.success || !code.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter the 6-digit code.' } };
+    return {
+      error: { code: 'VALIDATION_FAILED', message: 'Enter the 6-digit code.' },
+    };
   }
 
   let destination: string;
@@ -95,24 +107,35 @@ export async function verifyOtp(
       user: CustomerSessionUser;
     }>('/auth/otp/verify', {
       method: 'POST',
-      body: { phone: phone.data, code: code.data, role: 'CUSTOMER' },
+      body: {
+        phone: phone.data,
+        code: code.data,
+        role: formData.get('role') === 'VENDOR_OWNER' ? 'VENDOR_OWNER' : 'CUSTOMER',
+      },
       headers: { ...TOKEN_TRANSPORT_HEADER },
       retries: 0,
     });
 
-    // A vendor or rider token must not become a customer session; their apps are separate.
-    if (data.user.role !== 'CUSTOMER') {
+    // The account's real role decides which app it lands in; each role keeps its own session cookie.
+    const session = sessionFromAuthResponse(data);
+    if (data.user.role === 'CUSTOMER') {
+      await writeCustomerSession(session);
+      destination = safeReturnTo(next, locale);
+    } else if (isVendorRole(data.user.role)) {
+      await writeVendorSession(session);
+      destination = `/${locale}/shop/orders`;
+    } else if (data.user.role === 'RIDER') {
+      await writeRiderSession(session);
+      destination = `/${locale}/rider/home`;
+    } else {
       return {
         step: 'phone',
         error: {
           code: 'NOT_CUSTOMER',
-          message: 'This number belongs to a vendor or staff account. Use the right app.',
+          message: 'Admins sign in at /admin/login.',
         },
       };
     }
-
-    await writeCustomerSession(sessionFromAuthResponse(data));
-    destination = safeReturnTo(next, locale);
   } catch (error) {
     return { step: 'code', error: toError(error) };
   }
@@ -154,7 +177,12 @@ export async function updateCustomerProfile(
     .safeParse(formData.get('name') ?? '');
 
   if (!name.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter your name (up to 80 characters).' } };
+    return {
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'Enter your name (up to 80 characters).',
+      },
+    };
   }
 
   try {

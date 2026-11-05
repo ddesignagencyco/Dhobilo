@@ -1,4 +1,10 @@
-import { type ApiErrorBody, adminErrorMessage, isSessionErrorCode, validationDetails, type FieldError } from '@dhoblio/shared';
+import {
+  type ApiErrorBody,
+  adminErrorMessage,
+  isSessionErrorCode,
+  validationDetails,
+  type FieldError,
+} from '@dhoblio/shared';
 
 /**
  * The browser's API client. Talks only to this app's own /api/bff proxy, which attaches the access token
@@ -129,4 +135,12 @@ export async function customerBff<T>(path: string, options: BffOptions = {}): Pr
 
 export async function customerBffData<T>(path: string, options: BffOptions = {}): Promise<T> {
   return (await customerBff<T>(path, options)).data;
+}
+
+export async function vendorBff<T>(path: string, options: BffOptions = {}): Promise<BffResult<T>> {
+  return bffAt('/api/vendor/bff', path, options);
+}
+
+export async function riderBff<T>(path: string, options: BffOptions = {}): Promise<BffResult<T>> {
+  return bffAt('/api/rider/bff', path, options);
 }

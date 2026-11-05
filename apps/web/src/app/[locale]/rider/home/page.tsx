@@ -1,7 +1,7 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { RiderHomeView } from '@/components/rider/home/rider-home-view';
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { RiderHomeView } from "@/components/rider/home/rider-home-view";
 
-export const metadata = { title: 'Available Jobs' };
+export const metadata = { title: "Available Jobs" };
 
 export default async function RiderHomePage({
   params,
@@ -10,13 +10,13 @@ export default async function RiderHomePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('rider.home');
+  const t = await getTranslations("rider.home");
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <RiderHomeView />

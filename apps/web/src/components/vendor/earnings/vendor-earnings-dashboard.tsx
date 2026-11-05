@@ -1,102 +1,162 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { useFormatter, useTranslations } from "next-intl";
+import { formatMoney } from "@dhoblio/shared";
+import { ErrorState } from "@/components/admin/states";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  type EarningsRange,
+  useVendorEarnings,
+} from "@/lib/vendor/hooks/use-vendor-earnings";
 
-type Period = 'day' | 'week' | 'month';
+function Tile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <Card className="gap-1 p-4">
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="text-xl font-semibold tabular-nums" dir="ltr">
+        {value}
+      </p>
+      {hint ? <p className="text-muted-foreground text-xs">{hint}</p> : null}
+    </Card>
+  );
+}
 
 export function VendorEarningsDashboard() {
-  const t = useTranslations('vendor.earnings');
-  const [period, setPeriod] = useState<Period>('week');
-
-  const earnings = {
-    day: { revenue: 12500, commission: 1250, net: 11250, orders: 45 },
-    week: { revenue: 87500, commission: 8750, net: 78750, orders: 315 },
-    month: { revenue: 375000, commission: 37500, net: 337500, orders: 1340 },
-  };
-
-  const current = earnings[period];
-
-  const recentOrders = [
-    { id: 'ORD001', amount: 1250, commission: 125, net: 1125, status: 'DELIVERED' },
-    { id: 'ORD002', amount: 950, commission: 95, net: 855, status: 'DELIVERED' },
-    { id: 'ORD003', amount: 2100, commission: 210, net: 1890, status: 'PROCESSING' },
-  ];
+  const t = useTranslations("vendor.earnings");
+  const format = useFormatter();
+  const [range, setRange] = useState<EarningsRange>("week");
+  const { data, isLoading, error, refetch } = useVendorEarnings(range);
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        {(['day', 'week', 'month'] as const).map((p) => (
-          <Button
-            key={p}
-            variant={period === p ? 'default' : 'outline'}
-            onClick={() => setPeriod(p)}
-            className="flex-1"
-            size="sm"
-          >
-            {t(p)}
-          </Button>
-        ))}
-      </div>
+      <Tabs value={range} onValueChange={(v) => setRange(v as EarningsRange)}>
+        <TabsList>
+          <TabsTrigger value="day">{t("day")}</TabsTrigger>
+          <TabsTrigger value="week">{t("week")}</TabsTrigger>
+          <TabsTrigger value="month">{t("month")}</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground font-medium">{t('revenue')}</p>
-          <p className="text-2xl font-bold mt-2">Rs. {current.revenue.toLocaleString()}</p>
-        </Card>
-        <Card className="p-4 bg-orange-50 border-orange-200">
-          <p className="text-xs text-muted-foreground font-medium">{t('commission')}</p>
-          <p className="text-2xl font-bold mt-2 text-orange-600">
-            -Rs. {current.commission.toLocaleString()}
-          </p>
-        </Card>
-        <Card className="p-4 bg-green-50 border-green-200">
-          <p className="text-xs text-muted-foreground font-medium">{t('net')}</p>
-          <p className="text-2xl font-bold mt-2 text-green-600">Rs. {current.net.toLocaleString()}</p>
-        </Card>
-      </div>
-
-      <Card className="p-4">
-        <p className="text-sm text-muted-foreground">{t('totalOrders')}</p>
-        <p className="text-3xl font-bold mt-1">{current.orders}</p>
-      </Card>
-
-      <div>
-        <h3 className="font-semibold mb-4">{t('recentOrders')}</h3>
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 border-b">
-              <tr>
-                <th className="text-left p-3 font-medium">{t('order')}</th>
-                <th className="text-right p-3 font-medium">{t('amount')}</th>
-                <th className="text-right p-3 font-medium">{t('commission')}</th>
-                <th className="text-right p-3 font-medium">{t('net')}</th>
-                <th className="text-left p-3 font-medium">{t('status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map((order) => (
-                <tr key={order.id} className="border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="p-3 font-mono text-xs">{order.id}</td>
-                  <td className="text-right p-3">Rs. {order.amount.toLocaleString()}</td>
-                  <td className="text-right p-3 text-orange-600">-Rs. {order.commission}</td>
-                  <td className="text-right p-3 font-semibold">Rs. {order.net.toLocaleString()}</td>
-                  <td className="p-3">
-                    <Badge
-                      variant={order.status === 'DELIVERED' ? 'default' : 'secondary'}
-                    >
-                      {t(order.status.toLowerCase())}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {error ? (
+        <ErrorState error={error} onRetry={() => void refetch()} />
+      ) : isLoading || !data ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
         </div>
-      </div>
+      ) : (
+        <>
+          <section
+            aria-label={t("periodTotals")}
+            className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+          >
+            <Tile label={t("orders")} value={String(data.totals.orders)} />
+            <Tile label={t("gross")} value={formatMoney(data.totals.gross)} />
+            <Tile
+              label={t("commission")}
+              value={formatMoney(data.totals.commission)}
+            />
+            <Tile label={t("net")} value={formatMoney(data.totals.net)} />
+          </section>
+
+          <section
+            aria-label={t("balance")}
+            className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+          >
+            <Tile
+              label={t("balanceTotal")}
+              value={formatMoney(data.balance.total)}
+            />
+            <Tile
+              label={t("balanceAvailable")}
+              value={formatMoney(data.balance.available)}
+            />
+            <Tile
+              label={t("balancePending")}
+              value={formatMoney(data.balance.pending)}
+            />
+            <Tile
+              label={t("awaitingCash")}
+              value={formatMoney(data.balance.awaitingCash.amount)}
+              hint={t("awaitingCashOrders", {
+                count: data.balance.awaitingCash.orders,
+              })}
+            />
+          </section>
+
+          <Card className="overflow-hidden p-0">
+            <h2 className="px-4 pt-4 text-sm font-semibold">
+              {t("deliveredOrders")}
+            </h2>
+            {data.orders.length === 0 ? (
+              <p className="text-muted-foreground px-4 py-10 text-center text-sm">
+                {t("empty")}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("order")}</TableHead>
+                      <TableHead>{t("delivered")}</TableHead>
+                      <TableHead className="text-end">
+                        {t("subtotal")}
+                      </TableHead>
+                      <TableHead className="text-end">
+                        {t("commission")}
+                      </TableHead>
+                      <TableHead className="text-end">{t("net")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.orders.map((o) => (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-medium" dir="ltr">
+                          {o.orderNo}
+                        </TableCell>
+                        <TableCell>
+                          {format.dateTime(new Date(o.deliveredAt), {
+                            dateStyle: "medium",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-end tabular-nums" dir="ltr">
+                          {formatMoney(o.subtotal)}
+                        </TableCell>
+                        <TableCell className="text-end tabular-nums" dir="ltr">
+                          {formatMoney(o.commission)}
+                        </TableCell>
+                        <TableCell className="text-end tabular-nums" dir="ltr">
+                          {formatMoney(o.net)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }

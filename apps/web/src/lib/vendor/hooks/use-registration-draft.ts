@@ -1,7 +1,25 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { VendorRegistration } from '@dhoblio/shared';
+
+export interface DraftDocument {
+  type: 'CNIC_FRONT' | 'CNIC_BACK' | 'SHOP_PHOTO';
+  publicId: string;
+  name: string;
+}
+
+/** Mirrors POST /vendor/register; every field is a string until submit so partial input survives a reload. */
+export interface VendorRegistrationDraft {
+  businessName: string;
+  description: string;
+  email: string;
+  addressLine: string;
+  cityId: string;
+  lat: string;
+  lng: string;
+  cnic: string;
+  documents: DraftDocument[];
+}
 
 const DB_NAME = 'dhoblio_vendor';
 const STORE_NAME = 'registration_draft';
@@ -27,7 +45,7 @@ export function useRegistrationDraft() {
   }, []);
 
   const saveDraft = useCallback(
-    async (step: number, data: Partial<VendorRegistration>) => {
+    async (step: number, data: Partial<VendorRegistrationDraft>) => {
       const db = await getDb();
       return new Promise<void>((resolve, reject) => {
         const tx = db.transaction([STORE_NAME], 'readwrite');
@@ -40,7 +58,10 @@ export function useRegistrationDraft() {
     [getDb],
   );
 
-  const loadDraft = useCallback(async (): Promise<{ step: number; data: Partial<VendorRegistration> } | null> => {
+  const loadDraft = useCallback(async (): Promise<{
+    step: number;
+    data: Partial<VendorRegistrationDraft>;
+  } | null> => {
     const db = await getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_NAME], 'readonly');

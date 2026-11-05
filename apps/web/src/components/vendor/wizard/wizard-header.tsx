@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2Icon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Step {
   number: number;
@@ -15,10 +16,11 @@ const STEPS: Step[] = [
 ];
 
 export function WizardHeader({ currentStep }: { currentStep: number }) {
+  const t = useTranslations('vendor.register.steps');
 
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex flex-wrap items-center gap-2 md:gap-4">
         {STEPS.map((step, idx) => (
           <div key={step.number} className="flex items-center gap-2 md:gap-4">
             <div
@@ -32,9 +34,11 @@ export function WizardHeader({ currentStep }: { currentStep: number }) {
             >
               {currentStep > step.number ? <CheckCircle2Icon className="size-5" /> : step.number}
             </div>
-            <span className="hidden text-sm font-medium md:inline">{`Step ${step.number}`}</span>
+            <span className="hidden text-sm font-medium md:inline">{t(step.key)}</span>
             {idx < STEPS.length - 1 && (
-              <div className={`hidden h-1 w-8 flex-1 rounded-full md:block ${currentStep > step.number ? 'bg-primary' : 'bg-muted'}`} />
+              <div
+                className={`hidden h-1 w-8 flex-1 rounded-full md:block ${currentStep > step.number ? 'bg-primary' : 'bg-muted'}`}
+              />
             )}
           </div>
         ))}

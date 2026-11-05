@@ -1,32 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useRiderEarnings } from '@/lib/rider/hooks';
+import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+import { formatMoney } from "@dhoblio/shared";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useRiderEarnings } from "@/lib/rider/hooks";
+
+type Period = "today" | "week" | "month";
+const DAYS: Record<Period, number> = { today: 0, week: 6, month: 29 };
+
+function isoDay(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export function RiderEarningsView() {
-  const t = useTranslations('rider.earnings');
-  const { data: earnings, isLoading } = useRiderEarnings();
-  const [period, setPeriod] = useState<'today' | 'week' | 'month'>('week');
+  const t = useTranslations("rider.earnings");
+  const [period, setPeriod] = useState<Period>("week");
 
-  if (isLoading) {
-    return <Card className="h-96 animate-pulse bg-muted" />;
-  }
+  const range = useMemo(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(to.getDate() - DAYS[period]);
+    return { from: isoDay(from), to: isoDay(to) };
+  }, [period]);
 
-  if (!earnings) {
-    return <Card className="p-6"><p>{t('error')}</p></Card>;
-  }
+  const { data: earnings, isLoading, isError } = useRiderEarnings(range);
 
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
-        {(['today', 'week', 'month'] as const).map((p) => (
+        {(["today", "week", "month"] as const).map((p) => (
           <Button
             key={p}
-            variant={period === p ? 'default' : 'outline'}
+            variant={period === p ? "default" : "outline"}
             onClick={() => setPeriod(p)}
             className="flex-1"
             size="sm"
@@ -36,63 +46,53 @@ export function RiderEarningsView() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5">
-          <p className="text-xs text-muted-foreground font-medium">{t('today')}</p>
-          <p className="text-2xl font-bold mt-2">Rs. {earnings.todayEarnings.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {earnings.completedJobs} {t('jobs')}
-          </p>
+      {isLoading ? (
+        <Card className="bg-muted h-48 animate-pulse" />
+      ) : isError || !earnings ? (
+        <Card className="p-6">
+          <p>{t("error")}</p>
         </Card>
+      ) : (
+        <>
+          <Card className="border-primary border-2 p-6">
+            <p className="text-muted-foreground text-sm font-medium">
+              {t("totalEarnings")}
+            </p>
+            <p className="mt-3 text-4xl font-bold">
+              {formatMoney(earnings.totals.earned)}
+            </p>
+            <p className="text-muted-foreground mt-2 text-xs">
+              {earnings.totals.jobs} {t("deliveries")}
+            </p>
+          </Card>
 
-        <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-          <p className="text-xs text-muted-foreground font-medium">{t('thisWeek')}</p>
-          <p className="text-2xl font-bold mt-2">Rs. {earnings.weekEarnings.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t('pending')}: {earnings.pendingJobs}
-          </p>
-        </Card>
-      </div>
-
-      <Card className="p-6 border-2 border-primary">
-        <p className="text-sm text-muted-foreground font-medium">{t('totalEarnings')}</p>
-        <p className="text-4xl font-bold mt-3">Rs. {earnings.totalEarnings.toFixed(2)}</p>
-        <p className="text-xs text-muted-foreground mt-2">
-          {t('allTime')} • {earnings.completedJobs} {t('deliveries')}
-        </p>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">{t('recentDeliveries')}</h3>
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b last:border-b-0">
-              <div>
-                <p className="text-sm font-medium">Order #{1000 + i}</p>
-                <p className="text-xs text-muted-foreground">2 hours ago</p>
+          <Card className="p-6">
+            <h3 className="mb-4 font-semibold">{t("byDay")}</h3>
+            {earnings.days.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{t("noEarnings")}</p>
+            ) : (
+              <div className="space-y-3">
+                {[...earnings.days].reverse().map((d) => (
+                  <div
+                    key={d.day}
+                    className="flex items-center justify-between border-b py-3 last:border-b-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{d.day}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {d.jobs} {t("jobs")}
+                      </p>
+                    </div>
+                    <span className="font-semibold">
+                      {formatMoney(d.earned)}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <Badge variant="secondary">Rs. 150</Badge>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">{t('payoutStatus')}</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">{t('availableBalance')}</span>
-            <span className="font-semibold">Rs. {(earnings.totalEarnings * 0.8).toFixed(2)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t('platformFee')}</span>
-            <span className="text-sm text-muted-foreground">-Rs. {(earnings.totalEarnings * 0.2).toFixed(2)}</span>
-          </div>
-          <Button className="w-full mt-4">
-            {t('requestPayout')}
-          </Button>
-        </div>
-      </Card>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }

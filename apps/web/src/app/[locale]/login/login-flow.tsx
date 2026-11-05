@@ -4,7 +4,7 @@ import { useActionState, useCallback, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -101,22 +101,22 @@ export function LoginFlow({
   next,
   banner,
   devHint,
+  asVendor = false,
 }: {
   locale: string;
   next?: string;
+  asVendor?: boolean;
   banner?: string;
   devHint?: string;
 }) {
   const t = useTranslations('customer.login');
+  const tVendor = useTranslations('vendor.shell');
   const router = useRouter();
   const [requestState, requestAction, requestPending] = useActionState<OtpState, FormData>(
     requestOtp.bind(null, locale),
     {},
   );
-  const [verifyState, verifyAction] = useActionState<OtpState, FormData>(
-    verifyOtp.bind(null, locale, next),
-    {},
-  );
+  const [verifyState, verifyAction] = useActionState<OtpState, FormData>(verifyOtp.bind(null, locale, next), {});
 
   const submitCode = useCallback(() => {
     document.getElementById('customer-otp-submit')?.click();
@@ -171,9 +171,7 @@ export function LoginFlow({
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>
             <p>{errorMessage}</p>
-            {error?.requestId ? (
-              <p className="text-muted-foreground font-mono text-[11px]">{error.requestId}</p>
-            ) : null}
+            {error?.requestId ? <p className="text-muted-foreground font-mono text-[11px]">{error.requestId}</p> : null}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -189,6 +187,7 @@ export function LoginFlow({
 
           <form action={verifyAction} className="space-y-4" noValidate>
             <input type="hidden" name="phone" value={requestState.phone} />
+            {asVendor ? <input type="hidden" name="role" value="VENDOR_OWNER" /> : null}
             <CodeInput label={t('codeDigit')} onComplete={submitCode} />
             <SubmitButton id="customer-otp-submit" label={t('verify')} pendingLabel={t('verifying')} />
           </form>
@@ -200,7 +199,12 @@ export function LoginFlow({
                 {secondsLeft > 0 ? t('resendIn', { seconds: secondsLeft }) : t('resend')}
               </Button>
             </form>
-            <Button type="button" variant="link" size="sm" onClick={() => router.replace('/login')}>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => router.replace(asVendor ? '/login?as=vendor' : '/login')}
+            >
               {t('changeNumber')}
             </Button>
           </div>
@@ -225,6 +229,15 @@ export function LoginFlow({
           <SubmitButton label={t('sendCode')} pendingLabel={t('sending')} />
         </form>
       )}
+
+      <p className="mt-4 text-center text-sm">
+        <Link
+          href={asVendor ? '/login' : '/login?as=vendor'}
+          className="text-primary underline-offset-4 hover:underline"
+        >
+          {asVendor ? tVendor('loginAsCustomer') : tVendor('loginAsVendor')}
+        </Link>
+      </p>
 
       {devHint ? <p className="text-muted-foreground mt-4 text-center text-xs">{devHint}</p> : null}
     </div>

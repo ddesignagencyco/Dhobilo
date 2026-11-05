@@ -9,11 +9,11 @@ export default async function CustomerLoginPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; as?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { next, error } = await searchParams;
+  const { next, error, as } = await searchParams;
   const t = await getTranslations();
 
   const banner =
@@ -37,6 +37,7 @@ export default async function CustomerLoginPage({
         <LoginFlow
           locale={locale}
           next={next}
+          asVendor={as === 'vendor'}
           banner={banner}
           devHint={process.env.NODE_ENV !== 'production' ? t('customer.login.devHint') : undefined}
         />
