@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export function ComplaintForm({ orderId }: { orderId: string }) {
+export function ComplaintForm({ orderId: _orderId }: { orderId: string }) {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-export function OrderReviewForm({ orderId }: { orderId: string }) {
+export function OrderReviewForm({ orderId: _orderId }: { orderId: string }) {
   const [rating, setRating] = useState(5);
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
