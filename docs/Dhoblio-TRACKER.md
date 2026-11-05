@@ -249,7 +249,7 @@
 - [ ] **FE-5.4** Status stepper with large buttons (FR-R4); handles flaky network via queued actions
 - [ ] **FE-5.5** Proof capture: camera photo with compression, or OTP entry (FR-R5)
 - [ ] **FE-5.6** Rider earnings and jobs completed (FR-R6)
-- [ ] **FE-5.7** Customer app: show rider name/photo/status on tracking screen (+ rider position if enabled)
+- [x] **FE-5.7** Customer app: show rider name/photo/status on tracking screen (+ rider position if enabled)
 - [x] **FE-5.8** Admin: rider approval queue, rider list, dispatch board (unassigned jobs, reassign) (FR-A2) (rider approval queue with inline approve/reject/suspend/reactivate (dispatch board still to do)) (rider approval queue plus the dispatch board with assign, unassign, mark-failed and redispatch)
 - [x] **FE-5.9** Admin: courier-partner toggle per city (FR-R7) (courier partner per city, set from the city dialog (null hands the city back to our own riders))
 

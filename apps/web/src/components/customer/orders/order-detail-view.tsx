@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCancelOrder, useOrderDetail, useOrderTimeline, useOrderTracking } from '@/lib/customer/hooks/use-orders';
+import { useOrderDelivery, useRiderLocation } from '@/lib/customer/hooks/use-deliveries';
 import type { OrderTimelineEntry } from '@/lib/customer/types';
 import { useVendorDetail } from '@/lib/customer/hooks/use-vendor-detail';
 import { formatDateTime, formatSlotRange } from '@/lib/customer/format';
@@ -28,6 +29,12 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
   const [cancelReason, setCancelReason] = useState('');
   const cancelOrder = useCancelOrder();
   const tracking = useOrderTracking(orderId, !!order.data && order.isSuccess);
+  const delivery = useOrderDelivery(orderId);
+  const riderLegs = delivery.data?.filter((leg) => leg.handledBy === 'RIDER') ?? [];
+  const riderLeg = riderLegs.find((leg) => leg.status === 'OUT_FOR_DELIVERY') ?? riderLegs[riderLegs.length - 1];
+  const rider = riderLeg?.rider;
+  const riderStatus = riderLeg?.status;
+  const riderLocationQuery = useRiderLocation(orderId, !!riderLeg && riderLeg.status === 'OUT_FOR_DELIVERY');
   const liveStatus = tracking.last?.to ?? order.data?.status ?? 'PLACED';
   const timelineEntries: OrderTimelineEntry[] = [
     ...(timeline.data ?? []),
@@ -173,6 +180,31 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
           )}
         </CardContent>
       </Card>
+
+      {rider ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t('ridersOnTheWay')}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-center gap-3">
+              {rider.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={rider.photoUrl} alt={rider.name ?? t('rider')} className="size-10 rounded-full object-cover" />
+              ) : null}
+              <div>
+                <p className="font-medium">{rider.name ?? t('rider')}</p>
+                <OrderStatusBadge status={riderStatus ?? 'OUT_FOR_DELIVERY'} />
+              </div>
+            </div>
+            {riderLocationQuery.data ? (
+              <p className="text-muted-foreground text-xs">
+                {t('riderLocation')}: {riderLocationQuery.data.lat.toFixed(5)}, {riderLocationQuery.data.lng.toFixed(5)}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

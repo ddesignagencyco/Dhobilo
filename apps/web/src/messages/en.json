@@ -802,6 +802,9 @@
       "deliveryFee": "Delivery fee",
       "discount": "Discount",
       "total": "Total",
+      "ridersOnTheWay": "Rider on the way",
+      "rider": "Rider",
+      "riderLocation": "Live rider location",
       "status": {
         "placed": "Placed",
         "accepted": "Accepted",
