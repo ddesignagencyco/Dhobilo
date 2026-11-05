@@ -1,0 +1,15 @@
+{
+  "node": {
+    "4012c63525b441d8adb512eb87aaae9d5b2faac3ae": {
+      "workers": {
+        "app/[locale]/(vendor)/settings/page": {
+          "moduleId": 25826,
+          "async": false
+        }
+      },
+      "exportedName": "signOut",
+      "filename": "apps/web/src/lib/auth/actions.ts"
+    }
+  },
+  "edge": {}
+}

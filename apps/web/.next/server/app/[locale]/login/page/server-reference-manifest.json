@@ -1,0 +1,25 @@
+{
+  "node": {
+    "707151f98b4bd6e271a7904828e8acaf936b163cb0": {
+      "workers": {
+        "app/[locale]/login/page": {
+          "moduleId": 88240,
+          "async": false
+        }
+      },
+      "exportedName": "requestOtp",
+      "filename": "apps/web/src/lib/customer/actions.ts"
+    },
+    "7801f4e0c847198f09bb0f71c5e292f535600b2e90": {
+      "workers": {
+        "app/[locale]/login/page": {
+          "moduleId": 88240,
+          "async": false
+        }
+      },
+      "exportedName": "verifyOtp",
+      "filename": "apps/web/src/lib/customer/actions.ts"
+    }
+  },
+  "edge": {}
+}

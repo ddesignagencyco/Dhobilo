@@ -1,0 +1,25 @@
+{
+  "node": {
+    "78ef0f9344b101a0a7a3e038adc7e9414829ad8cce": {
+      "workers": {
+        "app/[locale]/login/page": {
+          "moduleId": "[project]/apps/web/.next-internal/server/app/[locale]/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/apps/web/src/lib/customer/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "exportedName": "verifyOtp",
+      "filename": "apps/web/src/lib/customer/actions.ts"
+    },
+    "70830836277ddcf54d41bcbf99a3018ed035e93d4e": {
+      "workers": {
+        "app/[locale]/login/page": {
+          "moduleId": "[project]/apps/web/.next-internal/server/app/[locale]/login/page/actions.js { ACTIONS_MODULE0 => \"[project]/apps/web/src/lib/customer/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "exportedName": "requestOtp",
+      "filename": "apps/web/src/lib/customer/actions.ts"
+    }
+  },
+  "edge": {}
+}

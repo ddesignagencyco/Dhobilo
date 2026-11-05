@@ -1,0 +1,127 @@
+{
+  "app": {
+    "[project]/apps/web/src/app/[locale]/(customer)/orders/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(customer)/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(customer)/profile/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(vendor)/availability/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(vendor)/ledger/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(vendor)/payouts/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(vendor)/settings/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/(vendor)/staff/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/admins/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/analytics/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/announcements/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/audit-logs/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/cities/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/cod/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/commission/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/complaints/[id]/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/complaints/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/delivery/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/orders/[id]/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/orders/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/payouts/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/promos/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/queues/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/reports/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/riders/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/vendors/[id]/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/vendors/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/admin/login/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ],
+    "[project]/apps/web/src/app/[locale]/login/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

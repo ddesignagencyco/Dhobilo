@@ -1,0 +1,11 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/apps/web/src/app/[locale]/admin/(panel)/orders/[id]/page": [
+      "static/media/07c7676b89ed2778-s.p.2bn3s6zvc0dyp.woff2",
+      "static/media/4c087816e2860fce-s.p.0h6p0wdoh4sq2.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}
