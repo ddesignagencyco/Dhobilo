@@ -1,3 +1,5 @@
+import type { Cart } from '@dhoblio/shared';
+
 /** Shapes returned by the public/customer API routes used by the customer app. */
 
 export interface ActiveCity {
@@ -212,4 +214,27 @@ export interface OrderTimelineEntry {
   at: string;
   by: string;
   note: string | null;
+}
+
+export interface OrderLiveEvent {
+  seq: number;
+  orderId: string;
+  from: string;
+  to: string;
+  at: string;
+  actor: string;
+  reason?: string;
+}
+
+export interface ReorderResult {
+  cart: Cart;
+  unavailable: { name: string }[];
+  priceChanges: { name: string; oldUnitPrice: string; newUnitPrice: string }[];
+}
+
+export interface NotificationPrefs {
+  push: boolean;
+  whatsapp: boolean;
+  sms: boolean;
+  email: boolean;
 }

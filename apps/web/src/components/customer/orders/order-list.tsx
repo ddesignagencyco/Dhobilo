@@ -3,18 +3,20 @@
 import { ReceiptText } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { formatMoney } from '@dhoblio/shared';
+import { toast } from 'sonner';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useOrders } from '@/lib/customer/hooks/use-orders';
+import { useOrders, useReorderOrder } from '@/lib/customer/hooks/use-orders';
 import { formatDateTime } from '@/lib/customer/format';
 import { OrderStatusBadge } from './order-status-badge';
 
 export function OrderList() {
   const t = useTranslations('customer.orders');
   const locale = useLocale();
+  const reorderOrder = useReorderOrder();
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } = useOrders();
 
   const orders = data?.pages.flatMap((page) => page.items) ?? [];
@@ -73,6 +75,21 @@ export function OrderList() {
                 <span>{formatDateTime(order.placedAt, locale)}</span>
                 <span>{t('itemCount', { count: order.itemCount })}</span>
                 <span className="text-foreground font-semibold">{formatMoney(order.total)}</span>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    void reorderOrder
+                      .mutateAsync({ orderId: order.id })
+                      .then(() => toast.success(t('reorderDone')))
+                      .catch(() => toast.error(t('reorderError')));
+                  }}
+                  disabled={reorderOrder.isPending}
+                >
+                  {t('reorder')}
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -258,7 +258,10 @@
     "cancelConfirm": "Cancel order",
     "cancelled": "Order cancelled.",
     "cancelReasonLabel": "Reason",
-    "cancelReasonPlaceholder": "Why this order is being cancelled"
+    "cancelReasonPlaceholder": "Why this order is being cancelled",
+    "reorder": "Reorder",
+    "reorderDone": "We refilled your cart from this order.",
+    "reorderError": "Could not reorder this order. Try again."
   },
   "delivery": {
     "title": "Dispatch",
@@ -810,6 +813,25 @@
         "delivered": "ڈیلیور ہو گیا",
         "cancelled": "منسوخ"
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "subtitle": "Choose how you hear about order updates.",
+      "push": "Push",
+      "pushDescription": "Instant alerts on your phone.",
+      "whatsapp": "WhatsApp",
+      "whatsappDescription": "Order updates through WhatsApp.",
+      "sms": "SMS",
+      "smsDescription": "Order updates by text message.",
+      "email": "Email",
+      "emailDescription": "Order updates by email.",
+      "pushTitle": "Push notifications",
+      "pushHint": "Allow notifications to get live order alerts.",
+      "pushEnable": "Enable",
+      "pushGranted": "Allowed",
+      "pushDenied": "Blocked",
+      "saving": "Saving…",
+      "saved": "Preferences saved."
     },
     "profile": {
       "title": "پروفائل",

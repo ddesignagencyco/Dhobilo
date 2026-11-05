@@ -257,9 +257,12 @@
     "cancelBody": "Order {orderNo} will be cancelled and any open pickup or drop job cancelled with it. The reason is recorded in the order history and shown to the customer and the vendor.",
     "cancelConfirm": "Cancel order",
     "cancelled": "Order cancelled.",
-    "cancelReasonLabel": "Reason",
-    "cancelReasonPlaceholder": "Why this order is being cancelled"
-  },
+      "cancelReasonLabel": "Reason",
+      "cancelReasonPlaceholder": "Why this order is being cancelled",
+      "reorder": "Reorder",
+      "reorderDone": "We refilled your cart from this order.",
+      "reorderError": "Could not reorder this order. Try again."
+    },
   "delivery": {
     "title": "Dispatch",
     "subtitle": "Pickup and drop jobs, and the riders carrying them.",

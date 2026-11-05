@@ -207,13 +207,13 @@
 - [x] **BE-4.11** Tests: every legal/illegal transition by every role; timeout fires once; notification fan-out per status
 
 ### FE
-- [ ] **FE-4.1** Customer tracking screen: status timeline (Picked up → In process → Ready → Out for delivery → Delivered) via SSE with polling fallback and reconnect (FR-C9)
+- [x] **FE-4.1** Customer tracking screen: status timeline (Picked up → In process → Ready → Out for delivery → Delivered) via SSE with polling fallback and reconnect (FR-C9)
 - [ ] **FE-4.2** Push permission prompt (contextual, post-first-order) + FCM service worker (FR-C10)
-- [ ] **FE-4.3** Order history list + one-tap Reorder (FR-C12)
-- [ ] **FE-4.4** Cancel order flow with confirmation
+- [x] **FE-4.3** Order history list + one-tap Reorder (FR-C12)
+- [x] **FE-4.4** Cancel order flow with confirmation
 - [ ] **FE-4.5** Vendor order board: New / In process / Ready columns, response countdown, audible + vibrate alert, accept/reject modal (FR-V5)
 - [ ] **FE-4.6** Vendor order detail: items, notes, slot, one-tap status buttons (FR-V6)
-- [ ] **FE-4.7** Notification preferences screen (channels)
+- [x] **FE-4.7** Notification preferences screen (channels)
 - [x] **FE-4.8** Admin: orders list/search + detail with timeline and manual cancel (support tool) (admin orders search and detail with history, delivery legs, commission breakdown and manual cancel)
 
 ### QA

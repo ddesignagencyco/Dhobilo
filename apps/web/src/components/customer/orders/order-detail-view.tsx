@@ -2,14 +2,18 @@
 
 import { CheckCircle2, ReceiptText } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { formatMoney } from '@dhoblio/shared';
+import { toast } from 'sonner';
 import { Link } from '@/i18n/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useOrderDetail, useOrderTimeline } from '@/lib/customer/hooks/use-orders';
+import { useCancelOrder, useOrderDetail, useOrderTimeline, useOrderTracking } from '@/lib/customer/hooks/use-orders';
+import type { OrderTimelineEntry } from '@/lib/customer/types';
 import { useVendorDetail } from '@/lib/customer/hooks/use-vendor-detail';
 import { formatDateTime, formatSlotRange } from '@/lib/customer/format';
 import { OrderStatusBadge } from './order-status-badge';
@@ -17,9 +21,20 @@ import { OrderStatusBadge } from './order-status-badge';
 export function OrderDetailView({ orderId, placed }: { orderId: string; placed: boolean }) {
   const t = useTranslations('customer.orders');
   const locale = useLocale();
-  const order = useOrderDetail(orderId);
+  const order = useOrderDetail(orderId, { refetchInterval: 15_000 });
   const timeline = useOrderTimeline(orderId);
   const vendor = useVendorDetail(order.data?.vendor.id);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const cancelOrder = useCancelOrder();
+  const tracking = useOrderTracking(orderId, !!order.data && order.isSuccess);
+  const liveStatus = tracking.last?.to ?? order.data?.status ?? 'PLACED';
+  const timelineEntries: OrderTimelineEntry[] = [
+    ...(timeline.data ?? []),
+    ...tracking.events
+      .filter((event) => !timeline.data?.some((entry) => entry.status === event.to && entry.at === event.at))
+      .map((event) => ({ status: event.to, from: event.from, at: event.at, by: event.actor, note: event.reason ?? null })),
+  ];
 
   if (order.isLoading) {
     return (
@@ -46,6 +61,7 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
   const data = order.data;
   const timeZone = vendor.data?.city.timezone ?? 'Asia/Karachi';
   const address = data.addressSnapshot;
+  const canCancel = ['PLACED', 'ACCEPTED'].includes(data.status);
 
   return (
     <div className="space-y-4 pb-16">
@@ -63,7 +79,7 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
             {data.vendor.businessName} · {formatDateTime(data.placedAt, locale)}
           </p>
         </div>
-        <OrderStatusBadge status={data.status} />
+        <OrderStatusBadge status={liveStatus} />
       </div>
 
       <Card>
@@ -139,8 +155,8 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
         <CardContent className="space-y-3 text-sm">
           {timeline.isLoading ? (
             <Skeleton className="h-16" />
-          ) : timeline.data && timeline.data.length > 0 ? (
-            timeline.data.map((entry) => (
+          ) : timelineEntries.length > 0 ? (
+            timelineEntries.map((entry) => (
               <div key={`${entry.status}-${entry.at}`} className="flex items-start gap-3">
                 <ReceiptText className="text-muted-foreground mt-0.5 size-4" aria-hidden />
                 <div className="flex-1">
@@ -183,7 +199,49 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
         </Alert>
       ) : null}
 
+      <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('cancelTitle')}</DialogTitle>
+            <DialogDescription>{t('cancelBody', { orderNo: data.orderNo })}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <label className="text-muted-foreground text-sm">{t('cancelReasonLabel')}</label>
+            <textarea
+              className="border-input bg-background placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm"
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder={t('cancelReasonPlaceholder')}
+              maxLength={200}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                void (async () => {
+                  await cancelOrder.mutateAsync({ orderId: data.id, reason: cancelReason.trim() || undefined });
+                  setCancelOpen(false);
+                  setCancelReason('');
+                  toast.success(t('cancelled'));
+                })();
+              }}
+              disabled={cancelOrder.isPending}
+            >
+              {t('cancelConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex gap-2">
+        {canCancel ? (
+          <Button variant="outline" onClick={() => setCancelOpen(true)} disabled={cancelOrder.isPending}>
+            {t('cancel')}
+          </Button>
+        ) : null}
         <Button asChild variant="outline">
           <Link href="/orders">{t('back')}</Link>
         </Button>
