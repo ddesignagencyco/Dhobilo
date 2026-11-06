@@ -10,7 +10,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   const session = await readVendorSession();
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <PageHeader title={t('title')} description={t('subtitle')} />
       <ProfileForm isOwner={session?.user.role === 'VENDOR_OWNER'} />
     </div>

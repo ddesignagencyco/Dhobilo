@@ -262,10 +262,10 @@ export function RegistrationWizard({ locale }: { locale: string }) {
   );
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto w-full max-w-2xl">
       <WizardHeader currentStep={step} />
 
-      <div className="bg-card space-y-5 rounded-xl border p-4 sm:p-6">
+      <div key={step} className="bg-card animate-fade space-y-5 rounded-xl border p-5 shadow-xs sm:p-7">
         {error ? (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>

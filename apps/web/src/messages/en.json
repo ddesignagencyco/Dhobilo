@@ -1004,7 +1004,11 @@
       "empty": "No delivered orders in this period.",
       "order": "Order",
       "delivered": "Delivered",
-      "subtotal": "Subtotal"
+      "subtotal": "Subtotal",
+      "trendTitle": "Net earnings over time",
+      "trendHint": "Hover a bar for details",
+      "ordersCount": "{count, plural, one {# order} other {# orders}}",
+      "heroHint": "From {orders, plural, one {# delivered order} other {# delivered orders}} · gross {gross} · commission {commission}"
     },
     "ledger": {
       "title": "Ledger",
@@ -1023,7 +1027,10 @@
         "PAYOUT": "Payouts",
         "ADJUSTMENT": "Adjustments",
         "REFUND": "Refunds"
-      }
+      },
+      "summaryIn": "Money in",
+      "summaryOut": "Money out",
+      "summaryNet": "Net"
     },
     "payouts": {
       "title": "Payouts",
@@ -1049,7 +1056,8 @@
         "APPROVED": "Approved",
         "PAID": "Paid",
         "REJECTED": "Rejected"
-      }
+      },
+      "useFull": "Use full balance"
     },
     "orders": {
       "title": "Orders",
@@ -1186,7 +1194,12 @@
           "json": "That is not valid JSON.",
           "header": "The CSV needs a header row that includes itemName."
         }
-      }
+      },
+      "searchPlaceholder": "Search items",
+      "summary": "{active} of {total} active",
+      "allCategories": "All",
+      "noMatches": "No items match",
+      "noMatchesHint": "Try a different search or category."
     },
     "hours": {
       "title": "Hours & availability",
@@ -1233,7 +1246,9 @@
         "slotsInvalid": "Enter a whole number, 1 or more.",
         "save": "Save settings",
         "saved": "Settings saved."
-      }
+      },
+      "today": "Today",
+      "applyAll": "Apply to all"
     },
     "shell": {
       "status": {
@@ -1255,6 +1270,11 @@
         "SUSPENDED": {
           "title": "Shop suspended",
           "body": "Your shop is suspended and cannot take orders. Contact Dhoblio support for help."
+        },
+        "progress": {
+          "submitted": "Submitted",
+          "review": "In review",
+          "approved": "Approved"
         }
       },
       "loginAsVendor": "Shop owner? Sign in or register here",
@@ -1311,7 +1331,9 @@
         "radius": "Service radius must be between 0.5 and 50 km.",
         "respond": "Response time must be a whole number from 5 to 60 minutes.",
         "slots": "Slots must be a whole number from 1 to 100."
-      }
+      },
+      "sectionShop": "Shop details",
+      "sectionService": "Service rules"
     },
     "register": {
       "title": "Register your shop",

@@ -8,7 +8,7 @@ export default async function VendorRegisterPage({ params }: { params: Promise<{
   const t = await getTranslations('vendor.register');
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader title={t('title')} description={t('subtitle')} />
       <RegistrationWizard locale={locale} />
     </div>

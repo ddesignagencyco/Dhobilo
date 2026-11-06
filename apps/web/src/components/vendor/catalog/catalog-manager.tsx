@@ -1,10 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Plus, Trash2, Upload } from 'lucide-react';
+import {
+  Pencil,
+  Plus,
+  SearchIcon,
+  ShirtIcon,
+  SparklesIcon,
+  Trash2,
+  Upload,
+  WashingMachineIcon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { formatMoney } from '@dhoblio/shared';
 import { ActionDialog } from '@/components/admin/action-dialog';
 import { PageHeader } from '@/components/admin/page-header';
 import { EmptyState, ErrorState } from '@/components/admin/states';
@@ -12,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import {
   type VendorCatalogItem,
@@ -22,6 +32,13 @@ import {
 } from '@/lib/vendor/hooks/use-vendor-catalog';
 import { ImportDialog } from './import-dialog';
 import { ItemDialog } from './item-dialog';
+
+const SERVICE_ICON: Record<string, LucideIcon> = {
+  WASH_FOLD: WashingMachineIcon,
+  WASH_IRON: WashingMachineIcon,
+  DRY_CLEAN: SparklesIcon,
+  IRON_ONLY: ShirtIcon,
+};
 
 function PriceCell({ item }: { item: VendorCatalogItem }) {
   const t = useTranslations('vendor.catalog');
@@ -47,12 +64,14 @@ function PriceCell({ item }: { item: VendorCatalogItem }) {
   };
 
   return (
-    <div className="flex items-center gap-1.5" dir="ltr">
-      <span className="text-muted-foreground text-xs">Rs</span>
+    <div className="relative" dir="ltr">
+      <span className="text-muted-foreground pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 text-xs">
+        Rs
+      </span>
       <Input
         aria-label={`${t('price')}: ${item.itemName}`}
         inputMode="decimal"
-        className="h-8 w-24 text-end"
+        className="tabular h-9 w-28 ps-8 text-end font-medium"
         value={draft ?? String(Number(item.price))}
         disabled={update.isPending}
         onChange={(e) => setDraft(e.target.value)}
@@ -96,12 +115,24 @@ export function CatalogManager() {
   const [editing, setEditing] = useState<VendorCatalogItem | 'new' | null>(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<VendorCatalogItem | null>(null);
+  const [query, setQuery] = useState('');
+  const [cat, setCat] = useState<number | null>(null);
 
   const itemName = (i: VendorCatalogItem) => (locale === 'ur' && i.itemNameUr ? i.itemNameUr : i.itemName);
   const itemSecondary = (i: VendorCatalogItem) => (locale === 'ur' ? i.itemName : i.itemNameUr);
 
+  const all = items.data ?? [];
+  const q = query.trim().toLowerCase();
+  const visible = all.filter(
+    (i) =>
+      (cat === null || i.categoryId === cat) &&
+      (q === '' || i.itemName.toLowerCase().includes(q) || (i.itemNameUr ?? '').includes(q)),
+  );
+  const categoryChips = [...new Map(all.map((i) => [i.categoryId, i.category])).entries()];
+  const activeCount = all.filter((i) => i.isActive).length;
+
   const groups = new Map<number, { name: string; items: VendorCatalogItem[] }>();
-  for (const item of items.data ?? []) {
+  for (const item of visible) {
     const group = groups.get(item.categoryId) ?? {
       name: locale === 'ur' && item.category.nameUr ? item.category.nameUr : item.category.name,
       items: [],
@@ -129,16 +160,63 @@ export function CatalogManager() {
         }
       />
 
+      {all.length > 0 ? (
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative min-w-52 flex-1 sm:max-w-sm">
+              <SearchIcon
+                className="text-muted-foreground pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2"
+                aria-hidden
+              />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                aria-label={t('searchPlaceholder')}
+                className="ps-9"
+              />
+            </div>
+            <p className="text-muted-foreground tabular text-sm">
+              {t('summary', { total: all.length, active: activeCount })}
+            </p>
+          </div>
+          <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
+            {[[null, { name: t('allCategories'), nameUr: t('allCategories') }] as const, ...categoryChips].map(
+              ([id, c]) => (
+                <button
+                  key={String(id)}
+                  type="button"
+                  onClick={() => setCat(id)}
+                  aria-pressed={cat === id}
+                  className={cn(
+                    'min-h-9 shrink-0 rounded-full border px-3.5 text-sm font-medium transition-all duration-200',
+                    cat === id
+                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                      : 'bg-card text-muted-foreground hover:text-foreground hover:border-primary/40',
+                  )}
+                >
+                  {id === null ? c.name : locale === 'ur' && c.nameUr ? c.nameUr : c.name}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+      ) : null}
+
       {items.isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </div>
       ) : items.isError ? (
         <ErrorState error={items.error} onRetry={() => void items.refetch()} />
+      ) : groups.size === 0 && all.length > 0 ? (
+        <div className="bg-card rounded-xl border">
+          <EmptyState title={t('noMatches')} hint={t('noMatchesHint')} />
+        </div>
       ) : groups.size === 0 ? (
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card rounded-xl border">
           <EmptyState
             title={t('empty')}
             hint={t('emptyHint')}
@@ -151,19 +229,30 @@ export function CatalogManager() {
           />
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="stagger space-y-7">
           {[...groups.entries()].map(([id, group]) => (
             <section key={id} aria-labelledby={`cat-${id}`}>
-              <h2 id={`cat-${id}`} className="mb-2 text-sm font-semibold">
+              <h2 id={`cat-${id}`} className="mb-2.5 flex items-center text-sm font-semibold">
                 {group.name}
-                <span className="text-muted-foreground ms-2 font-normal">{group.items.length}</span>
+                <span className="bg-muted text-muted-foreground tabular ms-2 rounded-full px-2 py-0.5 text-xs font-semibold">
+                  {group.items.length}
+                </span>
               </h2>
-              <ul className="bg-card divide-y rounded-lg border">
+              <ul className="bg-card divide-y overflow-hidden rounded-xl border shadow-xs">
                 {group.items.map((item) => (
                   <li
                     key={item.id}
-                    className={`flex flex-wrap items-center gap-x-4 gap-y-2 p-3 ${item.isActive ? '' : 'opacity-60'}`}
+                    className={cn(
+                      'hover:bg-muted/40 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 transition-colors',
+                      !item.isActive && 'opacity-60',
+                    )}
                   >
+                    <span className="bg-accent text-accent-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
+                      {(() => {
+                        const Icon = SERVICE_ICON[item.serviceType] ?? ShirtIcon;
+                        return <Icon className="size-5" aria-hidden />;
+                      })()}
+                    </span>
                     <div className="min-w-0 flex-1 basis-40">
                       <p className="truncate font-medium">{itemName(item)}</p>
                       {itemSecondary(item) ? (
@@ -175,9 +264,6 @@ export function CatalogManager() {
                         <Badge variant="secondary">{t(`serviceType.${item.serviceType}`)}</Badge>
                         <span className="text-muted-foreground text-xs">
                           {t('turnaround', { hours: item.turnaroundHours })}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          {formatMoney(item.price, { decimals: false })}
                         </span>
                       </div>
                     </div>
