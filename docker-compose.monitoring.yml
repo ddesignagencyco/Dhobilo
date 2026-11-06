@@ -1,0 +1,23 @@
+# Prometheus + Alertmanager + uptime probe. Start with: ops/monitoring/up.sh   (stop: docker compose -p dhoblio-monitoring -f docker-compose.monitoring.yml down)
+name: dhoblio-monitoring
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports: ['9091:9090']
+    volumes:
+      - ./ops/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./ops/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./ops/monitoring/.metrics-token:/etc/prometheus/metrics-token:ro
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on: [alertmanager, blackbox]
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    ports: ['9094:9093']
+    volumes:
+      - ./ops/monitoring/.alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    ports: ['9116:9115']
+    volumes:
+      - ./ops/monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    extra_hosts: ['host.docker.internal:host-gateway']

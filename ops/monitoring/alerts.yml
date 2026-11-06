@@ -1,0 +1,76 @@
+# Alert catalogue (OPS-9.1). Thresholds follow the SRS/TRD targets; tune them after the first weeks of real traffic.
+groups:
+  - name: dhoblio-availability
+    rules:
+      - alert: ApiDown
+        expr: probe_success{job="dhoblio-ready"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: 'API readiness check failing'
+          description: 'GET /api/v1/health/ready has not returned 200 for 2 minutes (API, database or Redis down). Runbook: docs/Dhoblio-OPS.md#monitoring-and-alerts'
+      - alert: MetricsScrapeFailing
+        expr: up{job="dhoblio-api"} == 0
+        for: 3m
+        labels: { severity: warning }
+        annotations:
+          summary: 'Prometheus cannot scrape the API'
+          description: 'Either the API is down or the METRICS_TOKEN no longer matches.'
+      - alert: DependencyDown
+        expr: app_dependency_up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: '{{ $labels.dependency }} is not answering'
+          description: 'The API cannot reach {{ $labels.dependency }}. Orders and logins will fail.'
+
+  - name: dhoblio-errors-and-latency
+    rules:
+      - alert: HighServerErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_requests_total[5m])), 0.0001) > 0.02
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: '5xx responses above 2% for 5 minutes'
+          description: 'Check the API logs by request id, then the dependency alerts.'
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 0.8
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'API p95 latency above 800 ms for 10 minutes'
+          description: 'SRS target is a p95 under 800 ms for reads.'
+      - alert: SlowOrderPlacement
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{method="POST",route="/api/v1/orders"}[5m]))) > 1.5
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'POST /orders p95 above 1.5 s for 10 minutes'
+          description: 'TRD §19.1 target is 1.5 s. Check database load and the city order counter.'
+
+  - name: dhoblio-queues
+    rules:
+      - alert: QueueBacklog
+        expr: queue_jobs{state="waiting"} > 500
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: 'Queue {{ $labels.queue }} has more than 500 waiting jobs'
+          description: 'The worker is not keeping up. Runbook: queue backlog.'
+      - alert: QueueStuck
+        expr: queue_oldest_waiting_seconds > 300
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: 'Oldest job in {{ $labels.queue }} has waited over 5 minutes'
+          description: 'The worker is probably down or stuck: no job should wait this long.'
+      - alert: FailedJobs
+        expr: queue_jobs{state="failed"} > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: '{{ $value }} failed jobs in {{ $labels.queue }}'
+          description: 'Inspect with GET /api/v1/admin/queues; retry with POST /admin/queues/:name/retry-failed.'

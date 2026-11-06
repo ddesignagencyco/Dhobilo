@@ -11,6 +11,7 @@ import { AppConfigModule } from './config/app-config.module';
 import type { Env } from './config/env';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
 import { MailModule } from './infra/mail/mail.module';
+import { MetricsModule } from './infra/metrics/metrics.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { bullBoardImports } from './infra/queue/bull-board.module';
 import { QueueModule } from './infra/queue/queue.module';
@@ -60,6 +61,7 @@ import { UsersModule } from './modules/users/users.module';
     QueueModule,
     ...bullBoardImports(),
     MailModule,
+    MetricsModule,
     CloudinaryModule,
     TimeModule,
     CryptoModule,

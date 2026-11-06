@@ -391,7 +391,7 @@
 - [ ] **QA-9.5** k6 `soak.js` (2–4 h) — no memory/connection leaks, queue depth stable (script and watcher written, not yet run)
 - [ ] **QA-9.6** Chaos tests: kill API mid-order, Redis restart, DB failover, gateway timeout; no lost orders/payments (SRS §7 Reliability)
 - [ ] **QA-9.7** Lighthouse CI on throttled 3G for the order path: interactive < 3 s (SRS §7 Performance)
-- [ ] **OPS-9.1** Uptime monitor, alerts (5xx rate, p95 latency, queue depth, failed jobs, DB CPU/connections)
+- [ ] **OPS-9.1** Uptime monitor, alerts (5xx rate, p95 latency, queue depth, failed jobs, DB CPU/connections) (PARTIAL: Prometheus /metrics, 9 alert rules, Alertmanager email routing and an uptime probe are built and validated; docs/Dhoblio-OPS.md. Still to do: run it against staging/production, add an external uptime check, and DB CPU/connection alerts from the managed database's own metrics)
 - [ ] **OPS-9.2** Pen-test / security review sign-off; PCI SAQ-A checklist completed
 
 **Exit criteria:** every NFR in TRD §18 has a recorded passing result; no open critical/high security findings.

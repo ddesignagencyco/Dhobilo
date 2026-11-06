@@ -152,6 +152,8 @@ export const envSchema = z
     // A deletion request waits this long (the user can still cancel) before the account is anonymised.
     ACCOUNT_DELETION_GRACE_DAYS: z.coerce.number().int().min(0).max(90).default(30),
 
+    /** Bearer token for GET /api/v1/metrics (Prometheus). Empty = endpoint disabled. */
+    METRICS_TOKEN: z.union([z.literal(''), z.string().min(16)]).default(''),
     BULL_BOARD_ENABLED: bool.default(false),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   })
