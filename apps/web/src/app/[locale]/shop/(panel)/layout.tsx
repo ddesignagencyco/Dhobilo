@@ -11,7 +11,7 @@ export default async function VendorLayout({
 }) {
   const { locale } = await params;
   const vendor = await currentVendor();
-  if (!vendor) redirect(`/${locale}/login`);
+  if (!vendor) redirect(`/${locale}/shop/login`);
 
   return (
     <VendorShell

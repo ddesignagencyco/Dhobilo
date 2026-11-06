@@ -1,16 +1,16 @@
-"use server";
+'use server';
 
-import { redirect } from "next/navigation";
-import { apiFetch } from "../api/fetch";
-import { clearRiderSession, readRiderSession } from "./session";
+import { redirect } from 'next/navigation';
+import { apiFetch } from '../api/fetch';
+import { clearRiderSession, readRiderSession } from './session';
 
 export async function signOutRider(locale: string): Promise<void> {
   const session = await readRiderSession();
 
   if (session) {
     try {
-      await apiFetch("/auth/logout", {
-        method: "POST",
+      await apiFetch('/auth/logout', {
+        method: 'POST',
         body: { refreshToken: session.refreshToken },
         accessToken: session.accessToken,
         retries: 0,
@@ -21,5 +21,5 @@ export async function signOutRider(locale: string): Promise<void> {
   }
 
   await clearRiderSession();
-  redirect(`/${locale}/login`);
+  redirect(`/${locale}/rider/login`);
 }

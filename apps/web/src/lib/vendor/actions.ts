@@ -21,5 +21,5 @@ export async function signOutVendor(locale: string): Promise<void> {
   }
 
   await clearVendorSession();
-  redirect(`/${locale}/login`);
+  redirect(`/${locale}/shop/login`);
 }

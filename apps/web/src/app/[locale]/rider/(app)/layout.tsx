@@ -14,7 +14,7 @@ export default async function RiderLayout({
   setRequestLocale(locale);
 
   const rider = await currentRider();
-  if (!rider) redirect(`/${locale}/login`);
+  if (!rider) redirect(`/${locale}/rider/login`);
 
   const t = await getTranslations();
   const initial = (rider.name?.trim() || rider.phone || "?")
