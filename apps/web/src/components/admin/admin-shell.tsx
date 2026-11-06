@@ -44,6 +44,21 @@ function useCollapsed(): [boolean, (next: boolean) => void] {
   return [collapsed, set];
 }
 
+const RAIL_QUERY = '(max-width: 1279px)';
+
+/** True below xl: the sidebar is an icon rail there whatever the saved preference says, to leave room for content. */
+function useForcedRail(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(RAIL_QUERY);
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    },
+    () => window.matchMedia(RAIL_QUERY).matches,
+    () => false,
+  );
+}
+
 function Breadcrumbs() {
   const t = useTranslations('nav');
   const home = useTranslations('adminShell');
@@ -106,7 +121,9 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const t = useTranslations('adminShell');
-  const [collapsed, setCollapsed] = useCollapsed();
+  const [savedCollapsed, setCollapsed] = useCollapsed();
+  const forcedRail = useForcedRail();
+  const collapsed = savedCollapsed || forcedRail;
 
   useEffect(() => {
     let stored: string | null = null;
@@ -124,8 +141,11 @@ export function AdminShell({
 
   return (
     <div
-      className={cn('bg-muted/30 min-h-dvh', initialDark && 'dark')}
-      style={{ ['--sb-w' as string]: collapsed ? '4.5rem' : '16rem' }}
+      className={cn(
+        'bg-muted/30 min-h-dvh',
+        initialDark && 'dark',
+        savedCollapsed ? '[--sb-w:4.5rem]' : '[--sb-w:16rem] max-xl:[--sb-w:4.5rem]',
+      )}
     >
       <a
         href="#main"
@@ -134,8 +154,8 @@ export function AdminShell({
         {t('skipToContent')}
       </a>
 
-      {/* Sidebar, desktop only. Fixed so long tables scroll under it rather than pushing it away. */}
-      <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-[var(--sb-w)] flex-col border-e transition-[width] duration-300 ease-[var(--ease-out)] lg:flex">
+      {/* Sidebar, tablet and up (icon rail below xl). Fixed so long tables scroll under it rather than pushing it away. */}
+      <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-[var(--sb-w)] flex-col border-e transition-[width] duration-300 ease-[var(--ease-out)] md:flex">
         <div
           className={cn(
             'border-sidebar-border flex h-14 shrink-0 items-center gap-2 border-b',
@@ -163,7 +183,7 @@ export function AdminShell({
           <Button
             variant="ghost"
             size={collapsed ? 'icon' : 'sm'}
-            className={cn('text-muted-foreground w-full', collapsed ? 'mx-auto' : 'justify-start gap-2')}
+            className={cn('text-muted-foreground w-full max-xl:hidden', collapsed ? 'mx-auto' : 'justify-start gap-2')}
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t('expand') : t('collapse')}
             title={collapsed ? t('expand') : t('collapse')}
@@ -184,10 +204,10 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="transition-[padding] duration-300 ease-[var(--ease-out)] lg:ps-[var(--sb-w)]">
+      <div className="transition-[padding] duration-300 ease-[var(--ease-out)] md:ps-[var(--sb-w)]">
         <header className="bg-background/85 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:px-5">
           <MobileNav adminRole={admin.adminRole} counts={counts} />
-          <Link href="/admin" className="font-semibold lg:hidden">
+          <Link href="/admin" className="font-semibold md:hidden">
             {appName}
           </Link>
           <Breadcrumbs />
@@ -196,13 +216,13 @@ export function AdminShell({
             <CommandPalette adminRole={admin.adminRole} />
             <NotificationsMenu counts={counts} />
             <ThemeToggle />
-            <div className="lg:hidden">
+            <div className="md:hidden">
               <UserMenu name={admin.name} email={admin.email} adminRole={admin.adminRole} />
             </div>
           </div>
         </header>
 
-        <main id="main" className="mx-auto w-full max-w-[1600px] p-4 sm:p-6">
+        <main id="main" className="mx-auto w-full max-w-[1760px] p-4 sm:p-6 xl:p-8 2xl:px-10">
           {children}
         </main>
       </div>

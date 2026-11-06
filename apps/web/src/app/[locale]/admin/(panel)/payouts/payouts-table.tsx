@@ -149,7 +149,7 @@ export function PayoutsTable({ initialStatus }: { initialStatus: string }) {
                   <TableCell>
                     <Badge variant="outline">{humanise(payout.method)}</Badge>
                   </TableCell>
-                  <TableCell className="font-mono text-xs" dir="ltr">
+                  <TableCell className="font-mono text-xs whitespace-nowrap" dir="ltr">
                     {payout.accountRef}
                   </TableCell>
                   <TableCell>

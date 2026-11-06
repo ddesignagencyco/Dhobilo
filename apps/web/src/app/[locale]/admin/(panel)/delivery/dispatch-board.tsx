@@ -173,7 +173,7 @@ export function DispatchBoard({ initialStatus }: { initialStatus: string }) {
                     <TableCell>
                       <Link
                         href={`/admin/orders/${job.order.id}`}
-                        className="font-mono text-xs font-medium hover:text-primary hover:underline"
+                        className="font-mono text-xs font-medium whitespace-nowrap hover:text-primary hover:underline"
                         dir="ltr"
                       >
                         {job.order.orderNo}

@@ -31,7 +31,7 @@ export async function OrderDetailCards({
   const address = order.addressSnapshot;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <Card className="gap-0 overflow-hidden py-0">
           <CardHeader className="py-4">

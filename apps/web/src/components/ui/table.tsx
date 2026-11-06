@@ -9,7 +9,16 @@ import { cn } from '@/lib/utils';
  */
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
-    <div data-slot="table-container" className="relative w-full overflow-x-auto">
+    <div
+      data-slot="table-container"
+      className={cn(
+        'relative w-full overflow-x-auto',
+        // Phones: keep each row's first cell pinned while the rest scrolls sideways inside the table.
+        'max-md:[&_th:first-child]:bg-muted max-md:[&_td:first-child]:bg-card max-md:[&_td:first-child]:border-e max-md:[&_th:first-child]:border-e',
+        'max-md:[&_td:first-child]:sticky max-md:[&_th:first-child]:sticky max-md:[&_td:first-child]:start-0 max-md:[&_th:first-child]:start-0',
+        'max-md:[&_td:first-child]:z-[1] max-md:[&_th:first-child]:z-[1] max-md:[&_td:first-child]:max-w-44 max-md:[&_th:first-child]:max-w-44',
+      )}
+    >
       <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   );

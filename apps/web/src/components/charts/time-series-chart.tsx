@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { areaPath, band, linePath, linear, niceTicks } from './scales';
 import { cn } from '@/lib/utils';
 
@@ -47,8 +47,22 @@ export function TimeSeriesChart({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const [hover, setHover] = useState<number | null>(null);
 
+  // Draw in real pixels: the viewBox follows the container so axis text keeps one size on any screen,
+  // instead of scaling up with the card on wide monitors.
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(560);
+  useEffect(() => {
+    if (!box) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const next = Math.round(entry.contentRect.width);
+      if (next > 0) setWidth(Math.max(260, next));
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [box]);
+
   const padding = { top: 12, right: 12, bottom: 28, left: 46 };
-  const width = 560; // viewBox width; the SVG scales to its container, so 1 unit is roughly 1px on a half-width card
   const plotW = width - padding.left - padding.right;
   const plotH = height - padding.top - padding.bottom;
 
@@ -78,7 +92,7 @@ export function TimeSeriesChart({
   const labelStride = Math.max(1, Math.ceil(labels.length / 7));
 
   return (
-    <div className={cn('relative', className)}>
+    <div ref={setBox} className={cn('relative', className)}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"

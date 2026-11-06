@@ -22,7 +22,7 @@ export function EmptyState({
 }) {
   const t = useTranslations('common');
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center max-md:sticky max-md:start-0 max-md:w-[calc(100vw-2.25rem)]">
       <div className="text-muted-foreground/60">{icon ?? <Inbox className="size-8" />}</div>
       <p className="font-medium">{title ?? t('noResults')}</p>
       <p className="text-muted-foreground max-w-sm text-sm">{hint ?? t('noResultsHint')}</p>

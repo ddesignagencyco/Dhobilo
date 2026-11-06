@@ -69,7 +69,7 @@ export function AuditLogTable() {
       >
         <SearchFilter value={action} onChange={setAction} placeholder={t('audit.actionPlaceholder')} />
         <SearchFilter value={entity} onChange={setEntity} placeholder={t('audit.entityPlaceholder')} />
-        <div className="flex items-center gap-1.5">
+        <div className="flex w-full items-center gap-1.5 sm:w-auto">
           <Label htmlFor="auditFrom" className="text-muted-foreground text-xs">
             {t('common.from')}
           </Label>
@@ -78,11 +78,11 @@ export function AuditLogTable() {
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="w-36"
+            className="min-w-0 flex-1 sm:w-36 sm:flex-none"
             dir="ltr"
           />
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex w-full items-center gap-1.5 sm:w-auto">
           <Label htmlFor="auditTo" className="text-muted-foreground text-xs">
             {t('common.to')}
           </Label>
@@ -91,7 +91,7 @@ export function AuditLogTable() {
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-36"
+            className="min-w-0 flex-1 sm:w-36 sm:flex-none"
             dir="ltr"
           />
         </div>
