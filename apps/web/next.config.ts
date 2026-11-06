@@ -32,6 +32,13 @@ const config: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
           { key: 'Permissions-Policy', value: 'camera=(self), geolocation=(self), microphone=()' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          // Directive-only CSP: no framing, no <base> injection, no plugins, forms only to this origin. It does not
+          // restrict scripts, because that needs per-request nonces with Next; add that as a follow-up.
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
+          ...(process.env.NODE_ENV === 'production'
+            ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' }]
+            : []),
         ],
       },
       {
