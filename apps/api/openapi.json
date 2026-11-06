@@ -1731,7 +1731,7 @@
           }
         ],
         "tags": [
-          "admin"
+          "admin-privacy"
         ],
         "summary": "Account deletion requests",
         "description": "**Who can use this:** signed-in admins.\n\nNewest first; filter by `status`. Shows role, masked phone and where each request stands (`lastError` says why one is waiting: `LEGAL_HOLD`, `BLOCKED:<reasons>`). Never shows names or addresses. Page with `meta.nextCursor`."
@@ -1747,7 +1747,9 @@
             "in": "path",
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+            "description": "User id"
           }
         ],
         "requestBody": {
@@ -1911,7 +1913,7 @@
           }
         ],
         "tags": [
-          "admin"
+          "admin-privacy"
         ],
         "summary": "Freeze a person's data (legal hold)",
         "description": "**Who can use this:** signed-in admins.\n\nDeletion and the clean-up job skip this person until the hold is released. Use for a dispute, an investigation or a legal request. Put the case reference in `reason`, not personal details. Audited."
@@ -1925,7 +1927,9 @@
             "in": "path",
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+            "description": "User id"
           }
         ],
         "responses": {
@@ -2018,7 +2022,7 @@
           }
         ],
         "tags": [
-          "admin"
+          "admin-privacy"
         ],
         "summary": "Release a legal hold",
         "description": "**Who can use this:** signed-in admins.\n\nDeletion and clean-up resume. A request that was waiting is processed on the next nightly run."
@@ -24524,6 +24528,10 @@
     {
       "name": "admin-users",
       "description": "Admin: create admins with a sub-role (super admin, operations, finance, support), change or deactivate them, and change your own password."
+    },
+    {
+      "name": "admin-privacy",
+      "description": "Admin: account deletion requests and legal holds (personal-data requests)."
     },
     {
       "name": "admin-queues",

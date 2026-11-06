@@ -54,7 +54,7 @@ export class PrivacyController {
 }
 
 /** Support/admin view of deletion requests and legal holds. */
-@ApiTags('admin')
+@ApiTags('admin-privacy')
 @ApiBearerAuth()
 @Roles(Role.ADMIN)
 @AdminAreaOnly('privacy')

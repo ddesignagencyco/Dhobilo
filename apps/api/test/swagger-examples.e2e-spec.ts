@@ -434,6 +434,9 @@ describe('Swagger examples match the real API (e2e)', () => {
       'GET /admin/queues', 'POST /admin/queues/{name}/retry-failed', // covered by hardening.e2e-spec.ts
       'GET /reports/{id}/download', // a file, not JSON: covered by reports.e2e-spec.ts (and its headers are checked above)
       'POST /auth/admin/login', // covered below
+      // Account deletion, export and legal hold are covered by privacy-deletion.e2e-spec.ts.
+      'POST /me/delete-request', 'GET /me/delete-request', 'DELETE /me/delete-request', 'GET /me/export',
+      'GET /admin/deletion-requests', 'PUT /admin/users/{id}/legal-hold', 'DELETE /admin/users/{id}/legal-hold',
       'POST /me/devices', 'DELETE /me/devices', 'DELETE /me/addresses/{id}', 'DELETE /cart', 'DELETE /vendor/staff/{userId}', 'DELETE /vendor/catalog/items/{id}', // 204 no body
       'POST /vendor/register', // needs Cloudinary assets; covered by vendors.e2e-spec.ts
       // Reviews, promos, referrals and complaints are covered by their own e2e specs.

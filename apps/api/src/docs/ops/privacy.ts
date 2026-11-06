@@ -1,6 +1,6 @@
 import { ID } from '../samples';
 import type { OperationDocs } from '../types';
-import { ok, page } from './helpers';
+import { PAGING_PARAMS, ok, page } from './helpers';
 
 const DELETION = {
   id: ID.request,
@@ -76,6 +76,7 @@ export const privacyDocs: OperationDocs = {
   'GET /admin/deletion-requests': {
     summary: 'Account deletion requests',
     who: ['ADMIN'],
+    params: { ...PAGING_PARAMS, status: { example: 'PENDING', description: 'Only requests in this state: PENDING, COMPLETED, CANCELLED or FAILED.' }, limit: { example: 20 } },
     description: 'Newest first; filter by `status`. Shows role, masked phone and where each request stands (`lastError` says why one is waiting: `LEGAL_HOLD`, `BLOCKED:<reasons>`). Never shows names or addresses. Page with `meta.nextCursor`.',
     response: {
       example: page([
@@ -86,6 +87,7 @@ export const privacyDocs: OperationDocs = {
   'PUT /admin/users/{id}/legal-hold': {
     summary: 'Freeze a person\'s data (legal hold)',
     who: ['ADMIN'],
+    params: { id: { example: ID.user, description: 'User id' } },
     description: 'Deletion and the clean-up job skip this person until the hold is released. Use for a dispute, an investigation or a legal request. Put the case reference in `reason`, not personal details. Audited.',
     requests: { default: { summary: 'Open dispute', value: { reason: 'Payment dispute case PD-1042' } } },
     response: { example: ok({ userId: ID.user, legalHold: true, reason: 'Payment dispute case PD-1042' }) },
@@ -97,6 +99,7 @@ export const privacyDocs: OperationDocs = {
   'DELETE /admin/users/{id}/legal-hold': {
     summary: 'Release a legal hold',
     who: ['ADMIN'],
+    params: { id: { example: ID.user, description: 'User id' } },
     description: 'Deletion and clean-up resume. A request that was waiting is processed on the next nightly run.',
     response: { example: ok({ userId: ID.user, legalHold: false }) },
     errors: [{ status: 404, code: 'NOT_FOUND', when: 'User not found.' }],

@@ -4472,6 +4472,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description User id
+                 * @example 3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01
+                 */
                 id: string;
             };
             cookie?: never;
@@ -4552,6 +4556,10 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                /**
+                 * @description User id
+                 * @example 3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01
+                 */
                 id: string;
             };
             cookie?: never;
