@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { RiderJobDetailView } from "@/components/rider/job/rider-job-detail-view";
 
 export const metadata = { title: "Job Details" };
@@ -14,7 +15,7 @@ export default async function RiderJobPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+      <PageHeader title={t("title")} />
       <RiderJobDetailView jobId={id} />
     </div>
   );

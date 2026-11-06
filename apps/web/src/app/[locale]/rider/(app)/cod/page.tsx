@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/ui/page-header";
 import { CodCollectionScreen } from "@/components/rider/cod/cod-collection-screen";
 
 export const metadata = { title: "Cash on delivery" };
@@ -14,7 +15,7 @@ export default async function RiderCodPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+      <PageHeader title={t("title")} />
       <CodCollectionScreen />
     </div>
   );

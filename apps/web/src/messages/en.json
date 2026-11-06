@@ -1421,7 +1421,8 @@
       "noJobsHint": "Stay online. We will show new jobs the moment they arrive.",
       "distanceKm": "{km} km away",
       "offerExpired": "Offer expired",
-      "offerEnds": "Offer ends in {time}"
+      "offerEnds": "Offer ends in {time}",
+      "showMore": "Show more ({count})"
     },
     "job": {
       "title": "Job details",
@@ -1487,7 +1488,9 @@
       "deliveries": "deliveries",
       "perJob": "Per job",
       "bestDay": "Best day",
-      "noEarningsHint": "Finish a delivery and it will show up here."
+      "noEarningsHint": "Finish a delivery and it will show up here.",
+      "jobsCount": "{count, plural, one {# job} other {# jobs}}",
+      "deliveriesCount": "{count, plural, one {# delivery} other {# deliveries}}"
     },
     "profile": {
       "title": "Profile",
@@ -1551,7 +1554,8 @@
       "settled": "Settled",
       "notice": "Cash on delivery",
       "noticeText": "Cash you collect belongs to Dhoblio. Hand it over when support settles your account.",
-      "error": "Could not load your cash balance."
+      "error": "Could not load your cash balance.",
+      "showMore": "Show more ({count})"
     },
     "shell": {
       "online": "Online",
