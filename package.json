@@ -13,6 +13,7 @@
   "scripts": {
     "api:dev": "npm run start:dev -w @dhoblio/api",
     "api:build": "npm run build -w @dhoblio/api",
+    "api:worker": "npm run start:worker -w @dhoblio/api",
     "api:test": "npm run test -w @dhoblio/api",
     "db:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
     "db:migrate": "npm run db:generate && prisma migrate deploy --schema apps/api/prisma/schema.prisma",

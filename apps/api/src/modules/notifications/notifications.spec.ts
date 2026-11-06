@@ -14,8 +14,9 @@ function setup() {
     deviceToken: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
   };
   const queue = { add: jest.fn().mockResolvedValue({}) };
-  const processor = new NotificationsProcessor(sms, mail as never, whatsapp, push, prisma as never, queue as never, { run: jest.fn() } as never);
-  return { sms, mail, whatsapp, push, prisma, queue, processor };
+  const mirror = { mirror: jest.fn().mockResolvedValue(undefined) };
+  const processor = new NotificationsProcessor(sms, mail as never, whatsapp, push, prisma as never, queue as never, { run: jest.fn() } as never, mirror as never);
+  return { sms, mail, whatsapp, push, prisma, queue, mirror, processor };
 }
 
 const lastUpdate = (p: ReturnType<typeof setup>) => p.prisma.notification.update.mock.calls.at(-1)![0];
@@ -29,6 +30,14 @@ describe('NotificationsProcessor', () => {
 
     await p.processor.process(job('send-email', { notificationId: 'n2', to: 'a@b.co', subject: 's', text: 't' }));
     expect(p.mail.send).toHaveBeenCalledWith({ to: 'a@b.co', subject: 's', text: 't' });
+  });
+
+  it('mirrors a message on the first attempt only, so retries do not repeat it', async () => {
+    const p = setup();
+    await p.processor.process(job('send-sms', { to: '+923001234567', message: 'hi' }, 0));
+    expect(p.mirror.mirror).toHaveBeenCalledTimes(1);
+    await p.processor.process(job('send-sms', { to: '+923001234567', message: 'hi' }, 2));
+    expect(p.mirror.mirror).toHaveBeenCalledTimes(1);
   });
 
   it('delivers WhatsApp template messages', async () => {
@@ -160,7 +169,7 @@ describe('NotificationsProcessor: announcements', () => {
   it('hands an announcement fan-out job to the fan-out service and writes no log row of its own', async () => {
     const run = jest.fn().mockResolvedValue({ queued: 3 });
     const prisma = { notification: { update: jest.fn() } };
-    const processor = new NotificationsProcessor({ send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, prisma as never, { add: jest.fn() } as never, { run } as never);
+    const processor = new NotificationsProcessor({ send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, prisma as never, { add: jest.fn() } as never, { run } as never, { mirror: jest.fn() } as never);
     await processor.process({ name: 'fan-out-announcement', data: { announcementId: 'a1' }, attemptsMade: 0, opts: { attempts: 3 } } as never);
     expect(run).toHaveBeenCalledWith('a1');
     expect(prisma.notification.update).not.toHaveBeenCalled();
@@ -168,7 +177,7 @@ describe('NotificationsProcessor: announcements', () => {
 
   it('lets a failing fan-out reach the queue so it is retried', async () => {
     const run = jest.fn().mockRejectedValue(new Error('redis went away'));
-    const processor = new NotificationsProcessor({ send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { notification: { update: jest.fn() } } as never, { add: jest.fn() } as never, { run } as never);
+    const processor = new NotificationsProcessor({ send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { send: jest.fn() } as never, { notification: { update: jest.fn() } } as never, { add: jest.fn() } as never, { run } as never, { mirror: jest.fn() } as never);
     await expect(processor.process({ name: 'fan-out-announcement', data: { announcementId: 'a1' }, attemptsMade: 0, opts: { attempts: 3 } } as never)).rejects.toThrow('redis went away');
   });
 });

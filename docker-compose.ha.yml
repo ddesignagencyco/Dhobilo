@@ -17,7 +17,6 @@ services:
     environment:
       DATABASE_URL: postgresql://dhoblio:dhoblio@postgres:5432/dhoblio?schema=public
       REDIS_URL: redis://redis:6379
-      SMTP_HOST: mailhog
       TRUST_PROXY: "1"
       SHUTDOWN_DRAIN_MS: "3000"
     healthcheck:
@@ -27,7 +26,6 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
-      mailhog: { condition: service_started }
 
   lb:
     image: nginx:1.27-alpine

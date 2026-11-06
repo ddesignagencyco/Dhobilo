@@ -82,7 +82,7 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Prisma 6 schema from the ERD, initial migration with CHECK constraints and append-only triggers, idempotent seed | `apps/api/prisma` |
 | Response envelope, error codes and exception filter, validation pipe, request IDs, pino logging with PII redaction | `src/common` |
 | Redis, BullMQ (all 8 queues from the TRD), Bull Board (dev only, flag-controlled) | `src/infra` |
-| Mail (Nodemailer: MailHog locally, Google SMTP in prod) with a dev-only test endpoint | `src/infra/mail` |
+| Mail (Nodemailer over Google SMTP) with a dev-only test endpoint and a dev-only mirror of every OTP/notification | `src/infra/mail` |
 | Cloudinary upload signing, asset verification and short-lived private download links | `src/infra/cloudinary` |
 | Field encryption (AES-256-GCM with key ids for rotation, keyed hashes) | `src/common/crypto` |
 | `@Audit()` decorator and interceptor writing `AuditLog` | `src/modules/audit` |
@@ -112,13 +112,16 @@ Requires Node.js 22+ and Docker.
 ```bash
 npm install
 cp .env.example .env        # then fill in the secrets (see comments in the file)
-docker compose up -d postgres redis mailhog     # local infrastructure
+docker compose up -d postgres redis             # local infrastructure
 npm run db:migrate          # generate Prisma client and apply migrations
 npm run db:seed             # cities, categories, admin user, global commission
 npm run api:dev             # API on http://localhost:4000
+npm run api:worker          # notification/dispatch worker (needs `npm run api:build` once); sends OTP and order emails
 ```
 
-The root `.env` is read by the API and by the `db:*` scripts. Open http://localhost:4000/api/v1/docs for the Swagger UI and http://localhost:8025 for MailHog.
+Set `SMTP_*` to a real SMTP account (Gmail + app password). With `NOTIFY_MIRROR_EMAIL` set (dev/staging only), every OTP code and every notification is also emailed to that inbox for testing; with `OTP_BYPASS=false` the codes are random.
+
+The root `.env` is read by the API and by the `db:*` scripts. Open http://localhost:4000/api/v1/docs for the Swagger UI.
 
 ### Web app
 
@@ -135,7 +138,7 @@ Customers sign in at http://localhost:3001/en/login with a phone number and the 
 docker compose up -d --build
 ```
 
-All containers run under the `dhoblio` compose project: `dhoblio-postgres`, `dhoblio-redis`, `dhoblio-mailhog`, `dhoblio-migrate` (runs migrations once), `dhoblio-api` and `dhoblio-worker`.
+All containers run under the `dhoblio` compose project: `dhoblio-postgres`, `dhoblio-redis`, `dhoblio-migrate` (runs migrations once), `dhoblio-api` and `dhoblio-worker`.
 
 ### Seeded admin
 

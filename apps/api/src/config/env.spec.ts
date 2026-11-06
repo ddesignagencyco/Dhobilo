@@ -33,6 +33,14 @@ describe('validateEnv', () => {
     );
   });
 
+  it('refuses NOTIFY_MIRROR_EMAIL in production but allows it elsewhere', () => {
+    const prod = { ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live', CORS_ORIGINS: 'https://app.dhoblio.pk' };
+    expect(() => validateEnv({ ...prod, NOTIFY_MIRROR_EMAIL: 'qa@example.com' })).toThrow(/NOTIFY_MIRROR_EMAIL/);
+    expect(validateEnv({ ...base, NOTIFY_MIRROR_EMAIL: 'qa@example.com' }).NOTIFY_MIRROR_EMAIL).toBe('qa@example.com');
+    expect(validateEnv(base).NOTIFY_MIRROR_EMAIL).toBe('');
+    expect(() => validateEnv({ ...base, NOTIFY_MIRROR_EMAIL: 'not-an-email' })).toThrow();
+  });
+
   it('allows OTP_BYPASS=false in production', () => {
     expect(validateEnv({ ...base, NODE_ENV: 'production', PAYMENTS_MODE: 'live', CORS_ORIGINS: 'https://app.dhoblio.pk' }).NODE_ENV).toBe('production');
   });
