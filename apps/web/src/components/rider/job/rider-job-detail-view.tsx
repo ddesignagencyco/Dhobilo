@@ -172,7 +172,7 @@ function SuccessPanel({ job }: { job: DeliveryJob }) {
 
 const FAIL_REASONS = ['reasonUnreachable', 'reasonWrongAddress', 'reasonRefused', 'reasonClosed'] as const;
 
-export function RiderJobDetailView({ jobId }: { jobId: string }) {
+export function RiderJobDetailView({ jobId, embedded = false }: { jobId: string; embedded?: boolean }) {
   const t = useTranslations('rider.job');
   const home = useTranslations('rider.home');
   const { data: job, isLoading, isError } = useRiderJob(jobId);
@@ -251,158 +251,170 @@ export function RiderJobDetailView({ jobId }: { jobId: string }) {
     );
 
   return (
-    <div className="space-y-5">
-      <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1.5">
-            <JobTypeChip type={job.jobType} />
-            <p className="tabular text-muted-foreground text-xs font-medium" dir="ltr">
-              {job.order.orderNo}
-            </p>
-          </div>
-          <div className="text-end">
-            <p className="tabular text-2xl leading-none font-semibold tracking-tight">{formatMoney(job.riderFee)}</p>
-            <p className="text-muted-foreground mt-1 text-xs">{t('yourFee')}</p>
+    <div className="@container">
+      <div className="space-y-5 @3xl:grid @3xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] @3xl:items-start @3xl:gap-6 @3xl:space-y-0">
+        <div className="min-w-0 space-y-5">
+          <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <JobTypeChip type={job.jobType} />
+                <p className="tabular text-muted-foreground text-xs font-medium" dir="ltr">
+                  {job.order.orderNo}
+                </p>
+              </div>
+              <div className="text-end">
+                <p className="tabular text-2xl leading-none font-semibold tracking-tight">
+                  {formatMoney(job.riderFee)}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">{t('yourFee')}</p>
+              </div>
+            </div>
+            <JobMeta job={job} />
+            {offered ? (
+              <Badge variant="warning">{t(`jobStatus.${job.status}`)}</Badge>
+            ) : job.status === 'FAILED' || job.status === 'CANCELLED' ? (
+              <Badge variant="destructive">{t(`jobStatus.${job.status}`)}</Badge>
+            ) : (
+              <StepTracker job={job} />
+            )}
+            {job.failureReason ? (
+              <Alert variant="destructive">
+                <AlertDescription>{job.failureReason}</AlertDescription>
+              </Alert>
+            ) : null}
+          </section>
+
+          <div className="stagger space-y-4">
+            <StopCard
+              title={t('pickupAddress')}
+              party={job.from}
+              highlight={next === 'from' && job.status !== 'COMPLETED'}
+            />
+            <StopCard title={t('dropAddress')} party={job.to} highlight={next === 'to'} />
           </div>
         </div>
-        <JobMeta job={job} />
-        {offered ? (
-          <Badge variant="warning">{t(`jobStatus.${job.status}`)}</Badge>
-        ) : job.status === 'FAILED' || job.status === 'CANCELLED' ? (
-          <Badge variant="destructive">{t(`jobStatus.${job.status}`)}</Badge>
-        ) : (
-          <StepTracker job={job} />
-        )}
-        {job.failureReason ? (
-          <Alert variant="destructive">
-            <AlertDescription>{job.failureReason}</AlertDescription>
-          </Alert>
-        ) : null}
-      </section>
 
-      <div className="stagger space-y-4">
-        <StopCard
-          title={t('pickupAddress')}
-          party={job.from}
-          highlight={next === 'from' && job.status !== 'COMPLETED'}
-        />
-        <StopCard title={t('dropAddress')} party={job.to} highlight={next === 'to'} />
-      </div>
-
-      {job.status === 'IN_TRANSIT' && job.proof.required ? (
-        <section className="animate-pop bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
-          <h3 className="font-semibold">{t('proofType')}</h3>
-          {types.length > 1 ? (
-            <div role="tablist" className="bg-muted grid grid-cols-2 gap-1 rounded-xl p-1">
-              {types.map((type) => (
-                <button
-                  key={type}
-                  role="tab"
-                  aria-selected={activeProof === type}
-                  onClick={() => setProofType(type)}
-                  className={cn(
-                    'flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all',
-                    activeProof === type ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
-                  )}
-                >
-                  {type === 'PHOTO' ? (
-                    <Camera className="size-4" aria-hidden />
-                  ) : (
-                    <KeyRound className="size-4" aria-hidden />
-                  )}
-                  {type === 'PHOTO' ? t('photo') : t('otp')}
-                </button>
-              ))}
-            </div>
+        <div className={cn('min-w-0 space-y-5 @3xl:sticky', embedded ? '@3xl:top-2' : '@3xl:top-24')}>
+          {job.status === 'IN_TRANSIT' && job.proof.required ? (
+            <section className="animate-pop bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
+              <h3 className="font-semibold">{t('proofType')}</h3>
+              {types.length > 1 ? (
+                <div role="tablist" className="bg-muted grid grid-cols-2 gap-1 rounded-xl p-1">
+                  {types.map((type) => (
+                    <button
+                      key={type}
+                      role="tab"
+                      aria-selected={activeProof === type}
+                      onClick={() => setProofType(type)}
+                      className={cn(
+                        'flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all',
+                        activeProof === type ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
+                      )}
+                    >
+                      {type === 'PHOTO' ? (
+                        <Camera className="size-4" aria-hidden />
+                      ) : (
+                        <KeyRound className="size-4" aria-hidden />
+                      )}
+                      {type === 'PHOTO' ? t('photo') : t('otp')}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {activeProof === 'OTP' ? (
+                <div className="space-y-3">
+                  <p className="text-muted-foreground text-center text-sm">{t('enterOtp')}</p>
+                  <CodeBoxes value={otp} onChange={setOtp} />
+                </div>
+              ) : (
+                <label className="border-input hover:bg-accent/50 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition-colors">
+                  <Camera className="text-muted-foreground size-7" aria-hidden />
+                  <span className="text-sm font-medium">{photo ? photo.name : t('takePhoto')}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              )}
+            </section>
           ) : null}
-          {activeProof === 'OTP' ? (
-            <div className="space-y-3">
-              <p className="text-muted-foreground text-center text-sm">{t('enterOtp')}</p>
-              <CodeBoxes value={otp} onChange={setOtp} />
-            </div>
-          ) : (
-            <label className="border-input hover:bg-accent/50 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition-colors">
-              <Camera className="text-muted-foreground size-7" aria-hidden />
-              <span className="text-sm font-medium">{photo ? photo.name : t('takePhoto')}</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          )}
-        </section>
-      ) : null}
 
-      {finished ? (
-        <p className="text-success-text animate-pop flex items-center justify-center gap-2 py-2 text-lg font-semibold">
-          <Check className="size-5" aria-hidden /> {t('jobCompleted')}
-        </p>
-      ) : null}
+          {finished ? (
+            <p className="text-success-text animate-pop flex items-center justify-center gap-2 py-2 text-lg font-semibold">
+              <Check className="size-5" aria-hidden /> {t('jobCompleted')}
+            </p>
+          ) : null}
 
-      {offered || job.status === 'ACCEPTED' || job.status === 'IN_TRANSIT' ? (
-        <div
-          className="bg-background/95 supports-[backdrop-filter]:bg-background/85 fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
-          <div className="mx-auto w-full max-w-3xl space-y-2 p-4">
-            {offered ? (
-              <div className={cn('grid gap-2', job.status === 'ASSIGNED' ? 'grid-cols-[1fr_auto]' : 'grid-cols-1')}>
-                <Button
-                  size="lg"
-                  className="h-14 text-base"
-                  disabled={busy}
-                  onClick={() =>
-                    action.mutate({ jobId, action: job.status === 'ASSIGNED' ? 'accept' : 'claim' }, { onError })
-                  }
-                >
-                  {busy ? t('updating') : home('acceptJob')}
-                </Button>
-                {job.status === 'ASSIGNED' ? (
+          {offered || job.status === 'ACCEPTED' || job.status === 'IN_TRANSIT' ? (
+            <div
+              className="bg-background/95 supports-[backdrop-filter]:bg-background/85 fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md lg:bg-card lg:sticky lg:inset-x-auto lg:bottom-3 lg:z-10 lg:rounded-2xl lg:border lg:shadow-xs lg:backdrop-blur-none"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+            >
+              <div className="mx-auto w-full max-w-3xl space-y-2 p-4 lg:max-w-none">
+                {offered ? (
+                  <div className={cn('grid gap-2', job.status === 'ASSIGNED' ? 'grid-cols-[1fr_auto]' : 'grid-cols-1')}>
+                    <Button
+                      size="lg"
+                      className="h-14 text-base"
+                      disabled={busy}
+                      onClick={() =>
+                        action.mutate({ jobId, action: job.status === 'ASSIGNED' ? 'accept' : 'claim' }, { onError })
+                      }
+                    >
+                      {busy ? t('updating') : home('acceptJob')}
+                    </Button>
+                    {job.status === 'ASSIGNED' ? (
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-14"
+                        disabled={busy}
+                        onClick={() => action.mutate({ jobId, action: 'decline' }, { onError })}
+                      >
+                        {home('decline')}
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {job.status === 'ACCEPTED' ? (
                   <Button
                     size="lg"
-                    variant="outline"
-                    className="h-14"
+                    className="h-14 w-full text-base"
                     disabled={busy}
-                    onClick={() => action.mutate({ jobId, action: 'decline' }, { onError })}
+                    onClick={() => action.mutate({ jobId, action: 'start' }, { onError })}
                   >
-                    {home('decline')}
+                    {action.isPending ? t('updating') : t('markInTransit')}
                   </Button>
                 ) : null}
+
+                {job.status === 'IN_TRANSIT' ? (
+                  <>
+                    <Button
+                      size="lg"
+                      className="h-14 w-full text-base"
+                      disabled={busy || !canComplete}
+                      onClick={() => void handleComplete()}
+                    >
+                      {busy ? t('submitting') : t('markCompleted')}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-muted-foreground h-11 w-full"
+                      onClick={() => setShowFail(true)}
+                    >
+                      {t('reportProblem')}
+                    </Button>
+                  </>
+                ) : null}
               </div>
-            ) : null}
-
-            {job.status === 'ACCEPTED' ? (
-              <Button
-                size="lg"
-                className="h-14 w-full text-base"
-                disabled={busy}
-                onClick={() => action.mutate({ jobId, action: 'start' }, { onError })}
-              >
-                {action.isPending ? t('updating') : t('markInTransit')}
-              </Button>
-            ) : null}
-
-            {job.status === 'IN_TRANSIT' ? (
-              <>
-                <Button
-                  size="lg"
-                  className="h-14 w-full text-base"
-                  disabled={busy || !canComplete}
-                  onClick={() => void handleComplete()}
-                >
-                  {busy ? t('submitting') : t('markCompleted')}
-                </Button>
-                <Button variant="ghost" className="text-muted-foreground h-11 w-full" onClick={() => setShowFail(true)}>
-                  {t('reportProblem')}
-                </Button>
-              </>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       <Sheet open={showFail} onOpenChange={setShowFail}>
         <SheetContent

@@ -10,7 +10,7 @@ export default async function RiderRegisterPage({ params }: { params: Promise<{ 
   const t = await getTranslations('rider.register');
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full space-y-6 md:max-w-2xl">
       <PageHeader title={t('title')} description={t('subtitle')} />
 
       <RiderRegistrationView />

@@ -69,11 +69,16 @@ function Bars({ days, period }: { days: { day: string; jobs: number; earned: str
   }, []);
   const max = Math.max(1, ...days.map((d) => toPaisa(d.earned)));
   return (
-    <div className="flex h-36 items-end gap-1.5" dir="ltr" role="img" aria-label="Earnings by day">
+    <div
+      className="flex h-36 items-end justify-center gap-1.5 md:h-48 md:gap-3 xl:h-60"
+      dir="ltr"
+      role="img"
+      aria-label="Earnings by day"
+    >
       {days.map((d, i) => {
         const pct = Math.max(4, Math.round((toPaisa(d.earned) / max) * 100));
         return (
-          <div key={d.day} className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5">
+          <div key={d.day} className="flex h-full max-w-24 min-w-0 flex-1 flex-col items-center gap-1.5">
             <div className="flex w-full flex-1 items-end">
               <div
                 className="bg-primary/80 hover:bg-primary w-full rounded-t-md transition-all duration-700 ease-[var(--ease-out)]"
@@ -113,56 +118,61 @@ export function RiderEarningsView() {
 
   return (
     <div className="space-y-5">
-      <Segmented
-        value={period}
-        onChange={setPeriod}
-        labels={{ today: t('today'), week: t('week'), month: t('month') }}
-      />
+      <div className="md:max-w-md">
+        <Segmented
+          value={period}
+          onChange={setPeriod}
+          labels={{ today: t('today'), week: t('week'), month: t('month') }}
+        />
+      </div>
 
       {isLoading ? (
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-[1.4fr_1fr_1fr] md:gap-4 md:space-y-0">
           <Skeleton className="h-40 rounded-3xl" />
-          <Skeleton className="h-44 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl max-md:hidden" />
+          <Skeleton className="h-40 rounded-2xl max-md:hidden" />
         </div>
       ) : isError || !earnings ? (
         <EmptyState icon={<Wallet aria-hidden />} title={t('error')} />
       ) : (
         <div key={period} className="animate-fade space-y-5">
-          <section className="bg-primary text-primary-foreground space-y-1 rounded-3xl p-6">
-            <p className="text-primary-foreground/80 text-sm font-medium">{t('totalEarnings')}</p>
-            <p className="tabular text-4xl font-semibold tracking-tight">
-              <MoneyCount value={earnings.totals.earned} />
-            </p>
-            <p className="text-primary-foreground/80 text-sm">
-              {t('deliveriesCount', { count: earnings.totals.jobs })}
-            </p>
-          </section>
+          <div className="space-y-5 md:grid md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] md:gap-4 md:space-y-0">
+            <section className="bg-primary text-primary-foreground space-y-1 rounded-3xl p-6 md:flex md:flex-col md:justify-center">
+              <p className="text-primary-foreground/80 text-sm font-medium">{t('totalEarnings')}</p>
+              <p className="tabular text-4xl font-semibold tracking-tight">
+                <MoneyCount value={earnings.totals.earned} />
+              </p>
+              <p className="text-primary-foreground/80 text-sm">
+                {t('deliveriesCount', { count: earnings.totals.jobs })}
+              </p>
+            </section>
 
-          <section className="grid grid-cols-2 gap-3">
-            <StatTile label={t('perJob')} value={<MoneyCount value={average} />} icon={<TrendingUp />} />
-            <StatTile
-              label={t('bestDay')}
-              value={
-                <MoneyCount
-                  value={earnings.days.reduce(
-                    (best, d) => (toPaisa(d.earned) > toPaisa(best) ? d.earned : best),
-                    '0.00',
-                  )}
-                />
-              }
-            />
-          </section>
+            <section className="grid grid-cols-2 gap-3 md:col-span-2 md:[&>*]:justify-center">
+              <StatTile label={t('perJob')} value={<MoneyCount value={average} />} icon={<TrendingUp />} />
+              <StatTile
+                label={t('bestDay')}
+                value={
+                  <MoneyCount
+                    value={earnings.days.reduce(
+                      (best, d) => (toPaisa(d.earned) > toPaisa(best) ? d.earned : best),
+                      '0.00',
+                    )}
+                  />
+                }
+              />
+            </section>
+          </div>
 
           {earnings.days.length === 0 ? (
             <EmptyState icon={<Wallet aria-hidden />} title={t('noEarnings')} description={t('noEarningsHint')} />
           ) : (
-            <>
-              <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
+            <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-5 lg:space-y-0">
+              <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-xs md:p-6">
                 <h3 className="font-semibold">{t('byDay')}</h3>
                 <Bars days={earnings.days} period={period} />
               </section>
 
-              <section className="bg-card rounded-2xl border shadow-xs">
+              <section className="bg-card rounded-2xl border shadow-xs lg:max-h-[34rem] lg:overflow-y-auto">
                 <ul className="stagger divide-y">
                   {[...earnings.days].reverse().map((d) => (
                     <li key={d.day} className="flex items-center justify-between gap-3 px-4 py-3.5">
@@ -177,7 +187,7 @@ export function RiderEarningsView() {
                   ))}
                 </ul>
               </section>
-            </>
+            </div>
           )}
         </div>
       )}

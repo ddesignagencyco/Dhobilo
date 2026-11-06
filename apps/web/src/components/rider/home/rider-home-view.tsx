@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BriefcaseBusiness, MapPin, PackageSearch, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -19,8 +20,10 @@ import {
 } from '@/lib/rider/hooks';
 import { cn } from '@/lib/utils';
 import { ActiveJobCard, AvailableJobCard } from '../job/job-card';
+import { RiderJobDetailView } from '../job/rider-job-detail-view';
 import { MoneyCount } from '../money-count';
 import { OnlineSlider } from '../online-slider';
+import { useIsDesktop } from '../use-media';
 
 const LIMIT = 5;
 
@@ -31,13 +34,16 @@ function errorMessage(error: unknown, fallback: string): string {
 
 function HomeSkeleton() {
   return (
-    <div className="space-y-5">
-      <Skeleton className="h-52 rounded-3xl" />
-      <div className="grid grid-cols-2 gap-3">
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-6 lg:space-y-0 xl:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]">
+      <div className="space-y-5">
+        <Skeleton className="h-52 rounded-3xl" />
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
-      <Skeleton className="h-56 rounded-2xl" />
+      <Skeleton className="hidden h-[32rem] rounded-2xl lg:block" />
     </div>
   );
 }
@@ -55,6 +61,8 @@ export function RiderHomeView() {
   const toggle = useRiderOnlineToggle();
   const action = useRiderJobAction();
   const [showAll, setShowAll] = useState(false);
+  const isDesktop = useIsDesktop();
+  const selectedParam = useSearchParams().get('job');
 
   if (me.isLoading) return <HomeSkeleton />;
 
@@ -98,12 +106,17 @@ export function RiderHomeView() {
       },
     );
 
+  // On desktop the job opens in the side panel (URL-addressable); on phones it is its own page.
+  const selectJob = (jobId: string) => router.replace(`/rider/home?job=${jobId}`, { scroll: false });
+
   const handleAction = (jobId: string, kind: 'claim' | 'accept' | 'decline') =>
     action.mutate(
       { jobId, action: kind },
       {
         onSuccess: () => {
-          if (kind !== 'decline') router.push(`/rider/job/${jobId}`);
+          if (kind === 'decline') return;
+          if (isDesktop) selectJob(jobId);
+          else router.push(`/rider/job/${jobId}`);
         },
         onError: (e) => toast.error(errorMessage(e, t('actionFailed'))),
       },
@@ -113,132 +126,168 @@ export function RiderHomeView() {
   const allJobs = available.data ?? [];
   const jobs = showAll ? allJobs : allJobs.slice(0, LIMIT);
   const pendingId = action.isPending ? action.variables?.jobId : undefined;
+  const selectedId = selectedParam ?? myJobs[0]?.id ?? allJobs[0]?.id ?? null;
+  const onSelect = isDesktop ? selectJob : undefined;
 
   return (
-    <div className="space-y-6">
-      <section
-        className={cn(
-          'animate-pop space-y-5 rounded-3xl border p-5 shadow-xs transition-colors duration-500',
-          isOnline ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card',
-        )}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className={cn('text-sm', isOnline ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
-              {t('greeting', { name: `\u2068${firstName}\u2069` })}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight">{isOnline ? t('onlineTitle') : t('offlineTitle')}</h1>
-          </div>
-          <span
+    <div className="lg:grid lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,30rem)_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-6">
+        <div className="space-y-6 md:grid md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] md:items-stretch md:gap-4 md:space-y-0 lg:block lg:space-y-6">
+          <section
             className={cn(
-              'inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold',
-              isOnline ? 'bg-white/20' : 'bg-muted text-muted-foreground',
+              'animate-pop space-y-5 rounded-3xl border p-5 shadow-xs transition-colors duration-500',
+              isOnline ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card',
             )}
           >
-            <span className="relative flex size-2.5">
-              {isOnline ? (
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-70" />
-              ) : null}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={cn('text-sm', isOnline ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                  {t('greeting', { name: `\u2068${firstName}\u2069` })}
+                </p>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  {isOnline ? t('onlineTitle') : t('offlineTitle')}
+                </h1>
+              </div>
               <span
                 className={cn(
-                  'relative inline-flex size-2.5 rounded-full',
-                  isOnline ? 'bg-white' : 'bg-muted-foreground/60',
+                  'inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold',
+                  isOnline ? 'bg-white/20' : 'bg-muted text-muted-foreground',
                 )}
-              />
-            </span>
-            {isOnline ? t('online') : t('offline')}
-          </span>
-        </div>
+              >
+                <span className="relative flex size-2.5">
+                  {isOnline ? (
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-white opacity-70" />
+                  ) : null}
+                  <span
+                    className={cn(
+                      'relative inline-flex size-2.5 rounded-full',
+                      isOnline ? 'bg-white' : 'bg-muted-foreground/60',
+                    )}
+                  />
+                </span>
+                {isOnline ? t('online') : t('offline')}
+              </span>
+            </div>
 
-        <OnlineSlider
-          online={isOnline}
-          pending={toggle.isPending}
-          onToggle={handleToggle}
-          labelOn={t('slideOnline')}
-          labelOff={t('slideOffline')}
-        />
+            <OnlineSlider
+              online={isOnline}
+              pending={toggle.isPending}
+              onToggle={handleToggle}
+              labelOn={t('slideOnline')}
+              labelOff={t('slideOffline')}
+            />
 
-        <p
-          className={cn(
-            'flex items-center gap-2 text-xs',
-            isOnline ? 'text-primary-foreground/80' : 'text-muted-foreground',
-          )}
-        >
-          <MapPin className="size-3.5 shrink-0" aria-hidden />
-          {isOnline ? t('onlineHint') : t('offlineHint')}
-        </p>
-      </section>
-
-      <section className="stagger grid grid-cols-2 gap-3">
-        <StatTile label={t('todayEarned')} value={<MoneyCount value={me.data.today.earned} />} />
-        <StatTile
-          label={t('todayJobs')}
-          value={<AnimatedNumber value={me.data.today.jobs} />}
-          hint={t('activeCapacity', { active: me.data.activeJobs, max: me.data.maxActiveJobs })}
-        />
-      </section>
-
-      {myJobs.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-base font-semibold">{t('myJobs')}</h2>
-          <div className="stagger space-y-3">
-            {myJobs.map((job) => (
-              <ActiveJobCard key={job.id} job={job} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold">{t('availableJobs')}</h2>
-          {isOnline ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-10 gap-2"
-              disabled={available.isFetching}
-              onClick={() => void available.refetch()}
+            <p
+              className={cn(
+                'flex items-center gap-2 text-xs',
+                isOnline ? 'text-primary-foreground/80' : 'text-muted-foreground',
+              )}
             >
-              <RefreshCw className={cn('size-4', available.isFetching && 'animate-spin')} aria-hidden />
-              {t('refresh')}
-            </Button>
-          ) : null}
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+              {isOnline ? t('onlineHint') : t('offlineHint')}
+            </p>
+          </section>
+
+          <section className="stagger grid grid-cols-2 gap-3 md:grid-cols-1 lg:grid-cols-2">
+            <StatTile label={t('todayEarned')} value={<MoneyCount value={me.data.today.earned} />} />
+            <StatTile
+              label={t('todayJobs')}
+              value={<AnimatedNumber value={me.data.today.jobs} />}
+              hint={t('activeCapacity', { active: me.data.activeJobs, max: me.data.maxActiveJobs })}
+            />
+          </section>
         </div>
 
-        {!isOnline ? (
-          <EmptyState
-            icon={<PackageSearch aria-hidden />}
-            title={t('goOnlineToSee')}
-            description={t('goOnlineToSeeHint')}
-          />
-        ) : available.isLoading ? (
-          <div className="space-y-3">
-            {[0, 1].map((i) => (
-              <Skeleton key={i} className="h-60 rounded-2xl" />
-            ))}
-          </div>
-        ) : jobs.length === 0 ? (
-          <EmptyState icon={<PackageSearch aria-hidden />} title={t('noJobs')} description={t('noJobsHint')} />
-        ) : (
-          <div className="stagger space-y-3">
-            {jobs.map((job) => (
-              <AvailableJobCard
-                key={job.id}
-                job={job}
-                busy={pendingId === job.id}
-                onClaim={() => handleAction(job.id, job.status === 'ASSIGNED' ? 'accept' : 'claim')}
-                onDecline={() => handleAction(job.id, 'decline')}
-              />
-            ))}
-            {allJobs.length > LIMIT && !showAll ? (
-              <Button variant="outline" size="lg" className="h-12 w-full" onClick={() => setShowAll(true)}>
-                {t('showMore', { count: allJobs.length - LIMIT })}
+        {myJobs.length > 0 ? (
+          <section className="space-y-3">
+            <h2 className="text-base font-semibold">{t('myJobs')}</h2>
+            <div className="stagger grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+              {myJobs.map((job) => (
+                <ActiveJobCard
+                  key={job.id}
+                  job={job}
+                  selected={isDesktop && job.id === selectedId}
+                  onSelect={onSelect ? () => onSelect(job.id) : undefined}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold">{t('availableJobs')}</h2>
+            {isOnline ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-10 gap-2"
+                disabled={available.isFetching}
+                onClick={() => void available.refetch()}
+              >
+                <RefreshCw className={cn('size-4', available.isFetching && 'animate-spin')} aria-hidden />
+                {t('refresh')}
               </Button>
             ) : null}
           </div>
+
+          {!isOnline ? (
+            <EmptyState
+              icon={<PackageSearch aria-hidden />}
+              title={t('goOnlineToSee')}
+              description={t('goOnlineToSeeHint')}
+            />
+          ) : available.isLoading ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+              {[0, 1].map((i) => (
+                <Skeleton key={i} className="h-60 rounded-2xl" />
+              ))}
+            </div>
+          ) : jobs.length === 0 ? (
+            <EmptyState icon={<PackageSearch aria-hidden />} title={t('noJobs')} description={t('noJobsHint')} />
+          ) : (
+            <div className="stagger grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+              {jobs.map((job) => (
+                <AvailableJobCard
+                  key={job.id}
+                  job={job}
+                  selected={isDesktop && job.id === selectedId}
+                  onSelect={onSelect ? () => onSelect(job.id) : undefined}
+                  busy={pendingId === job.id}
+                  onClaim={() => handleAction(job.id, job.status === 'ASSIGNED' ? 'accept' : 'claim')}
+                  onDecline={() => handleAction(job.id, 'decline')}
+                />
+              ))}
+              {allJobs.length > LIMIT && !showAll ? (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-12 w-full md:col-span-2 lg:col-span-1"
+                  onClick={() => setShowAll(true)}
+                >
+                  {t('showMore', { count: allJobs.length - LIMIT })}
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <aside
+        aria-label={t('selectJob')}
+        className="hidden min-w-0 lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-7.5rem)] lg:overflow-y-auto lg:rounded-2xl lg:pe-1 [scrollbar-gutter:stable]"
+      >
+        {selectedId ? (
+          <RiderJobDetailView key={selectedId} jobId={selectedId} embedded />
+        ) : (
+          <EmptyState
+            icon={<BriefcaseBusiness aria-hidden />}
+            title={t('selectJob')}
+            description={t('selectJobHint')}
+            className="py-24"
+          />
         )}
-      </section>
+      </aside>
     </div>
   );
 }

@@ -30,28 +30,35 @@ export function CodCollectionScreen() {
   if (isError || !data) return <EmptyState icon={<Banknote aria-hidden />} title={t('error')} />;
 
   return (
-    <div className="space-y-5">
-      <section className="bg-card animate-pop space-y-3 rounded-3xl border p-6 shadow-xs">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-sm font-medium">{t('cashBalance')}</p>
-          <span className="bg-warning/15 text-warning-text flex size-10 items-center justify-center rounded-full">
-            <HandCoins className="size-5" aria-hidden />
-          </span>
+    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+      <div className="space-y-5 lg:sticky lg:top-24">
+        <section className="bg-card animate-pop space-y-3 rounded-3xl border p-6 shadow-xs">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-muted-foreground text-sm font-medium">{t('cashBalance')}</p>
+            <span className="bg-warning/15 text-warning-text flex size-10 items-center justify-center rounded-full">
+              <HandCoins className="size-5" aria-hidden />
+            </span>
+          </div>
+          <p className="tabular text-4xl font-semibold tracking-tight">
+            <MoneyCount value={data.cashInHand} />
+          </p>
+          <p className="text-muted-foreground text-sm">
+            <AnimatedNumber value={data.unsettledOrders} /> {t('unsettled')}
+          </p>
+        </section>
+
+        <div className="bg-muted/60 text-muted-foreground max-lg:hidden rounded-2xl p-4 text-xs leading-relaxed">
+          <p className="text-foreground mb-1 font-medium">{t('notice')}</p>
+          <p>{t('noticeText')}</p>
         </div>
-        <p className="tabular text-4xl font-semibold tracking-tight">
-          <MoneyCount value={data.cashInHand} />
-        </p>
-        <p className="text-muted-foreground text-sm">
-          <AnimatedNumber value={data.unsettledOrders} /> {t('unsettled')}
-        </p>
-      </section>
+      </div>
 
       <section className="space-y-3">
         <h3 className="font-semibold">{t('collectionHistory')}</h3>
         {data.collections.length === 0 ? (
           <EmptyState icon={<Banknote aria-hidden />} title={t('noCash')} />
         ) : (
-          <ul className="stagger space-y-2.5">
+          <ul className="stagger grid gap-2.5 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {(showAll ? data.collections : data.collections.slice(0, LIMIT)).map((entry) => (
               <li
                 key={entry.id}
@@ -76,13 +83,13 @@ export function CodCollectionScreen() {
           </ul>
         )}
         {data.collections.length > LIMIT && !showAll ? (
-          <Button variant="outline" size="lg" className="h-12 w-full" onClick={() => setShowAll(true)}>
+          <Button variant="outline" size="lg" className="h-12 w-full md:w-auto" onClick={() => setShowAll(true)}>
             {t('showMore', { count: data.collections.length - LIMIT })}
           </Button>
         ) : null}
       </section>
 
-      <div className="bg-muted/60 text-muted-foreground rounded-2xl p-4 text-xs leading-relaxed">
+      <div className="bg-muted/60 text-muted-foreground rounded-2xl p-4 text-xs leading-relaxed lg:hidden">
         <p className="text-foreground mb-1 font-medium">{t('notice')}</p>
         <p>{t('noticeText')}</p>
       </div>

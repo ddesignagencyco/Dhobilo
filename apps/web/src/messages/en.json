@@ -1444,7 +1444,9 @@
       "distanceKm": "{km} km away",
       "offerExpired": "Offer expired",
       "offerEnds": "Offer ends in {time}",
-      "showMore": "Show more ({count})"
+      "showMore": "Show more ({count})",
+      "selectJob": "Select a job",
+      "selectJobHint": "Pick a job from the list to see its route, stops and actions here."
     },
     "job": {
       "title": "Job details",
