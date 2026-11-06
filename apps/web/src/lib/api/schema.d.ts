@@ -251,6 +251,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/delete-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where my deletion request stands
+         * @description **Who can use this:** any signed-in user.
+         *
+         *     Works for an account that is scheduled for deletion (every other endpoint answers `ACCOUNT_PENDING_DELETION` for it). `status` is `NONE` when nothing was ever requested.
+         */
+        get: operations["PrivacyController_status"];
+        put?: never;
+        /**
+         * Delete my account
+         * @description **Who can use this:** any signed-in user.
+         *
+         *     Asks for the account to be deleted. **Needs a fresh phone code** (`POST /auth/otp/request`, then send the 6-digit code here).
+         *
+         *     - Everything that is still open has to be finished first (open orders, an unpaid shop balance or payout in progress, cash a rider has not handed in, deliveries in progress, open complaints). If something blocks the deletion the answer `DELETION_BLOCKED` lists exactly what.
+         *     - The account is signed out everywhere and **scheduled** for deletion after the grace period (30 days by default). During that time the person can still sign in, but only to see the status or cancel.
+         *     - After the grace period the account is **anonymised**: name, phone, email, addresses, devices, documents and CNIC are removed. Orders, payments and the ledger stay without any personal details, because the law requires them to be kept.
+         *     - Shop staff cannot do this themselves (the shop owner removes them) and admin accounts are removed by a super admin.
+         *
+         *     **Limit:** 5 requests per hour.
+         */
+        post: operations["PrivacyController_request"];
+        /**
+         * Cancel my deletion request
+         * @description **Who can use this:** any signed-in user.
+         *
+         *     Keeps the account and makes it fully usable again. Works until the data has actually been anonymised. A shop stays **closed** and has to be reopened by its owner.
+         */
+        delete: operations["PrivacyController_cancel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download my data
+         * @description **Who can use this:** any signed-in user.
+         *
+         *     Everything the platform holds about the signed-in person as JSON: profile, addresses, orders, reviews, complaints, notification log, devices and (for shops and riders) their business or rider profile with a **masked** CNIC. Passwords, token hashes and other people's data are never included. Long lists are cut and `truncated` says which.
+         *
+         *     **Limit:** 3 per hour.
+         */
+        get: operations["PrivacyController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/deletion-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Account deletion requests
+         * @description **Who can use this:** signed-in admins.
+         *
+         *     Newest first; filter by `status`. Shows role, masked phone and where each request stands (`lastError` says why one is waiting: `LEGAL_HOLD`, `BLOCKED:<reasons>`). Never shows names or addresses. Page with `meta.nextCursor`.
+         */
+        get: operations["PrivacyAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/legal-hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Freeze a person's data (legal hold)
+         * @description **Who can use this:** signed-in admins.
+         *
+         *     Deletion and the clean-up job skip this person until the hold is released. Use for a dispute, an investigation or a legal request. Put the case reference in `reason`, not personal details. Audited.
+         */
+        put: operations["PrivacyAdminController_setHold"];
+        post?: never;
+        /**
+         * Release a legal hold
+         * @description **Who can use this:** signed-in admins.
+         *
+         *     Deletion and clean-up resume. A request that was waiting is processed on the next nightly run.
+         */
+        delete: operations["PrivacyAdminController_clearHold"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cities": {
         parameters: {
             query?: never;
@@ -3324,6 +3439,8 @@ export interface components {
         UpdateNotificationPrefsDto: Record<string, never>;
         DeviceTokenDto: Record<string, never>;
         RemoveDeviceTokenDto: Record<string, never>;
+        RequestDeletionDto: Record<string, never>;
+        LegalHoldDto: Record<string, never>;
         CreateAddressDto: Record<string, never>;
         UpdateAddressDto: Record<string, never>;
         SignUploadDto: Record<string, never>;
@@ -4036,6 +4153,456 @@ export interface operations {
             };
             /** @description Not signed in (or the token expired) */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                     *         "status": "PENDING",
+                     *         "requestedAt": "2026-11-06T09:00:00.000Z",
+                     *         "scheduledFor": "2026-12-06T09:00:00.000Z",
+                     *         "cancelledAt": null,
+                     *         "completedAt": null,
+                     *         "daysLeft": 30,
+                     *         "canCancel": true
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyController_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestDeletionDto"];
+            };
+        };
+        responses: {
+            /** @description Scheduled */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                     *         "status": "PENDING",
+                     *         "requestedAt": "2026-11-06T09:00:00.000Z",
+                     *         "scheduledFor": "2026-12-06T09:00:00.000Z",
+                     *         "cancelledAt": null,
+                     *         "completedAt": null,
+                     *         "daysLeft": 30,
+                     *         "canCancel": true
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad request: the input is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in, but not allowed to do this */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict with the current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                     *         "status": "CANCELLED",
+                     *         "requestedAt": "2026-11-06T09:00:00.000Z",
+                     *         "scheduledFor": "2026-12-06T09:00:00.000Z",
+                     *         "cancelledAt": "2026-11-07T10:00:00.000Z",
+                     *         "completedAt": null,
+                     *         "daysLeft": 0,
+                     *         "canCancel": false
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyController_export: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "generatedAt": "2026-11-06T09:00:00.000Z",
+                     *         "account": {
+                     *           "id": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                     *           "phone": "+923001234567",
+                     *           "email": null,
+                     *           "name": "Ayesha Khan",
+                     *           "role": "CUSTOMER",
+                     *           "locale": "EN"
+                     *         },
+                     *         "addresses": [],
+                     *         "orders": [],
+                     *         "reviews": [],
+                     *         "complaints": [],
+                     *         "notificationLog": [],
+                     *         "devices": [],
+                     *         "truncated": {
+                     *           "orders": false,
+                     *           "reviews": false,
+                     *           "complaints": false,
+                     *           "notificationLog": false
+                     *         }
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyAdminController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": [
+                     *         {
+                     *           "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                     *           "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                     *           "role": "CUSTOMER",
+                     *           "status": "PENDING",
+                     *           "phone": "+92300*****67",
+                     *           "reasonCode": "NOT_USING",
+                     *           "requestedAt": "2026-11-06T09:00:00.000Z",
+                     *           "scheduledFor": "2026-12-06T09:00:00.000Z",
+                     *           "completedAt": null,
+                     *           "attempts": 0,
+                     *           "lastError": null,
+                     *           "legalHold": false,
+                     *           "legalHoldReason": null
+                     *         }
+                     *       ],
+                     *       "meta": {
+                     *         "nextCursor": null
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in, but not allowed to do this */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyAdminController_setHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description User id
+                 * @example 3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01
+                 */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegalHoldDto"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                     *         "legalHold": true,
+                     *         "reason": "Payment dispute case PD-1042"
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Bad request: the input is not valid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in, but not allowed to do this */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict with the current state */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    PrivacyAdminController_clearHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description User id
+                 * @example 3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01
+                 */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "data": {
+                     *         "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                     *         "legalHold": false
+                     *       }
+                     *     }
+                     */
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Not signed in (or the token expired) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in, but not allowed to do this */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

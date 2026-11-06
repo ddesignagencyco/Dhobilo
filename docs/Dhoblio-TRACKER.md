@@ -369,10 +369,10 @@
 - [x] **BE-9.2** Security headers, strict CORS, cookie flags, CSRF review for cookie-based refresh (strict headers and CORS, production refuses wildcard origins, SameSite=Strict, origin check on cookie refresh/logout)
 - [ ] **BE-9.3** Query performance: `EXPLAIN ANALYZE` hot paths (discovery, orders list, vendor board, ledger); add/adjust indexes; confirm no N+1 (PARTIAL: profiling and the slow-query log under load found and fixed three bottlenecks (timezone formatter, city order counter lock, 5xx on DB timeout); the full EXPLAIN ANALYZE pass over every hot path is still to do)
 - [x] **BE-9.4** Connection pooling (Prisma/PgBouncer sizing) and Redis/BullMQ settings under load (pool size and timeout configurable, sizing rule documented; BullMQ/Redis tuning under staging load still to confirm)
-- [ ] **BE-9.5** Data protection review: encryption at rest enabled, CNIC access audited, log redaction verified, retention/deletion policy implemented (PARTIAL: retention job done; account-deletion flow and legal retention periods need a decision)
+- [ ] **BE-9.5** Data protection review: encryption at rest enabled, CNIC access audited, log redaction verified, retention/deletion policy implemented (PARTIAL: account deletion with grace period, anonymisation job, data export, legal hold and extended retention job are built and tested; policy in docs/Dhoblio-DATA-PROTECTION.md is PROPOSED and needs legal sign-off; encryption at rest and log redaction still need checking on the real hosting)
 - [ ] **BE-9.6** Backups + restore drill (PITR); document RTO/RPO (PARTIAL: scripts and a restore drill on 100k orders done (backup 7 s, restore 10 s, everything identical); PITR and the real RTO/RPO need the managed database)
 - [x] **BE-9.7** Graceful shutdown + zero-downtime deploy; ≥ 2 API replicas behind LB (graceful drain on SIGTERM; two replicas behind nginx survived a rolling restart with 0 of 300 requests failed)
-- [ ] **BE-9.8** Fix issues found by ZAP baseline scan and dependency audit (PARTIAL: npm audit 9 -> 3 (remaining are Prisma CLI tooling); ZAP baseline not run yet)
+- [ ] **BE-9.8** Fix issues found by ZAP baseline scan and dependency audit (PARTIAL: ZAP API scan 120 checks, 0 failures or warnings (ops/security/zap-baseline.md); web security headers added; npm audit 23 -> 9 low, all in Jest test tooling (dev only). Still to do: scan staging over HTTPS, enforce a nonce-based CSP)
 - [x] **BE-9.9** Queue resilience: DLQ/failed-job alerts, stuck-job detection, poison-job handling (queue watch with ops alerts, GET /admin/queues, retry-failed, failed set as dead-letter store)
 
 ### FE
@@ -391,7 +391,7 @@
 - [ ] **QA-9.5** k6 `soak.js` (2–4 h) — no memory/connection leaks, queue depth stable (script and watcher written, not yet run)
 - [ ] **QA-9.6** Chaos tests: kill API mid-order, Redis restart, DB failover, gateway timeout; no lost orders/payments (SRS §7 Reliability)
 - [ ] **QA-9.7** Lighthouse CI on throttled 3G for the order path: interactive < 3 s (SRS §7 Performance)
-- [ ] **OPS-9.1** Uptime monitor, alerts (5xx rate, p95 latency, queue depth, failed jobs, DB CPU/connections)
+- [ ] **OPS-9.1** Uptime monitor, alerts (5xx rate, p95 latency, queue depth, failed jobs, DB CPU/connections) (PARTIAL: Prometheus /metrics, 9 alert rules, Alertmanager email routing and an uptime probe are built and validated; docs/Dhoblio-OPS.md. Still to do: run it against staging/production, add an external uptime check, and DB CPU/connection alerts from the managed database's own metrics)
 - [ ] **OPS-9.2** Pen-test / security review sign-off; PCI SAQ-A checklist completed
 
 **Exit criteria:** every NFR in TRD §18 has a recorded passing result; no open critical/high security findings.

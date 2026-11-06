@@ -1191,6 +1191,843 @@
         "description": "**Who can use this:** any signed-in user.\n\nCall on sign-out. Only removes tokens that belong to you."
       }
     },
+    "/api/v1/me/delete-request": {
+      "post": {
+        "operationId": "PrivacyController_request",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestDeletionDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Confirm with the phone code",
+                  "value": {
+                    "code": "123456",
+                    "reasonCode": "NOT_USING"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Scheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                    "status": "PENDING",
+                    "requestedAt": "2026-11-06T09:00:00.000Z",
+                    "scheduledFor": "2026-12-06T09:00:00.000Z",
+                    "cancelledAt": null,
+                    "completedAt": null,
+                    "daysLeft": 30,
+                    "canCancel": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "INVALID_OTP": {
+                    "summary": "INVALID_OTP: The code is invalid or has expired.",
+                    "value": {
+                      "error": {
+                        "code": "INVALID_OTP",
+                        "message": "The code is invalid or has expired.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "STAFF_REMOVED_BY_OWNER": {
+                    "summary": "STAFF_REMOVED_BY_OWNER: Shop staff accounts are removed by the shop owner.",
+                    "value": {
+                      "error": {
+                        "code": "STAFF_REMOVED_BY_OWNER",
+                        "message": "Shop staff accounts are removed by the shop owner.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "DELETION_NOT_AVAILABLE": {
+                    "summary": "DELETION_NOT_AVAILABLE: Admin accounts are removed by a super admin, not here.",
+                    "value": {
+                      "error": {
+                        "code": "DELETION_NOT_AVAILABLE",
+                        "message": "Admin accounts are removed by a super admin, not here.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "DELETION_BLOCKED": {
+                    "summary": "DELETION_BLOCKED: Finish these before deleting your account.",
+                    "value": {
+                      "error": {
+                        "code": "DELETION_BLOCKED",
+                        "message": "Finish these before deleting your account.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  },
+                  "DELETION_ALREADY_REQUESTED": {
+                    "summary": "DELETION_ALREADY_REQUESTED: A deletion request is already open for this account.",
+                    "value": {
+                      "error": {
+                        "code": "DELETION_ALREADY_REQUESTED",
+                        "message": "A deletion request is already open for this account.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "RATE_LIMITED: Too many attempts. Please try again later.",
+                    "value": {
+                      "error": {
+                        "code": "RATE_LIMITED",
+                        "message": "Too many attempts. Please try again later.",
+                        "details": {
+                          "retryAfterSec": 540
+                        },
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ],
+        "summary": "Delete my account",
+        "description": "**Who can use this:** any signed-in user.\n\nAsks for the account to be deleted. **Needs a fresh phone code** (`POST /auth/otp/request`, then send the 6-digit code here).\n\n- Everything that is still open has to be finished first (open orders, an unpaid shop balance or payout in progress, cash a rider has not handed in, deliveries in progress, open complaints). If something blocks the deletion the answer `DELETION_BLOCKED` lists exactly what.\n- The account is signed out everywhere and **scheduled** for deletion after the grace period (30 days by default). During that time the person can still sign in, but only to see the status or cancel.\n- After the grace period the account is **anonymised**: name, phone, email, addresses, devices, documents and CNIC are removed. Orders, payments and the ledger stay without any personal details, because the law requires them to be kept.\n- Shop staff cannot do this themselves (the shop owner removes them) and admin accounts are removed by a super admin.\n\n**Limit:** 5 requests per hour."
+      },
+      "get": {
+        "operationId": "PrivacyController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                    "status": "PENDING",
+                    "requestedAt": "2026-11-06T09:00:00.000Z",
+                    "scheduledFor": "2026-12-06T09:00:00.000Z",
+                    "cancelledAt": null,
+                    "completedAt": null,
+                    "daysLeft": 30,
+                    "canCancel": true
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ],
+        "summary": "Where my deletion request stands",
+        "description": "**Who can use this:** any signed-in user.\n\nWorks for an account that is scheduled for deletion (every other endpoint answers `ACCOUNT_PENDING_DELETION` for it). `status` is `NONE` when nothing was ever requested."
+      },
+      "delete": {
+        "operationId": "PrivacyController_cancel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                    "status": "CANCELLED",
+                    "requestedAt": "2026-11-06T09:00:00.000Z",
+                    "scheduledFor": "2026-12-06T09:00:00.000Z",
+                    "cancelledAt": "2026-11-07T10:00:00.000Z",
+                    "completedAt": null,
+                    "daysLeft": 0,
+                    "canCancel": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "DELETION_NOT_REQUESTED": {
+                    "summary": "DELETION_NOT_REQUESTED: There is no open deletion request.",
+                    "value": {
+                      "error": {
+                        "code": "DELETION_NOT_REQUESTED",
+                        "message": "There is no open deletion request.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ],
+        "summary": "Cancel my deletion request",
+        "description": "**Who can use this:** any signed-in user.\n\nKeeps the account and makes it fully usable again. Works until the data has actually been anonymised. A shop stays **closed** and has to be reopened by its owner."
+      }
+    },
+    "/api/v1/me/export": {
+      "get": {
+        "operationId": "PrivacyController_export",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "generatedAt": "2026-11-06T09:00:00.000Z",
+                    "account": {
+                      "id": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                      "phone": "+923001234567",
+                      "email": null,
+                      "name": "Ayesha Khan",
+                      "role": "CUSTOMER",
+                      "locale": "EN"
+                    },
+                    "addresses": [],
+                    "orders": [],
+                    "reviews": [],
+                    "complaints": [],
+                    "notificationLog": [],
+                    "devices": [],
+                    "truncated": {
+                      "orders": false,
+                      "reviews": false,
+                      "complaints": false,
+                      "notificationLog": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "RATE_LIMITED": {
+                    "summary": "RATE_LIMITED: Too many attempts. Please try again later.",
+                    "value": {
+                      "error": {
+                        "code": "RATE_LIMITED",
+                        "message": "Too many attempts. Please try again later.",
+                        "details": {
+                          "retryAfterSec": 540
+                        },
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "me"
+        ],
+        "summary": "Download my data",
+        "description": "**Who can use this:** any signed-in user.\n\nEverything the platform holds about the signed-in person as JSON: profile, addresses, orders, reviews, complaints, notification log, devices and (for shops and riders) their business or rider profile with a **masked** CNIC. Passwords, token hashes and other people's data are never included. Long lists are cut and `truncated` says which.\n\n**Limit:** 3 per hour."
+      }
+    },
+    "/api/v1/admin/deletion-requests": {
+      "get": {
+        "operationId": "PrivacyAdminController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60",
+                      "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                      "role": "CUSTOMER",
+                      "status": "PENDING",
+                      "phone": "+92300*****67",
+                      "reasonCode": "NOT_USING",
+                      "requestedAt": "2026-11-06T09:00:00.000Z",
+                      "scheduledFor": "2026-12-06T09:00:00.000Z",
+                      "completedAt": null,
+                      "attempts": 0,
+                      "lastError": null,
+                      "legalHold": false,
+                      "legalHoldReason": null
+                    }
+                  ],
+                  "meta": {
+                    "nextCursor": null
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-privacy"
+        ],
+        "summary": "Account deletion requests",
+        "description": "**Who can use this:** signed-in admins.\n\nNewest first; filter by `status`. Shows role, masked phone and where each request stands (`lastError` says why one is waiting: `LEGAL_HOLD`, `BLOCKED:<reasons>`). Never shows names or addresses. Page with `meta.nextCursor`."
+      }
+    },
+    "/api/v1/admin/users/{id}/legal-hold": {
+      "put": {
+        "operationId": "PrivacyAdminController_setHold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+            "description": "User id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalHoldDto"
+              },
+              "examples": {
+                "default": {
+                  "summary": "Open dispute",
+                  "value": {
+                    "reason": "Payment dispute case PD-1042"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                    "legalHold": true,
+                    "reason": "Payment dispute case PD-1042"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request: the input is not valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "VALIDATION_FAILED": {
+                    "summary": "VALIDATION_FAILED: Request failed validation",
+                    "value": {
+                      "error": {
+                        "code": "VALIDATION_FAILED",
+                        "message": "Request failed validation",
+                        "details": [
+                          {
+                            "field": "phone",
+                            "messages": [
+                              "phone must be longer than or equal to 10 characters"
+                            ]
+                          }
+                        ],
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "NOT_FOUND": {
+                    "summary": "NOT_FOUND: User not found.",
+                    "value": {
+                      "error": {
+                        "code": "NOT_FOUND",
+                        "message": "User not found.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict with the current state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ALREADY_DELETED": {
+                    "summary": "ALREADY_DELETED: This account has already been anonymised; there is nothing left to hold.",
+                    "value": {
+                      "error": {
+                        "code": "ALREADY_DELETED",
+                        "message": "This account has already been anonymised; there is nothing left to hold.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-privacy"
+        ],
+        "summary": "Freeze a person's data (legal hold)",
+        "description": "**Who can use this:** signed-in admins.\n\nDeletion and the clean-up job skip this person until the hold is released. Use for a dispute, an investigation or a legal request. Put the case reference in `reason`, not personal details. Audited."
+      },
+      "delete": {
+        "operationId": "PrivacyAdminController_clearHold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "example": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+            "description": "User id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": {
+                    "userId": "3f6c1f0e-8c1a-4a53-9f55-6a1c1c0b2a01",
+                    "legalHold": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or the token expired)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "UNAUTHENTICATED": {
+                    "summary": "UNAUTHENTICATED: Authentication required.",
+                    "value": {
+                      "error": {
+                        "code": "UNAUTHENTICATED",
+                        "message": "Authentication required.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signed in, but not allowed to do this",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "FORBIDDEN": {
+                    "summary": "FORBIDDEN: You do not have access to this resource.",
+                    "value": {
+                      "error": {
+                        "code": "FORBIDDEN",
+                        "message": "You do not have access to this resource.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "NOT_FOUND": {
+                    "summary": "NOT_FOUND: User not found.",
+                    "value": {
+                      "error": {
+                        "code": "NOT_FOUND",
+                        "message": "User not found.",
+                        "requestId": "b7d1e9c3-6a2f-4e84-95d0-1a3c5e7f9b60"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin-privacy"
+        ],
+        "summary": "Release a legal hold",
+        "description": "**Who can use this:** signed-in admins.\n\nDeletion and clean-up resume. A request that was waiting is processed on the next nightly run."
+      }
+    },
     "/api/v1/cities": {
       "get": {
         "operationId": "CitiesController_list",
@@ -23693,6 +24530,10 @@
       "description": "Admin: create admins with a sub-role (super admin, operations, finance, support), change or deactivate them, and change your own password."
     },
     {
+      "name": "admin-privacy",
+      "description": "Admin: account deletion requests and legal holds (personal-data requests)."
+    },
+    {
       "name": "admin-queues",
       "description": "Admin: health of the background queues, and retrying jobs that failed."
     },
@@ -23754,6 +24595,14 @@
         "properties": {}
       },
       "RemoveDeviceTokenDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestDeletionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LegalHoldDto": {
         "type": "object",
         "properties": {}
       },

@@ -103,6 +103,36 @@ export class CloudinaryService {
     return `https://api.cloudinary.com/v1_1/${this.cloudName}/image/download?${query.toString()}`;
   }
 
+  get configured(): boolean {
+    return !!(this.cloudName && this.apiKey && this.apiSecret);
+  }
+
+  /**
+   * Permanently deletes one asset (used when an account is deleted). Tries `authenticated` first (CNIC and shop
+   * documents) and then `upload`; an asset that is already gone counts as deleted. Returns false when media is
+   * not configured (nothing to delete in that environment).
+   * NOTE: signing follows Cloudinary's documented destroy API but has not been exercised against a live account yet.
+   */
+  async deleteAsset(publicId: string): Promise<boolean> {
+    if (!this.configured) return false;
+    const root = `${this.folderRoot}/`;
+    if (!publicId.startsWith(root) || publicId.includes('..')) {
+      throw new AppException('MEDIA_INVALID_ASSET', 'Asset is outside the expected folder', HttpStatus.BAD_REQUEST);
+    }
+    for (const type of ['authenticated', 'upload'] as const) {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = signParams({ invalidate: 'true', public_id: publicId, timestamp, type }, this.apiSecret as string);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${this.cloudName}/image/destroy`, {
+        method: 'POST',
+        body: new URLSearchParams({ public_id: publicId, type, invalidate: 'true', timestamp: String(timestamp), api_key: this.apiKey as string, signature }),
+      });
+      if (!res.ok) throw new AppException('MEDIA_DELETE_FAILED', 'Could not delete the asset', HttpStatus.BAD_GATEWAY);
+      const body = (await res.json()) as { result?: string };
+      if (body.result === 'ok') return true;
+    }
+    return true;
+  }
+
   /**
    * Confirms an uploaded asset really exists (and lives under the expected folder) via the Admin API before the
    * API persists its publicId. Returns the stored asset facts.

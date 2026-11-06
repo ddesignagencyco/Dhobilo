@@ -77,3 +77,34 @@ Index added: `Order(deliveredAt)`, `AuditLog(createdAt)`, `AuditLog(action, crea
 
 ## 9. Still open for Phase 9 exit
 QA-9.2 (staging 200 VU), QA-9.3, QA-9.4, QA-9.5, QA-9.6 (chaos), QA-9.7 (Lighthouse, needs the frontend), OPS-9.1 (uptime monitor and alert routing — the signals exist: 5xx in logs, `/health/ready`, `/admin/queues`), OPS-9.2 sign-off, and every FE-9.x item.
+
+## Monitoring and alerts
+
+The API exposes Prometheus metrics at `GET /api/v1/metrics`. It is off (404) until `METRICS_TOKEN` (16+ characters)
+is set, and then needs `Authorization: Bearer <token>`. It reports request duration and count by method, route
+template and status, BullMQ job counts per queue and state, the age of the oldest waiting job per queue (a stuck or
+dead worker makes this grow), database and Redis reachability, and the default Node metrics (event loop lag, memory).
+
+**Run it locally:** set `METRICS_TOKEN` in `.env`, restart the API, then `ops/monitoring/up.sh`. Prometheus is on
+`:9091`, Alertmanager on `:9094`, the uptime probe on `:9116`. Alerts go to `ALERT_EMAIL_TO` (default `SMTP_USER`)
+through the same SMTP account the API uses. Stop with
+`docker compose -p dhoblio-monitoring -f docker-compose.monitoring.yml down`.
+
+| Alert | Fires when | Severity |
+|---|---|---|
+| ApiDown | `/health/ready` not 200 for 2 min (API, database or Redis) | critical |
+| MetricsScrapeFailing | Prometheus cannot scrape the API for 3 min | warning |
+| DependencyDown | database or Redis unreachable from the API for 1 min | critical |
+| HighServerErrorRate | 5xx above 2% of requests for 5 min | critical |
+| HighLatencyP95 | overall p95 above 800 ms for 10 min | warning |
+| SlowOrderPlacement | `POST /orders` p95 above 1.5 s for 10 min | warning |
+| QueueBacklog | more than 500 waiting jobs in a queue for 10 min | warning |
+| QueueStuck | oldest waiting job older than 5 min for 5 min (worker down or stuck) | critical |
+| FailedJobs | any failed job sitting in a queue for 5 min | warning |
+
+Failed jobs: inspect with `GET /api/v1/admin/queues`, retry with `POST /api/v1/admin/queues/:name/retry-failed`.
+Thresholds are starting points from the SRS/TRD targets; tune them after the first weeks of real traffic.
+
+**Production note:** this compose file is for a single host. In production run Prometheus and Alertmanager (or
+the provider's managed equivalent) next to the API, keep `/api/v1/metrics` off the public internet, and add an
+external uptime check from outside the network, because probes from the same host cannot see a network outage.

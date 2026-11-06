@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, HttpStatus, Injectable } from '@nestjs/c
 import { Reflector } from '@nestjs/core';
 import { UserStatus } from '@prisma/client';
 import { AuthedRequest } from '../../../common/auth/auth-user';
+import { ALLOW_PENDING_DELETION_KEY } from '../../../common/decorators/allow-pending-deletion.decorator';
 import { IS_PUBLIC_KEY } from '../../../common/decorators/public.decorator';
 import { AppException } from '../../../common/errors/app.exception';
 import { ErrorCode } from '../../../common/errors/error-codes';
@@ -43,7 +44,12 @@ export class JwtAuthGuard implements CanActivate {
       select: { id: true, role: true, adminRole: true, status: true },
     });
     if (!user) throw this.unauthenticated();
-    if (user.status !== UserStatus.ACTIVE) {
+    if (user.status === UserStatus.PENDING_DELETION) {
+      const allowed = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_DELETION_KEY, [context.getHandler(), context.getClass()]);
+      if (!allowed) {
+        throw new AppException('ACCOUNT_PENDING_DELETION', 'This account is scheduled for deletion. Cancel the deletion to keep using it.', HttpStatus.FORBIDDEN);
+      }
+    } else if (user.status !== UserStatus.ACTIVE) {
       throw new AppException('ACCOUNT_SUSPENDED', 'This account is not active.', HttpStatus.FORBIDDEN);
     }
 

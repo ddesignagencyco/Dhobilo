@@ -338,7 +338,7 @@ describe('Hardening (e2e)', () => {
 
     it('is repeatable: a second run finds nothing more to remove', async () => {
       await retention.purge();
-      expect(await retention.purge()).toEqual({ otpCodes: 0, sessions: 0, notifications: 0, courierEvents: 0 });
+      expect(await retention.purge()).toMatchObject({ dryRun: false, otpCodes: 0, sessions: 0, notifications: 0, courierEvents: 0, orderPii: 0, rejectedApplications: 0 });
     });
   });
 

@@ -11,6 +11,7 @@ import { AppConfigModule } from './config/app-config.module';
 import type { Env } from './config/env';
 import { CloudinaryModule } from './infra/cloudinary/cloudinary.module';
 import { MailModule } from './infra/mail/mail.module';
+import { MetricsModule } from './infra/metrics/metrics.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { bullBoardImports } from './infra/queue/bull-board.module';
 import { QueueModule } from './infra/queue/queue.module';
@@ -35,6 +36,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { OpsModule } from './modules/ops/ops.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
 import { PromotionsHttpModule } from './modules/promos/promotions-http.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SlotsModule } from './modules/slots/slots.module';
@@ -59,6 +61,7 @@ import { UsersModule } from './modules/users/users.module';
     QueueModule,
     ...bullBoardImports(),
     MailModule,
+    MetricsModule,
     CloudinaryModule,
     TimeModule,
     CryptoModule,
@@ -68,6 +71,7 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    PrivacyModule,
     CitiesModule,
     AddressesModule,
     MediaModule,

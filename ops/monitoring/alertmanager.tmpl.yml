@@ -1,0 +1,18 @@
+# Rendered by ops/monitoring/up.sh: ALERT_EMAIL_TO / SMTP_* are filled in from the environment (never committed).
+route:
+  receiver: ops
+  group_by: [alertname, queue, dependency]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: ops
+    email_configs:
+      - to: '__ALERT_EMAIL_TO__'
+        from: '__SMTP_FROM__'
+        smarthost: '__SMTP_HOST__:__SMTP_PORT__'
+        auth_username: '__SMTP_USER__'
+        auth_password: '__SMTP_PASS__'
+        require_tls: true
+        send_resolved: true

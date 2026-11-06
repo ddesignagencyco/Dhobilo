@@ -79,6 +79,7 @@ export const TAGS: [name: string, description: string][] = [
   ['admin-reports', 'Admin: build CSV / Excel reports in the background and download them with a short-lived signed link.'],
   ['admin-announcements', 'Admin: preview an audience, send an announcement by push, SMS or email, and follow its delivery.'],
   ['admin-users', 'Admin: create admins with a sub-role (super admin, operations, finance, support), change or deactivate them, and change your own password.'],
+  ['admin-privacy', 'Admin: account deletion requests and legal holds (personal-data requests).'],
   ['admin-queues', 'Admin: health of the background queues, and retrying jobs that failed.'],
   ['admin-audit', 'Admin: search the audit trail of who did what to which record.'],
   ['webhooks', 'Calls made **to** us by partners (courier and payment status updates). Signed, not logged-in.'],
