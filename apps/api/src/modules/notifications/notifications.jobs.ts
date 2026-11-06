@@ -19,6 +19,8 @@ export interface SendEmailJob extends Logged {
   to: string;
   subject: string;
   text: string;
+  /** Designed HTML version; sent as a multipart email next to `text`. */
+  html?: string;
 }
 
 export interface SendWhatsAppJob extends Logged {

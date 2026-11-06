@@ -45,11 +45,13 @@ export const envSchema = z
       .regex(/^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/, 'CLOUDINARY_FOLDER_ROOT must be a plain folder path like dhoblio')
       .default('dhoblio'),
 
-    SMTP_HOST: z.string().default('localhost'),
-    SMTP_PORT: z.coerce.number().int().positive().default(1025),
+    SMTP_HOST: z.string().default('smtp.gmail.com'),
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
     SMTP_USER: z.string().default(''),
     SMTP_PASS: z.string().default(''),
     SMTP_FROM: z.string().default('Dhoblio <no-reply@dhoblio.pk>'),
+    /** Dev/staging only: also email every OTP code and every notification to this address (empty = off). */
+    NOTIFY_MIRROR_EMAIL: z.union([z.literal(''), z.string().email()]).default(''),
 
     SMS_PROVIDER: z.string().default('mock'),
     SMS_API_KEY: z.string().default(''),
@@ -147,6 +149,13 @@ export const envSchema = z
         code: 'custom',
         path: ['OTP_BYPASS'],
         message: 'OTP_BYPASS must not be true in production',
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.NOTIFY_MIRROR_EMAIL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['NOTIFY_MIRROR_EMAIL'],
+        message: 'NOTIFY_MIRROR_EMAIL must be empty in production (it would copy customers\' OTP codes to one inbox)',
       });
     }
     if (env.NODE_ENV === 'production') {

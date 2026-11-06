@@ -10,7 +10,7 @@ export interface MailMessage {
   html?: string;
 }
 
-/** Nodemailer transport: MailHog locally, Google SMTP (app password) in staging/prod, chosen purely by env. */
+/** Nodemailer transport over real SMTP (Google SMTP with an app password), configured purely by env. */
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);

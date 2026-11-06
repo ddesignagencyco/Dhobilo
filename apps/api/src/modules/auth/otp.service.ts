@@ -33,6 +33,7 @@ export class OtpService {
   private readonly hmacKey: Buffer;
   private readonly ttlSeconds: number;
   private readonly bypass: boolean;
+  private readonly mirrorEnabled: boolean;
 
   constructor(
     config: ConfigService<Env, true>,
@@ -44,6 +45,7 @@ export class OtpService {
     this.hmacKey = Buffer.from(String(config.get('HMAC_KEY_BASE64', { infer: true })), 'base64');
     this.ttlSeconds = config.get('OTP_TTL_SECONDS', { infer: true });
     this.bypass = config.get('OTP_BYPASS', { infer: true }) && config.get('NODE_ENV', { infer: true }) !== 'production';
+    this.mirrorEnabled = !!config.get('NOTIFY_MIRROR_EMAIL', { infer: true });
   }
 
   /** Issues a code for `phone` (already E.164). Returns how long it stays valid. */
@@ -68,7 +70,8 @@ export class OtpService {
     const key = otpKey(phone);
     await this.redis.multi().del(key).hset(key, { hash: codeHash, attempts: 0, id: row.id }).expire(key, this.ttlSeconds).exec();
 
-    if (!this.bypass) {
+    // With the bypass on there is nobody to text, but a configured test inbox still gets the code by email.
+    if (!this.bypass || this.mirrorEnabled) {
       await this.notifications.add(
         SEND_SMS_JOB,
         {
