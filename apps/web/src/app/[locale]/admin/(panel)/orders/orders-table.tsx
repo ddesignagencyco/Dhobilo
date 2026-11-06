@@ -102,7 +102,7 @@ export function OrdersTable() {
                   <TableCell>
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="font-mono text-xs font-medium hover:text-primary hover:underline"
+                      className="font-mono text-xs font-medium whitespace-nowrap hover:text-primary hover:underline"
                       dir="ltr"
                     >
                       {order.orderNo}

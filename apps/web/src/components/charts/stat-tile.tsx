@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +19,7 @@ export function StatTile({
   upIsGood = true,
   hint,
   icon,
+  count,
 }: {
   label: string;
   value: ReactNode;
@@ -26,6 +28,8 @@ export function StatTile({
   upIsGood?: boolean;
   hint?: string;
   icon?: ReactNode;
+  /** Counts the figure up from zero instead of showing `value` statically. */
+  count?: { value: number; format: (n: number) => string };
 }) {
   const hasDelta = delta !== null && delta !== undefined && Number.isFinite(delta);
   const up = hasDelta && delta > 0;
@@ -33,14 +37,20 @@ export function StatTile({
   const good = up === upIsGood;
 
   return (
-    <Card className="py-4">
+    <Card className="hover-lift py-4">
       <CardContent className="px-4">
         <div className="flex items-start justify-between gap-2">
           <p className="text-muted-foreground text-xs">{label}</p>
-          {icon ? <span className="text-muted-foreground/60">{icon}</span> : null}
+          {icon ? (
+            <span className="bg-accent text-accent-foreground flex size-8 items-center justify-center rounded-lg [&>svg]:size-4">
+              {icon}
+            </span>
+          ) : null}
         </div>
 
-        <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
+        <p className="tabular mt-1 text-2xl font-semibold tracking-tight">
+          {count ? <AnimatedNumber value={count.value} format={count.format} /> : value}
+        </p>
 
         {hasDelta && !flat ? (
           <p
@@ -51,7 +61,7 @@ export function StatTile({
           >
             {up ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />}
             {/* Sign is explicit as well as the arrow: never colour alone. */}
-            {`${delta > 0 ? '+' : ''}${(delta * 100).toFixed(1)}%`}
+            <bdi dir="ltr">{`${delta > 0 ? '+' : ''}${(delta * 100).toFixed(1)}%`}</bdi>
             {hint ? <span className="text-muted-foreground font-normal">{hint}</span> : null}
           </p>
         ) : hint ? (

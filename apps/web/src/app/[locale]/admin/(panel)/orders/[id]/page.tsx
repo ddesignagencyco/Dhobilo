@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/admin/status-badge';
 import { Button } from '@/components/ui/button';
 import { ApiError } from '@/lib/api/errors';
 import { fetchForPage } from '@/lib/api/server';
-import type { AdminOrderDetail, OrderDeliveryLeg, OrderTimelineEntry } from '@/lib/api/types';
+import type { AdminOrderDetail, DeliveryJob, OrderDeliveryLeg, OrderTimelineEntry } from '@/lib/api/types';
 import { CancelOrderButton } from './cancel-order';
 import { OrderDetailCards } from './order-detail-cards';
 
@@ -39,8 +39,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ lo
     fetchForPage<OrderTimelineEntry[]>(`/orders/${id}/timeline`, { locale, returnTo, cache: 'no-store' })
       .then((r) => r.data)
       .catch(() => null),
-    fetchForPage<OrderDeliveryLeg[]>(`/orders/${id}/delivery`, { locale, returnTo, cache: 'no-store' })
-      .then((r) => r.data)
+    // The customer-facing /orders/:id/delivery is closed to admins; the dispatch list filters by order number.
+    fetchForPage<DeliveryJob[]>('/admin/delivery/jobs', {
+      locale,
+      returnTo,
+      cache: 'no-store',
+      query: { orderNo: order.orderNo },
+    })
+      .then((r) =>
+        r.data
+          .filter((job) => job.order.orderNo === order.orderNo)
+          .map(
+            (job): OrderDeliveryLeg => ({
+              id: job.id,
+              jobType: job.jobType,
+              status: job.status,
+              scheduledStart: job.scheduledStart,
+              scheduledEnd: job.scheduledEnd,
+              startedAt: job.startedAt ?? null,
+              completedAt: job.completedAt ?? null,
+              handledBy: null,
+              rider: job.rider ? { name: job.rider.name, photoUrl: null } : null,
+            }),
+          ),
+      )
       .catch(() => null),
   ]);
 

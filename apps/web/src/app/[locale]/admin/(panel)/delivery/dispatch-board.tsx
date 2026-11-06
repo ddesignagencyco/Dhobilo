@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, RotateCw, Truck, UserMinus, UserPlus, XCircle } from 'lucide-react';
+import { AlertTriangle, Bike, Clock, RotateCw, Truck, UserMinus, UserPlus, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { JobStatus, JobType, formatMoney } from '@dhoblio/shared';
 import { Link } from '@/i18n/navigation';
@@ -13,7 +13,9 @@ import { EmptyState, ErrorState, TableSkeleton } from '@/components/admin/states
 import { StatusBadge } from '@/components/admin/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { StatTile } from '@/components/charts/stat-tile';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { bffData } from '@/lib/api/bff';
 import type { DeliveryJob, DeliverySummary } from '@/lib/api/types';
@@ -47,22 +49,27 @@ function SummaryTiles() {
   });
 
   const tiles = [
-    { label: t('unassigned'), value: data?.jobs?.UNASSIGNED ?? 0, tone: 'warning' as const },
-    { label: t('inFlight'), value: (data?.jobs?.ACCEPTED ?? 0) + (data?.jobs?.IN_TRANSIT ?? 0), tone: 'info' as const },
-    { label: t('needAttention'), value: data?.needAttention ?? 0, tone: 'destructive' as const },
-    { label: t('ridersOnline'), value: data?.onlineRiders ?? 0, tone: 'success' as const },
+    { label: t('unassigned'), value: data?.jobs?.UNASSIGNED ?? 0, icon: <Clock /> },
+    { label: t('inFlight'), value: (data?.jobs?.ACCEPTED ?? 0) + (data?.jobs?.IN_TRANSIT ?? 0), icon: <Truck /> },
+    { label: t('needAttention'), value: data?.needAttention ?? 0, icon: <AlertTriangle /> },
+    { label: t('ridersOnline'), value: data?.onlineRiders ?? 0, icon: <Bike /> },
   ];
 
   return (
-    <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {tiles.map((tile) => (
-        <Card key={tile.label} className="py-4">
-          <CardContent className="px-4">
-            <p className="text-muted-foreground text-xs">{tile.label}</p>
-            <p className="mt-1 text-2xl font-semibold tabular">{isLoading ? '—' : tile.value}</p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="stagger mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {tiles.map((tile) =>
+        isLoading ? (
+          <Skeleton key={tile.label} className="h-24 w-full rounded-xl" />
+        ) : (
+          <StatTile
+            key={tile.label}
+            label={tile.label}
+            value={String(tile.value)}
+            count={{ value: tile.value, format: (n) => String(Math.round(n)) }}
+            icon={tile.icon}
+          />
+        ),
+      )}
     </div>
   );
 }

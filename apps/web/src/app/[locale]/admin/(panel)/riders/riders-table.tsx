@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/admin/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EntityCell } from '@/components/admin/entity-cell';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AdminRiderListItem } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
@@ -126,7 +127,9 @@ export function RidersTable({ initialStatus }: { initialStatus: string }) {
             ) : (
               list.items.map((rider) => (
                 <TableRow key={rider.id}>
-                  <TableCell className="font-medium">{rider.user?.name ?? '—'}</TableCell>
+                  <TableCell>
+                    <EntityCell name={rider.user?.name ?? '—'} />
+                  </TableCell>
                   <TableCell>
                     <a className="font-mono text-xs text-primary hover:underline" href={`tel:${rider.user?.phone}`} dir="ltr">
                       {rider.user?.phone ?? '—'}

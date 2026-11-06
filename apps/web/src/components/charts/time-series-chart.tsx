@@ -47,8 +47,8 @@ export function TimeSeriesChart({
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const [hover, setHover] = useState<number | null>(null);
 
-  const padding = { top: 12, right: 16, bottom: 28, left: 52 };
-  const width = 760; // viewBox width; the SVG scales to its container
+  const padding = { top: 12, right: 12, bottom: 28, left: 46 };
+  const width = 560; // viewBox width; the SVG scales to its container, so 1 unit is roughly 1px on a half-width card
   const plotW = width - padding.left - padding.right;
   const plotH = height - padding.top - padding.bottom;
 
@@ -102,7 +102,7 @@ export function TimeSeriesChart({
               y={y(tick)}
               textAnchor="end"
               dominantBaseline="middle"
-              className="fill-chart-axis text-[10px]"
+              className="fill-chart-axis text-[11px]"
             >
               {(yFormat ?? ((v: number) => String(v)))(tick)}
             </text>
@@ -116,7 +116,7 @@ export function TimeSeriesChart({
               x={x(i)}
               y={height - 8}
               textAnchor="middle"
-              className="fill-chart-axis text-[10px]"
+              className="fill-chart-axis text-[11px]"
             >
               {label}
             </text>
@@ -128,11 +128,11 @@ export function TimeSeriesChart({
           const colour = s.slot === 1 ? 'var(--chart-1)' : 'var(--chart-2)';
           return (
             <g key={s.key}>
-              {area ? (
-                <path d={areaPath(points, y(0))} fill={colour} opacity={0.1} />
-              ) : null}
+              {area ? <path d={areaPath(points, y(0))} fill={colour} opacity={0.12} className="animate-fade" /> : null}
               <path
                 d={linePath(points)}
+                pathLength={1}
+                className="animate-draw"
                 fill="none"
                 stroke={colour}
                 strokeWidth={2}

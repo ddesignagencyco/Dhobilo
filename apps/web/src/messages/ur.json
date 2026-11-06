@@ -83,13 +83,15 @@
     "emailPlaceholder": "you@dhoblio.com",
     "password": "پاس ورڈ",
     "submit": "سائن اِن کریں",
-    "submitting": "Signing in…",
-    "invalid": "That email and password do not match.",
-    "locked": "Too many failed attempts. This account is locked for 15 minutes.",
-    "emailRequired": "Enter your email address.",
-    "emailInvalid": "That does not look like an email address.",
-    "passwordRequired": "Enter your password.",
-    "customerHint": "Customers, vendors and riders sign in with their phone number, not here."
+    "submitting": "سائن اِن ہو رہا ہے…",
+    "invalid": "ای میل اور پاس ورڈ میل نہیں کھاتے۔",
+    "locked": "بہت زیادہ غلط کوششیں۔ یہ اکاؤنٹ 15 منٹ کے لیے لاک ہے۔",
+    "emailRequired": "اپنی ای میل درج کریں۔",
+    "emailInvalid": "یہ ای میل ایڈریس درست نہیں لگتا۔",
+    "passwordRequired": "اپنا پاس ورڈ درج کریں۔",
+    "customerHint": "Customers, vendors and riders sign in with their phone number, not here.",
+    "show": "دکھائیں",
+    "hide": "چھپائیں"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -678,7 +680,17 @@
       "cityLoadError": "شہروں کی فہرست لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
       "nextTitle": "اپنا پہلا آرڈر دیں",
       "nextBody": "کپڑے دھونے کا آرڈر دیں، پک اپ سے ڈیلیوری تک سب ہم سنبھال لیں گے۔",
-      "ordersCta": "آرڈرز دیکھیں"
+      "ordersCta": "آرڈرز دیکھیں",
+      "greetMorning": "صبح بخیر",
+      "greetAfternoon": "سہ پہر بخیر",
+      "greetEvening": "شام بخیر",
+      "heroTitle": "آج کیا دھلوانا ہے؟",
+      "searchPlaceholder": "لانڈری یا علاقہ تلاش کریں",
+      "servicesTitle": "سروسز",
+      "nearYou": "آپ کے قریب",
+      "seeAll": "سب دیکھیں",
+      "deliverTo": "ڈیلیوری",
+      "addAddress": "اپنا پتہ شامل کریں"
     },
     "discovery": {
       "title": "دکانیں تلاش کریں",
@@ -694,7 +706,21 @@
       "loading": "لوڈ ہو رہا ہے…",
       "distance": "{km} کلومیٹر دور",
       "startingFrom": "{price} سے شروع",
-      "turnaroundHours": "{hours} گھنٹے میں تیار"
+      "turnaroundHours": "{hours} گھنٹے میں تیار",
+      "new": "نیا",
+      "from": "شروع",
+      "filters": "فلٹر",
+      "filtersHint": "فہرست ترتیب دیں اور کم از کم ریٹنگ چنیں۔",
+      "sortBy": "ترتیب",
+      "sort": {
+        "distance": "سب سے قریب",
+        "rating": "بہترین ریٹنگ",
+        "price": "کم قیمت"
+      },
+      "minRating": "کم از کم ریٹنگ",
+      "anyRating": "کوئی بھی",
+      "apply": "نتائج دیکھیں",
+      "reset": "ری سیٹ"
     },
     "vendor": {
       "open": "ابھی کھلی ہے",
@@ -706,7 +732,11 @@
       "add": "شامل کریں",
       "increase": "ایک اور شامل کریں",
       "decrease": "ایک کم کریں",
-      "emptyCatalog": "اس دکان نے ابھی کوئی سروس شائع نہیں کی۔"
+      "emptyCatalog": "اس دکان نے ابھی کوئی سروس شائع نہیں کی۔",
+      "open24": "چوبیس گھنٹے کھلا",
+      "todayHours": "آج {from} – {to}",
+      "closedToday": "آج بند ہے",
+      "deliveryFee": "ڈیلیوری {fee}"
     },
     "cart": {
       "title": "آپ کی ٹوکری",
@@ -731,7 +761,11 @@
       "proceed": "آگے بڑھیں",
       "addMore": "مزید شامل کریں",
       "checkout": "چیک آؤٹ",
-      "openCart": "ٹوکری کھولیں"
+      "openCart": "ٹوکری کھولیں",
+      "viewCart": "کارٹ دیکھیں",
+      "emptyHint": "اپنے قریب کی لانڈری سے کپڑے شامل کریں، وہ یہاں نظر آئیں گے۔",
+      "orderingFrom": "آرڈر کر رہے ہیں",
+      "payOnDelivery": "کپڑے ڈیلیور ہونے پر کیش میں ادائیگی کریں۔"
     },
     "checkout": {
       "title": "چیک آؤٹ",
@@ -770,7 +804,11 @@
       "jazzcash": "جیز کیش",
       "jazzcashInfo": "اپنے جیز کیش والٹ سے ادائیگی کریں۔",
       "raast": "راست",
-      "fee": "فیس"
+      "fee": "فیس",
+      "stepAddress": "پتہ",
+      "stepSchedule": "وقت",
+      "stepPayment": "ادائیگی",
+      "placing": "آرڈر بھیجا جا رہا ہے…"
     },
     "address": {
       "label": "لیبل",
@@ -836,19 +874,41 @@
       "reorderError": "دوبارہ آرڈر نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
       "rider": "رائیڈر",
       "riderLocation": "رائیڈر کی لوکیشن",
-      "ridersOnTheWay": "آپ کا رائیڈر راستے میں ہے"
+      "ridersOnTheWay": "آپ کا رائیڈر راستے میں ہے",
+      "tabActive": "جاری",
+      "tabCompleted": "پرانے",
+      "noneActive": "کوئی جاری آرڈر نہیں",
+      "noneCompleted": "ابھی کوئی پرانا آرڈر نہیں",
+      "placedTitle": "آرڈر بھیج دیا گیا!",
+      "trackTitle": "آرڈر کی پیش رفت",
+      "viewVendor": "دکان دیکھیں",
+      "openMaps": "میپس میں کھولیں",
+      "riderEta": "آپ کا رائیڈر آپ کی طرف آ رہا ہے",
+      "pending": "انتظار",
+      "statusHint": {
+        "placed": "دکان کی تصدیق کا انتظار ہے۔",
+        "accepted": "دکان نے آپ کا آرڈر قبول کر لیا۔",
+        "picked_up": "آپ کے کپڑے وصول ہو گئے۔",
+        "in_process": "آپ کے کپڑے دھل رہے ہیں۔",
+        "ready": "ڈیلیوری کے لیے تیار۔",
+        "out_for_delivery": "آپ کی طرف آ رہا ہے۔",
+        "delivered": "ڈیلیور ہو گیا۔ شکریہ!",
+        "cancelled": "یہ آرڈر منسوخ ہو گیا۔",
+        "rejected": "دکان یہ آرڈر نہیں لے سکی۔"
+      },
+      "scheduleTitle": "شیڈول"
     },
     "notifications": {
       "title": "Notifications",
       "subtitle": "Choose how you hear about order updates.",
-      "push": "Push",
-      "pushDescription": "Instant alerts on your phone.",
-      "whatsapp": "WhatsApp",
-      "whatsappDescription": "Order updates through WhatsApp.",
-      "sms": "SMS",
-      "smsDescription": "Order updates by text message.",
-      "email": "Email",
-      "emailDescription": "Order updates by email.",
+      "push": "پش",
+      "pushDescription": "اس ڈیوائس پر آرڈر کی اپ ڈیٹس۔",
+      "whatsapp": "واٹس ایپ",
+      "whatsappDescription": "واٹس ایپ پر آرڈر کی اپ ڈیٹس۔",
+      "sms": "ایس ایم ایس",
+      "smsDescription": "اہم آرڈر اپ ڈیٹس کے لیے ٹیکسٹ میسج۔",
+      "email": "ای میل",
+      "emailDescription": "رسیدیں اور خلاصے ای میل پر۔",
       "pushTitle": "Push notifications",
       "pushHint": "Allow notifications to get live order alerts.",
       "pushEnable": "Enable",
@@ -867,7 +927,18 @@
       "saving": "محفوظ ہو رہا ہے…",
       "saved": "آپ کی تفصیلات محفوظ ہو گئیں۔",
       "namePlaceholder": "اپنا نام لکھیں",
-      "signOut": "سائن آؤٹ"
+      "signOut": "سائن آؤٹ",
+      "guestName": "آپ کی پروفائل",
+      "addressesTitle": "محفوظ پتے",
+      "addAddress": "پتہ شامل کریں",
+      "addAddressHint": "ہم کپڑے کہاں سے پک اپ اور کہاں ڈیلیور کریں؟",
+      "addressesEmpty": "ابھی کوئی پتہ محفوظ نہیں",
+      "defaultBadge": "ڈیفالٹ",
+      "removeAddress": "پتہ ہٹائیں",
+      "addressAdded": "پتہ محفوظ ہو گیا۔",
+      "addressRemoved": "پتہ ہٹا دیا گیا۔",
+      "addressRemoveError": "پتہ نہیں ہٹایا جا سکا۔",
+      "detailsTitle": "ذاتی معلومات"
     },
     "login": {
       "expired": "آپ کا سیشن ختم ہو گیا۔ دوبارہ سائن ان کریں۔",
@@ -890,6 +961,13 @@
       "invalidPhone": "درست فون نمبر درج کریں۔",
       "rateLimited": "بہت زیادہ کوششیں۔ تھوڑی دیر بعد کوشش کریں۔",
       "unreachable": "سرور سے رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں۔"
+    },
+    "services": {
+      "all": "سب",
+      "WASH_FOLD": "دھلائی اور تہہ",
+      "WASH_IRON": "دھلائی اور استری",
+      "DRY_CLEAN": "ڈرائی کلیننگ",
+      "IRON_ONLY": "استری"
     }
   },
   "vendor": {
@@ -1419,5 +1497,176 @@
       "noticeText": "جو کیش آپ وصول کرتے ہیں وہ ڈھوبلیو کا ہے۔ جب سپورٹ آپ کا حساب کرے تو اسے جمع کروا دیں۔",
       "error": "آپ کا کیش بیلنس لوڈ نہیں ہو سکا۔"
     }
+  },
+  "auth": {
+    "slogan": "تازہ کپڑے، بغیر کسی فکر کے۔",
+    "servingLahore": "لاہور میں خدمت",
+    "language": "زبان",
+    "orSwitch": "سائن اِن کے دوسرے راستے",
+    "form": {
+      "phone": "فون نمبر",
+      "phonePlaceholder": "03xx xxxxxxx",
+      "phoneHint": "ہم آپ کو 6 ہندسوں کا کوڈ بھیجیں گے۔ پاس ورڈ کی ضرورت نہیں۔",
+      "sendCode": "کوڈ بھیجیں",
+      "sending": "بھیجا جا رہا ہے…",
+      "codeTitle": "کوڈ درج کریں",
+      "codeSentTo": "کوڈ بھیجا گیا",
+      "codeDigit": "ہندسہ",
+      "verify": "تصدیق کریں اور آگے بڑھیں",
+      "verifying": "تصدیق ہو رہی ہے…",
+      "resend": "کوڈ دوبارہ بھیجیں",
+      "resendIn": "{seconds} سیکنڈ میں دوبارہ بھیجیں",
+      "changeNumber": "نمبر تبدیل کریں",
+      "invalidCode": "یہ کوڈ غلط ہے یا ختم ہو گیا۔ نیا کوڈ منگوائیں۔",
+      "invalidPhone": "درست فون نمبر درج کریں۔",
+      "rateLimited": "بہت زیادہ کوششیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔",
+      "unreachable": "سرور سے رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+      "expired": "آپ کا سیشن ختم ہو گیا۔ دوبارہ سائن اِن کریں۔",
+      "wrongRole": "یہ نمبر {area} اکاؤنٹ کے طور پر رجسٹر ہے۔",
+      "wrongRoleLink": "{area} سائن اِن پر جائیں",
+      "devHint": "ڈویلپمنٹ کوڈ: 123456"
+    },
+    "area": {
+      "customer": "کسٹمر",
+      "vendor": "دکان کے مالک",
+      "rider": "رائیڈر",
+      "admin": "ایڈمن"
+    },
+    "switch": {
+      "customer": "کسٹمر سائن اِن",
+      "vendor": "دکان کے مالک کا سائن اِن",
+      "rider": "رائیڈر سائن اِن",
+      "admin": "ایڈمن سائن اِن"
+    },
+    "customer": {
+      "badge": "کسٹمرز",
+      "title": "خوش آمدید",
+      "help": "پک اپ بک کرنے اور اپنے آرڈرز دیکھنے کے لیے فون نمبر سے سائن اِن کریں۔",
+      "heading": "لانڈری، آپ کے دروازے تک۔",
+      "intro": "ڈھوبلیو آپ کو اپنے قریب کی قابلِ اعتماد دکانوں سے ملاتا ہے، پک اپ اور ڈیلیوری سمیت۔",
+      "b1": {
+        "title": "پک اپ اور ڈیلیوری",
+        "body": "وقت منتخب کریں، رائیڈر کپڑے لے جائے گا اور صاف کر کے واپس لائے گا۔"
+      },
+      "b2": {
+        "title": "ہر آرڈر پر نظر",
+        "body": "پک اپ سے ڈیلیوری تک ہر مرحلہ دیکھیں، راستے میں رائیڈر کی لائیو لوکیشن کے ساتھ۔"
+      },
+      "b3": {
+        "title": "ڈیلیوری پر ادائیگی",
+        "body": "کپڑے ملنے پر کیش میں ادائیگی کریں۔ کارڈ کی ضرورت نہیں۔"
+      },
+      "t1": "قابلِ اعتماد مقامی دکانیں",
+      "t2": "قیمتیں پہلے سے واضح",
+      "t3": "اردو اور انگریزی",
+      "switchHelp": "کیا آپ کسٹمر نہیں ہیں؟"
+    },
+    "vendor": {
+      "badge": "دکان کے مالکان",
+      "title": "دکان کا سائن اِن",
+      "help": "آرڈرز، کیٹلاگ اور ادائیگیاں سنبھالنے کے لیے فون نمبر سے سائن اِن کریں۔ نئے ہیں؟ اپنا نمبر درج کریں، ہم آپ کا دکان اکاؤنٹ بنا دیں گے۔",
+      "heading": "اپنی لانڈری ایک ہی پینل سے چلائیں۔",
+      "intro": "اپنے قریب کے کسٹمرز سے آرڈر لیں اور پہلے آرڈر سے ادائیگی تک پوری دکان ایک جگہ رکھیں۔",
+      "b1": {
+        "title": "قریبی کسٹمرز کے آرڈرز",
+        "body": "نئے آرڈر سیکنڈوں میں قبول کریں اور ہر آرڈر کو مرحلہ وار آگے بڑھائیں۔"
+      },
+      "b2": {
+        "title": "کیٹلاگ اور اوقات",
+        "body": "اپنی قیمتیں، وقت اور کھلنے کے اوقات جب چاہیں طے کریں۔"
+      },
+      "b3": {
+        "title": "واضح کمائی اور ادائیگیاں",
+        "body": "دیکھیں کتنا کمایا اور تیار ہوں تو ادائیگی کی درخواست کریں۔"
+      },
+      "t1": "رجسٹریشن مفت",
+      "t2": "چند دن میں جائزہ",
+      "t3": "اردو اور انگریزی",
+      "switchHelp": "کیا آپ دکان کے مالک نہیں ہیں؟"
+    },
+    "rider": {
+      "badge": "رائیڈرز",
+      "title": "رائیڈر سائن اِن",
+      "help": "اپنے قریب کی جابز دیکھنے کے لیے فون نمبر سے سائن اِن کریں۔ نئے ہیں؟ درخواست شروع کرنے کے لیے اپنا نمبر درج کریں۔",
+      "heading": "ڈیلیور کریں، کمائیں، دہرائیں۔",
+      "intro": "پورے لاہور میں لانڈری پک اپ اور ڈیلیور کریں اور ہر ڈیلیوری پر کمائی کریں۔",
+      "b1": {
+        "title": "ہر ڈیلیوری پر کمائی",
+        "body": "ہر جاب کی واضح فیس، اور آپ کی کمائی ہمیشہ آپ کے سامنے۔"
+      },
+      "b2": {
+        "title": "جب چاہیں کام کریں",
+        "body": "فارغ ہوں تو آن لائن ہوں، ورنہ آف لائن۔"
+      },
+      "b3": {
+        "title": "جاب کی واضح تفصیل",
+        "body": "پک اپ اور ڈیلیوری کے پتے اور نقشہ ایک ٹیپ میں۔"
+      },
+      "t1": "کیش کا محفوظ حساب",
+      "t2": "آسان درخواست",
+      "t3": "اردو اور انگریزی",
+      "switchHelp": "کیا آپ رائیڈر نہیں ہیں؟"
+    },
+    "admin": {
+      "badge": "اسٹاف",
+      "title": "ایڈمن سائن اِن",
+      "help": "اپنی ڈھوبلیو اسٹاف ای میل اور پاس ورڈ سے سائن اِن کریں۔",
+      "heading": "پورے پلیٹ فارم کا ایک کنٹرول روم۔",
+      "intro": "ڈھوبلیو ٹیم کے لیے آپریشنز، فنانس اور سپورٹ کے ٹولز۔",
+      "b1": {
+        "title": "آپریشنز",
+        "body": "دکانوں اور رائیڈرز کی منظوری دیں، ڈیلیوری پر نظر رکھیں اور آرڈر حل کریں۔"
+      },
+      "b2": {
+        "title": "فنانس",
+        "body": "کمیشن، کیش وصولی اور ادائیگیاں ایک جگہ حساب کے ساتھ۔"
+      },
+      "b3": {
+        "title": "سپورٹ",
+        "body": "شکایات اور اعلانات مکمل آڈٹ ریکارڈ کے ساتھ سنبھالیں۔"
+      },
+      "t1": "صرف مجاز اسٹاف",
+      "t2": "ہر رسائی ریکارڈ ہوتی ہے",
+      "t3": "اردو اور انگریزی",
+      "notice": "یہ حصہ ڈھوبلیو اسٹاف کے لیے ہے۔ کسٹمرز، دکان کے مالکان اور رائیڈرز فون نمبر سے سائن اِن کرتے ہیں۔",
+      "switchHelp": "کیا آپ اسٹاف نہیں ہیں؟"
+    }
+  },
+  "adminShell": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "searchPlaceholder": "Search pages and actions…",
+    "searchHint": "Search",
+    "searchEmpty": "Nothing matches “{q}”.",
+    "pages": "Pages",
+    "actions": "Actions",
+    "navigateHint": "to navigate",
+    "openHint": "to open",
+    "closeHint": "to close",
+    "notifications": "Notifications",
+    "allCaughtUp": "You're all caught up.",
+    "needsAttention": "Needs attention",
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode",
+    "switchLanguage": "Switch language",
+    "pendingVendors": "{count} vendors awaiting approval",
+    "pendingRiders": "{count} rider applications to review",
+    "openComplaints": "{count} open complaints",
+    "pendingPayouts": "{count} payout requests",
+    "unassignedJobs": "{count} unassigned delivery jobs",
+    "home": "Home",
+    "signedInAs": "Signed in as",
+    "skipToContent": "Skip to content"
+  },
+  "adminDash": {
+    "attentionTitle": "Needs attention",
+    "attentionSubtitle": "Queues waiting on an admin.",
+    "attentionClear": "Nothing is waiting. Nice work.",
+    "review": "Review",
+    "recentOrders": "Recent orders",
+    "recentOrdersHint": "The latest orders across all vendors.",
+    "viewAll": "View all",
+    "vsPrevious": "vs previous {days} days",
+    "noOrders": "No orders yet."
   }
 }

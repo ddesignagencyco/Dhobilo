@@ -89,7 +89,9 @@
     "emailRequired": "Enter your email address.",
     "emailInvalid": "That does not look like an email address.",
     "passwordRequired": "Enter your password.",
-    "customerHint": "Customers, vendors and riders sign in with their phone number, not here."
+    "customerHint": "Customers, vendors and riders sign in with their phone number, not here.",
+    "show": "Show",
+    "hide": "Hide"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -678,7 +680,17 @@
       "cityLoadError": "Could not load cities. Try again.",
       "nextTitle": "Place your first order",
       "nextBody": "Book a wash and we handle pickup through delivery.",
-      "ordersCta": "View orders"
+      "ordersCta": "View orders",
+      "greetMorning": "Good morning",
+      "greetAfternoon": "Good afternoon",
+      "greetEvening": "Good evening",
+      "heroTitle": "What can we freshen up today?",
+      "searchPlaceholder": "Search laundries or areas",
+      "servicesTitle": "Services",
+      "nearYou": "Near you",
+      "seeAll": "See all",
+      "deliverTo": "Deliver to",
+      "addAddress": "Add your address"
     },
     "discovery": {
       "title": "Discover vendors",
@@ -694,7 +706,21 @@
       "loading": "Loading…",
       "distance": "{km} km away",
       "startingFrom": "Starting from {price}",
-      "turnaroundHours": "{hours}h turnaround"
+      "turnaroundHours": "{hours}h turnaround",
+      "new": "New",
+      "from": "From",
+      "filters": "Filters",
+      "filtersHint": "Sort the list and set a minimum rating.",
+      "sortBy": "Sort by",
+      "sort": {
+        "distance": "Nearest",
+        "rating": "Top rated",
+        "price": "Lowest price"
+      },
+      "minRating": "Minimum rating",
+      "anyRating": "Any",
+      "apply": "Show results",
+      "reset": "Reset"
     },
     "vendor": {
       "open": "Open now",
@@ -706,7 +732,11 @@
       "add": "Add",
       "increase": "Add one",
       "decrease": "Remove one",
-      "emptyCatalog": "This vendor has not published any services yet."
+      "emptyCatalog": "This vendor has not published any services yet.",
+      "open24": "Open 24 hours",
+      "todayHours": "Today {from} – {to}",
+      "closedToday": "Closed today",
+      "deliveryFee": "Delivery {fee}"
     },
     "cart": {
       "title": "Your cart",
@@ -727,11 +757,15 @@
       "estimatePending": "Add items to see the total.",
       "estimating": "Calculating…",
       "youSave": "You save {amount}",
-      "itemCount": "{count} item(s)",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
       "proceed": "Proceed",
       "addMore": "Add more",
       "checkout": "Checkout",
-      "openCart": "Open cart"
+      "openCart": "Open cart",
+      "viewCart": "View cart",
+      "emptyHint": "Add clothes from a laundry near you and they show up here.",
+      "orderingFrom": "Ordering from",
+      "payOnDelivery": "Pay in cash when your clothes are delivered."
     },
     "checkout": {
       "title": "Checkout",
@@ -770,7 +804,11 @@
       "jazzcash": "JazzCash",
       "jazzcashInfo": "Pay with your JazzCash wallet.",
       "raast": "Raast",
-      "fee": "Fee"
+      "fee": "Fee",
+      "stepAddress": "Address",
+      "stepSchedule": "Schedule",
+      "stepPayment": "Payment",
+      "placing": "Placing order…"
     },
     "address": {
       "label": "Label",
@@ -794,7 +832,7 @@
       "emptyHint": "Your orders will show up here.",
       "browse": "Place an order",
       "loadError": "Could not load your orders. Try again.",
-      "itemCount": "{count} item(s)",
+      "itemCount": "{count, plural, one {# item} other {# items}}",
       "loading": "Loading…",
       "loadMore": "Load more",
       "placedBanner": "Your order is placed. The vendor will confirm shortly.",
@@ -836,7 +874,29 @@
       "cancelled": "Order cancelled.",
       "reorder": "Order again",
       "reorderDone": "We refilled your cart from this order.",
-      "reorderError": "Could not reorder. Try again."
+      "reorderError": "Could not reorder. Try again.",
+      "tabActive": "Active",
+      "tabCompleted": "Past",
+      "noneActive": "No active orders",
+      "noneCompleted": "No past orders yet",
+      "placedTitle": "Order placed!",
+      "trackTitle": "Order progress",
+      "viewVendor": "View shop",
+      "openMaps": "Open in Maps",
+      "riderEta": "Your rider is heading to you",
+      "pending": "Waiting",
+      "statusHint": {
+        "placed": "Waiting for the shop to confirm.",
+        "accepted": "The shop confirmed your order.",
+        "picked_up": "Your clothes have been picked up.",
+        "in_process": "Your clothes are being cleaned.",
+        "ready": "Ready for delivery.",
+        "out_for_delivery": "On the way to you.",
+        "delivered": "Delivered. Thank you!",
+        "cancelled": "This order was cancelled.",
+        "rejected": "The shop could not take this order."
+      },
+      "scheduleTitle": "Schedule"
     },
     "profile": {
       "title": "Profile",
@@ -847,7 +907,18 @@
       "saving": "Saving…",
       "saved": "Your details are saved.",
       "namePlaceholder": "Your name",
-      "signOut": "Sign out"
+      "signOut": "Sign out",
+      "guestName": "Your profile",
+      "addressesTitle": "Saved addresses",
+      "addAddress": "Add address",
+      "addAddressHint": "Where should we pick up and deliver?",
+      "addressesEmpty": "No saved addresses yet",
+      "defaultBadge": "Default",
+      "removeAddress": "Remove address",
+      "addressAdded": "Address saved.",
+      "addressRemoved": "Address removed.",
+      "addressRemoveError": "Could not remove the address.",
+      "detailsTitle": "Personal details"
     },
     "login": {
       "expired": "Your session expired. Sign in again.",
@@ -878,7 +949,22 @@
       "pushEnable": "Turn on push notifications",
       "pushGranted": "Push notifications are on.",
       "pushDenied": "Push notifications are blocked in your browser settings.",
-      "pushPermissionHint": "We will only ask after your first order."
+      "pushPermissionHint": "We will only ask after your first order.",
+      "push": "Push",
+      "pushDescription": "Order updates on this device.",
+      "whatsapp": "WhatsApp",
+      "whatsappDescription": "Order updates on WhatsApp.",
+      "sms": "SMS",
+      "smsDescription": "Text messages for key order updates.",
+      "email": "Email",
+      "emailDescription": "Receipts and summaries by email."
+    },
+    "services": {
+      "all": "All",
+      "WASH_FOLD": "Wash & Fold",
+      "WASH_IRON": "Wash & Iron",
+      "DRY_CLEAN": "Dry Cleaning",
+      "IRON_ONLY": "Ironing"
     }
   },
   "vendor": {
@@ -1408,5 +1494,176 @@
       "noticeText": "Cash you collect belongs to Dhoblio. Hand it over when support settles your account.",
       "error": "Could not load your cash balance."
     }
+  },
+  "auth": {
+    "slogan": "Fresh clothes. Zero hassle.",
+    "servingLahore": "Serving Lahore",
+    "language": "Language",
+    "orSwitch": "Other sign-in options",
+    "form": {
+      "phone": "Phone number",
+      "phonePlaceholder": "03xx xxxxxxx",
+      "phoneHint": "We will text you a 6-digit code. No password needed.",
+      "sendCode": "Send code",
+      "sending": "Sending…",
+      "codeTitle": "Enter the code",
+      "codeSentTo": "Code sent to",
+      "codeDigit": "Digit",
+      "verify": "Verify and continue",
+      "verifying": "Verifying…",
+      "resend": "Resend code",
+      "resendIn": "Resend in {seconds}s",
+      "changeNumber": "Change number",
+      "invalidCode": "That code is invalid or expired. Request a new one.",
+      "invalidPhone": "Enter a valid phone number.",
+      "rateLimited": "Too many attempts. Try again in a little while.",
+      "unreachable": "Could not reach the server. Try again.",
+      "expired": "Your session expired. Sign in again.",
+      "wrongRole": "This number is registered as a {area} account.",
+      "wrongRoleLink": "Go to the {area} sign-in",
+      "devHint": "Development code: 123456"
+    },
+    "area": {
+      "customer": "customer",
+      "vendor": "shop owner",
+      "rider": "rider",
+      "admin": "admin"
+    },
+    "switch": {
+      "customer": "Customer sign-in",
+      "vendor": "Shop owner sign-in",
+      "rider": "Rider sign-in",
+      "admin": "Admin sign-in"
+    },
+    "customer": {
+      "badge": "Customers",
+      "title": "Welcome back",
+      "help": "Sign in with your phone number to book pickups and track your orders.",
+      "heading": "Laundry that comes to your door.",
+      "intro": "Dhoblio connects you with trusted laundries and dry cleaners near you, with pickup and delivery included.",
+      "b1": {
+        "title": "Pickup and delivery",
+        "body": "Pick a time slot and a rider collects your clothes and brings them back fresh."
+      },
+      "b2": {
+        "title": "Track every order",
+        "body": "See each step from pickup to delivery, with live rider location on the way."
+      },
+      "b3": {
+        "title": "Pay cash on delivery",
+        "body": "Pay when your clothes arrive. No card needed."
+      },
+      "t1": "Trusted local shops",
+      "t2": "Clear prices up front",
+      "t3": "Urdu and English",
+      "switchHelp": "Not a customer?"
+    },
+    "vendor": {
+      "badge": "Shop owners",
+      "title": "Shop sign-in",
+      "help": "Sign in with your phone number to manage orders, your catalog and payouts. New here? Enter your number and we will set up your shop account.",
+      "heading": "Run your laundry from one panel.",
+      "intro": "Get orders from customers near you and keep your whole shop in one place, from the first order to payout.",
+      "b1": {
+        "title": "Orders from nearby customers",
+        "body": "Accept new orders in seconds and move each one through your shop."
+      },
+      "b2": {
+        "title": "Catalog and hours",
+        "body": "Set your prices, turnaround times and opening hours whenever you like."
+      },
+      "b3": {
+        "title": "Clear earnings and payouts",
+        "body": "See what you earned and request a payout when you are ready."
+      },
+      "t1": "Free to register",
+      "t2": "Reviewed within days",
+      "t3": "Urdu and English",
+      "switchHelp": "Not a shop owner?"
+    },
+    "rider": {
+      "badge": "Riders",
+      "title": "Rider sign-in",
+      "help": "Sign in with your phone number to see jobs near you. New here? Enter your number to start your application.",
+      "heading": "Deliver. Earn. Repeat.",
+      "intro": "Pick up and deliver laundry across Lahore and get paid for every delivery.",
+      "b1": {
+        "title": "Earn on every delivery",
+        "body": "A clear fee for each job, with your earnings always in view."
+      },
+      "b2": {
+        "title": "Work when you want",
+        "body": "Go online when you are free and offline when you are not."
+      },
+      "b3": {
+        "title": "Clear job details",
+        "body": "Pickup and drop-off addresses and maps in one tap."
+      },
+      "t1": "Cash handled safely",
+      "t2": "Simple application",
+      "t3": "Urdu and English",
+      "switchHelp": "Not a rider?"
+    },
+    "admin": {
+      "badge": "Staff",
+      "title": "Admin sign-in",
+      "help": "Sign in with your Dhoblio staff email and password.",
+      "heading": "One control room for the whole platform.",
+      "intro": "Operations, finance and support tools for the Dhoblio team.",
+      "b1": {
+        "title": "Operations",
+        "body": "Approve vendors and riders, watch dispatch and resolve orders."
+      },
+      "b2": {
+        "title": "Finance",
+        "body": "Commission, cash collection and payouts, reconciled in one place."
+      },
+      "b3": {
+        "title": "Support",
+        "body": "Handle complaints and announcements with a full audit trail."
+      },
+      "t1": "Authorised staff only",
+      "t2": "All access is logged",
+      "t3": "Urdu and English",
+      "notice": "This area is for Dhoblio staff. Customers, shop owners and riders sign in with their phone number.",
+      "switchHelp": "Not staff?"
+    }
+  },
+  "adminShell": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "searchPlaceholder": "Search pages and actions…",
+    "searchHint": "Search",
+    "searchEmpty": "Nothing matches “{q}”.",
+    "pages": "Pages",
+    "actions": "Actions",
+    "navigateHint": "to navigate",
+    "openHint": "to open",
+    "closeHint": "to close",
+    "notifications": "Notifications",
+    "allCaughtUp": "You're all caught up.",
+    "needsAttention": "Needs attention",
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode",
+    "switchLanguage": "Switch language",
+    "pendingVendors": "{count} vendors awaiting approval",
+    "pendingRiders": "{count} rider applications to review",
+    "openComplaints": "{count} open complaints",
+    "pendingPayouts": "{count} payout requests",
+    "unassignedJobs": "{count} unassigned delivery jobs",
+    "home": "Home",
+    "signedInAs": "Signed in as",
+    "skipToContent": "Skip to content"
+  },
+  "adminDash": {
+    "attentionTitle": "Needs attention",
+    "attentionSubtitle": "Queues waiting on an admin.",
+    "attentionClear": "Nothing is waiting. Nice work.",
+    "review": "Review",
+    "recentOrders": "Recent orders",
+    "recentOrdersHint": "The latest orders across all vendors.",
+    "viewAll": "View all",
+    "vsPrevious": "vs previous {days} days",
+    "noOrders": "No orders yet."
   }
 }

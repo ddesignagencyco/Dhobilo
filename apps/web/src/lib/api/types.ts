@@ -223,6 +223,8 @@ export interface DeliveryJob {
   from: DeliveryJobParty | null;
   to: DeliveryJobParty | null;
   attempts?: number;
+  startedAt?: string | null;
+  completedAt?: string | null;
   createdAt?: string;
 }
 
