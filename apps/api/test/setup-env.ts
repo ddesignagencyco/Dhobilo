@@ -20,6 +20,10 @@ process.env.TRUST_PROXY = '1';
 // Empty values count as unset so a local .env with blank placeholders cannot break the e2e suite.
 const defaults: Record<string, string> = {
   NODE_ENV: 'test',
+  // The CORS/CSRF tests assert against these exact origins. Set them here so a local .env pointing at
+  // another web port (3001) cannot make an otherwise-green e2e suite fail; a shell/CI value still wins.
+  APP_URL: 'http://localhost:3000',
+  CORS_ORIGINS: 'http://localhost:3000',
   JWT_ACCESS_SECRET: 'test-access-secret-test-access-secret',
   JWT_REFRESH_SECRET: 'test-refresh-secret-test-refresh-secret',
   ENC_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),

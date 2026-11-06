@@ -17,7 +17,7 @@ export function MobileNav({ adminRole, counts }: { adminRole: AdminRole | null; 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('openMenu')}>
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('openMenu')}>
           <Menu />
         </Button>
       </SheetTrigger>

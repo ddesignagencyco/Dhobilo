@@ -1,13 +1,10 @@
 'use client';
 
-import { CheckCircle2Icon } from 'lucide-react';
+import { CheckIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
-interface Step {
-  number: number;
-  key: string;
-}
-
-const STEPS: Step[] = [
+const STEPS = [
   { number: 1, key: 'business' },
   { number: 2, key: 'location' },
   { number: 3, key: 'documents' },
@@ -15,30 +12,48 @@ const STEPS: Step[] = [
 ];
 
 export function WizardHeader({ currentStep }: { currentStep: number }) {
+  const t = useTranslations('vendor.register.steps');
+  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-2 md:gap-4">
-        {STEPS.map((step, idx) => (
-          <div key={step.number} className="flex items-center gap-2 md:gap-4">
-            <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition-colors ${
-                currentStep > step.number
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : currentStep === step.number
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-muted text-muted-foreground'
-              }`}
+    <div className="mb-8 space-y-3">
+      <ol className="relative flex items-start justify-between">
+        <span aria-hidden className="bg-muted absolute inset-x-5 top-5 h-0.5" />
+        <span
+          aria-hidden
+          className="bg-primary absolute inset-s-5 top-5 h-0.5 transition-[width] duration-500 ease-[var(--ease-out)]"
+          style={{ width: `calc((100% - 2.5rem) * ${progress / 100})` }}
+        />
+        {STEPS.map((step) => {
+          const done = currentStep > step.number;
+          const active = currentStep === step.number;
+          return (
+            <li
+              key={step.number}
+              aria-current={active ? 'step' : undefined}
+              className="relative z-10 flex w-20 flex-col items-center gap-2 text-center"
             >
-              {currentStep > step.number ? <CheckCircle2Icon className="size-5" /> : step.number}
-            </div>
-            <span className="hidden text-sm font-medium md:inline">{`Step ${step.number}`}</span>
-            {idx < STEPS.length - 1 && (
-              <div className={`hidden h-1 w-8 flex-1 rounded-full md:block ${currentStep > step.number ? 'bg-primary' : 'bg-muted'}`} />
-            )}
-          </div>
-        ))}
-      </div>
+              <span
+                className={cn(
+                  'flex size-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-300',
+                  done && 'border-primary bg-primary text-primary-foreground',
+                  active && 'border-primary bg-card text-primary ring-primary/15 ring-4',
+                  !done && !active && 'border-border bg-card text-muted-foreground',
+                )}
+              >
+                {done ? (
+                  <CheckIcon className="animate-pop size-5" aria-hidden />
+                ) : (
+                  <span className="tabular">{step.number}</span>
+                )}
+              </span>
+              <span className={cn('text-xs font-medium', active ? 'text-foreground' : 'text-muted-foreground')}>
+                {t(step.key)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

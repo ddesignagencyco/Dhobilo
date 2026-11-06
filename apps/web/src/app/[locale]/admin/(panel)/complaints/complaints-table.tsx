@@ -97,7 +97,7 @@ export function ComplaintsTable({ initialStatus }: { initialStatus: string }) {
                   <TableCell>
                     <StatusBadge status={complaint.status} />
                   </TableCell>
-                  <TableCell className="font-mono text-xs" dir="ltr">
+                  <TableCell className="font-mono text-xs whitespace-nowrap" dir="ltr">
                     {complaint.order?.orderNo ?? '—'}
                   </TableCell>
                   <TableCell className="max-w-40 truncate">{complaint.vendor?.businessName ?? '—'}</TableCell>

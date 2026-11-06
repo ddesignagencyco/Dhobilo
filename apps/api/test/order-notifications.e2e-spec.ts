@@ -75,7 +75,7 @@ describe('Order notifications (e2e)', () => {
       const wa = jobs.find((j) => j.name === 'send-whatsapp' && j.data.userId === s.customer.user.id)!;
       expect(wa.data).toMatchObject({ to: s.customer.user.phone, templateName: 'order_placed_en', language: 'en', fallbackSms: true, params: [o.orderNo, s.vendor.vendor.businessName] });
       const email = jobs.find((j) => j.name === 'send-email' && j.data.to.includes('owner-'))!;
-      expect(email.data).toMatchObject({ subject: 'New order', text: expect.stringContaining(o.orderNo) });
+      expect(email.data).toMatchObject({ subject: expect.stringContaining(o.orderNo), text: expect.stringContaining(o.orderNo) });
     });
 
     it('adds push for everyone with a registered device; vendor staff get push only', async () => {

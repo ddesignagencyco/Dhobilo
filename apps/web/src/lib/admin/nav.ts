@@ -1,6 +1,5 @@
 import {
   BadgeDollarSign,
-  BarChart3,
   Bike,
   Building2,
   ClipboardList,
@@ -68,7 +67,7 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: null,
-    items: [{ href: '', labelKey: 'dashboard', icon: LayoutDashboard, area: 'analytics' }],
+    items: [{ href: '/analytics', labelKey: 'dashboard', icon: LayoutDashboard, area: 'analytics' }],
   },
   {
     labelKey: 'operations',
@@ -103,10 +102,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     labelKey: 'insight',
-    items: [
-      { href: '/analytics', labelKey: 'analytics', icon: BarChart3, area: 'analytics' },
-      { href: '/reports', labelKey: 'reports', icon: FileSpreadsheet, area: 'reports' },
-    ],
+    items: [{ href: '/reports', labelKey: 'reports', icon: FileSpreadsheet, area: 'reports' }],
   },
   {
     labelKey: 'system',

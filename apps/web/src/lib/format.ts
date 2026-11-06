@@ -74,5 +74,7 @@ export function maskPhone(phone: string | null | undefined): string {
 export function humanise(value: string | null | undefined): string {
   if (!value) return '—';
   const lower = value.replace(/_/g, ' ').toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
+  const sentence = lower.charAt(0).toUpperCase() + lower.slice(1);
+  // Acronyms keep their case: "COD pending", not "Cod pending".
+  return sentence.replace(/\b(cod|cnic|sms|otp|iban|gmv)\b/gi, (m) => m.toUpperCase());
 }

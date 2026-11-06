@@ -1,90 +1,94 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
+import { compareMoney } from '@dhoblio/shared';
+import { BffError } from '@/lib/api/bff';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import { useRequestPayout } from '@/lib/vendor/hooks/use-vendor-payouts';
 
-const payoutSchema = z.object({
-  iban: z.string().min(1, 'IBAN required').regex(/^PK/, 'Invalid IBAN'),
-  amount: z.string().min(1, 'Amount required'),
+const schema = z.object({
+  amount: z
+    .string()
+    .trim()
+    .regex(/^\d{1,9}(\.\d{1,2})?$/, 'invalidAmount'),
+  accountRef: z.string().trim().min(5, 'invalidAccount').max(64, 'invalidAccount'),
+  note: z.string().trim().max(300).optional(),
 });
+type Form = z.infer<typeof schema>;
 
-type PayoutForm = z.infer<typeof payoutSchema>;
-
-export function PayoutRequestForm({ availableBalance }: { availableBalance: number }) {
+export function PayoutRequestForm({ available }: { available: string }) {
   const t = useTranslations('vendor.payouts');
-  const [submitted, setSubmitted] = useState(false);
-
-  const form = useForm<PayoutForm>({
-    resolver: zodResolver(payoutSchema),
-    defaultValues: { iban: '', amount: '' },
+  const mutation = useRequestPayout();
+  const form = useForm<Form>({
+    resolver: zodResolver(schema),
+    defaultValues: { amount: '', accountRef: '', note: '' },
   });
+  const errors = form.formState.errors;
 
-  const onSubmit = (data: PayoutForm) => {
-    const amount = parseFloat(data.amount);
-    if (amount > availableBalance) {
-      toast.error(t('insufficientBalance'));
+  const onSubmit = async (values: Form) => {
+    if (compareMoney(values.amount, available) > 0) {
+      form.setError('amount', { message: 'insufficientBalance' });
       return;
     }
-    toast.success(t('payoutRequested'));
-    setSubmitted(true);
-    form.reset();
+    try {
+      await mutation.mutateAsync({
+        amount: values.amount,
+        method: 'BANK',
+        accountRef: values.accountRef,
+        note: values.note || undefined,
+      });
+      toast.success(t('requested'));
+      form.reset();
+    } catch (e) {
+      toast.error(e instanceof BffError ? e.message : t('requestFailed'));
+    }
   };
 
-  if (submitted) {
-    return (
-      <Card className="p-6 text-center space-y-4">
-        <div className="text-4xl">✓</div>
-        <h3 className="font-semibold text-lg">{t('requestSubmitted')}</h3>
-        <p className="text-muted-foreground text-sm">{t('reviewNotice')}</p>
-        <Button onClick={() => setSubmitted(false)} className="w-full">
-          {t('newRequest')}
-        </Button>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="p-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="text-sm font-medium">{t('bankIban')}</label>
-          <Input
-            {...form.register('iban')}
-            placeholder="PK94ABCD..."
-            className="mt-1"
-          />
-          {form.formState.errors.iban && (
-            <p className="text-sm text-red-600 mt-1">{form.formState.errors.iban.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="text-sm font-medium">{t('amount')}</label>
-          <div className="relative mt-1">
-            <span className="absolute left-3 top-2.5 text-muted-foreground">Rs.</span>
-            <Input
-              {...form.register('amount')}
-              placeholder="0.00"
-              className="pl-10"
-            />
+    <Card className="p-4">
+      <h2 className="mb-3 text-sm font-semibold">{t('requestTitle')}</h2>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3" noValidate>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="payout-amount">{t('amount')}</Label>
+            <button
+              type="button"
+              className="text-primary text-xs font-medium hover:underline"
+              onClick={() => form.setValue('amount', available, { shouldValidate: true })}
+            >
+              {t('useFull')}
+            </button>
           </div>
-          {form.formState.errors.amount && (
-            <p className="text-sm text-red-600 mt-1">{form.formState.errors.amount.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">
-            {t('available')}: Rs. {availableBalance.toFixed(2)}
-          </p>
+          <Input
+            id="payout-amount"
+            inputMode="decimal"
+            dir="ltr"
+            placeholder="2500.00"
+            className="tabular text-base"
+            {...form.register('amount')}
+          />
+          {errors.amount ? <p className="text-destructive text-xs">{t(errors.amount.message as string)}</p> : null}
         </div>
-
-        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? t('submitting') : t('requestPayout')}
+        <div className="space-y-1.5">
+          <Label htmlFor="payout-iban">{t('iban')}</Label>
+          <Input id="payout-iban" dir="ltr" placeholder="PK36SCBL0000001123456702" {...form.register('accountRef')} />
+          {errors.accountRef ? (
+            <p className="text-destructive text-xs">{t(errors.accountRef.message as string)}</p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="payout-note">{t('note')}</Label>
+          <Input id="payout-note" {...form.register('note')} />
+        </div>
+        <Button type="submit" disabled={mutation.isPending} className="w-full sm:w-auto">
+          {mutation.isPending ? t('submitting') : t('submit')}
         </Button>
       </form>
     </Card>

@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAddresses } from '@/lib/customer/hooks/use-addresses';
 import type { DiscoveryFilters } from '@/lib/customer/hooks/use-discovery';
@@ -22,20 +23,16 @@ function readCityId(): number | undefined {
   return Number.isFinite(id) ? id : undefined;
 }
 
-export function DiscoveryView({ filters }: { filters: DiscoveryFilters }) {
+export function DiscoveryView({ filters, limit }: { filters: DiscoveryFilters; limit?: number }) {
   const t = useTranslations('customer.discovery');
   const addresses = useAddresses();
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locating, setLocating] = useState(false);
   const [denied, setDenied] = useState(false);
-  const [cityId] = useState<number | undefined>(() =>
-    typeof document === 'undefined' ? undefined : readCityId(),
-  );
+  const [cityId] = useState<number | undefined>(() => (typeof document === 'undefined' ? undefined : readCityId()));
 
   const defaultAddress = addresses.data?.find((address) => address.isDefault) ?? addresses.data?.[0];
-  const addressCoords = defaultAddress
-    ? { lat: Number(defaultAddress.lat), lng: Number(defaultAddress.lng) }
-    : null;
+  const addressCoords = defaultAddress ? { lat: Number(defaultAddress.lat), lng: Number(defaultAddress.lng) } : null;
   const effectiveCoords = coords ?? addressCoords;
 
   const locate = useCallback(() => {
@@ -60,9 +57,9 @@ export function DiscoveryView({ filters }: { filters: DiscoveryFilters }) {
 
   if (addresses.isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-40" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
+        {Array.from({ length: limit ?? 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-40 rounded-2xl" />
         ))}
       </div>
     );
@@ -70,20 +67,20 @@ export function DiscoveryView({ filters }: { filters: DiscoveryFilters }) {
 
   if (!effectiveCoords) {
     return (
-      <div className="flex flex-col items-center gap-3 py-12 text-center">
-        <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full">
-          <MapPin className="size-6" aria-hidden />
-        </div>
-        <div className="space-y-1">
-          <p className="font-medium">{t('locationTitle')}</p>
-          <p className="text-muted-foreground text-sm">{denied ? t('locationDenied') : t('locationBody')}</p>
-        </div>
-        <Button onClick={locate} disabled={locating}>
-          {locating ? t('locating') : t('useLocation')}
-        </Button>
-      </div>
+      <EmptyState
+        icon={<MapPin aria-hidden />}
+        title={t('locationTitle')}
+        description={denied ? t('locationDenied') : t('locationBody')}
+        action={
+          <Button onClick={locate} disabled={locating}>
+            {locating ? t('locating') : t('useLocation')}
+          </Button>
+        }
+      />
     );
   }
 
-  return <VendorList lat={effectiveCoords.lat} lng={effectiveCoords.lng} filters={{ ...filters, cityId }} />;
+  return (
+    <VendorList lat={effectiveCoords.lat} lng={effectiveCoords.lng} filters={{ ...filters, cityId }} limit={limit} />
+  );
 }

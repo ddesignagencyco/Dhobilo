@@ -1,67 +1,246 @@
 'use client';
 
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { ChevronRightIcon, PanelLeftCloseIcon, PanelLeftOpenIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
-import { UserMenu } from '@/components/admin/user-menu';
-import { MobileNav } from '@/components/admin/mobile-nav';
-import { VendorSidebarNav } from './sidebar-nav';
+import { Link, usePathname } from '@/i18n/navigation';
+import { ThemeToggle } from '@/components/admin/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { useVendorProfile } from '@/lib/vendor/hooks/use-vendor-hours';
+import { cn } from '@/lib/utils';
 import { AvailabilityToggle } from './forms/availability-toggle';
+import { ShopAvatar } from './shop-avatar';
+import { VendorSidebarNav, activeNavItem } from './sidebar-nav';
+import { VendorMobileNav } from './vendor-mobile-nav';
+import { type BlockedStatus, VendorStatusScreen } from './vendor-status-screen';
+import { VendorUserMenu } from './vendor-user-menu';
 
-/**
- * Vendor app shell: fixed sidebar on desktop, collapse to burger on mobile.
- * Matches admin layout pattern for consistency.
- */
+/** Phone-only tap target floor (44px) for every control inside the panel, without touching shared primitives. */
+const PHONE_TAP =
+  "max-sm:[&_input:not([type=checkbox]):not([type=radio])]:h-11 max-sm:[&_select]:h-11 max-sm:[&_[role=radiogroup]]:h-12 max-sm:[&_button:not([role=switch])]:min-h-11 max-sm:[&_button[class*='size-8']]:size-11 max-sm:[&_button[class*='size-9']]:size-11 max-sm:[&_[role=switch]]:relative max-sm:[&_[role=switch]]:before:absolute max-sm:[&_[role=switch]]:before:-inset-x-2 max-sm:[&_[role=switch]]:before:-inset-y-3";
+
+const COLLAPSE_KEY = 'dh-vendor-sidebar';
+const COLLAPSE_EVENT = 'dh-vendor-sidebar-change';
+
+function subscribe(onChange: () => void) {
+  window.addEventListener(COLLAPSE_EVENT, onChange);
+  window.addEventListener('storage', onChange);
+  window.addEventListener('resize', onChange);
+  return () => {
+    window.removeEventListener(COLLAPSE_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener('resize', onChange);
+  };
+}
+
+/** An explicit choice wins; otherwise tablets and small laptops get the icon rail and wide screens the full sidebar. */
+function readCollapsed(): boolean {
+  const stored = localStorage.getItem(COLLAPSE_KEY);
+  if (stored === '1') return true;
+  if (stored === '0') return false;
+  return window.innerWidth < 1280;
+}
+
+function useCollapsed(): [boolean, (next: boolean) => void] {
+  const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
+  const set = useCallback((next: boolean) => {
+    try {
+      localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+    } catch {
+      // Storage unavailable: the rail simply will not persist.
+    }
+    window.dispatchEvent(new Event(COLLAPSE_EVENT));
+  }, []);
+  return [collapsed, set];
+}
+
+const DOT: Record<string, string> = {
+  OPEN: 'bg-success',
+  BUSY: 'bg-warning',
+  CLOSED: 'bg-destructive',
+};
+
+function ShopIdentity({ name, collapsed }: { name: string; collapsed: boolean }) {
+  const t = useTranslations('vendor.hours');
+  const profile = useVendorProfile();
+  const availability = profile.data?.availability;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2.5 rounded-xl',
+        collapsed ? 'justify-center p-1' : 'bg-sidebar-accent/60 border-sidebar-border border p-2.5',
+      )}
+      title={collapsed ? name : undefined}
+    >
+      <span className="relative">
+        <ShopAvatar name={name} />
+        {availability ? (
+          <span
+            aria-hidden
+            className={cn(
+              'ring-sidebar absolute -end-0.5 -bottom-0.5 size-3 rounded-full ring-2',
+              DOT[availability],
+              availability === 'OPEN' && 'animate-pulse',
+            )}
+          />
+        ) : null}
+      </span>
+      {collapsed ? null : (
+        <div className="min-w-0">
+          <p className="truncate text-sm leading-tight font-semibold">{name}</p>
+          <p className="text-muted-foreground truncate text-xs">
+            {availability ? t(`availability.${availability}`) : ' '}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Vendor app shell: collapsible sidebar on desktop, sheet on mobile, a header that names the current page. */
 export function VendorShell({
   children,
   vendorName,
   vendorStatus,
+  rejectionReason,
+  isOwner,
 }: {
   children: React.ReactNode;
   vendorName: string;
-  vendorStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  vendorStatus: 'UNREGISTERED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  rejectionReason: string | null;
+  isOwner: boolean;
 }) {
   const t = useTranslations();
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useCollapsed();
+  const restricted = vendorStatus !== 'APPROVED';
+  const onRegister = pathname === '/shop/register' || pathname.startsWith('/shop/register/');
+  const canRegisterNow = vendorStatus === 'UNREGISTERED' || vendorStatus === 'REJECTED';
+  const showStatus = restricted && !(onRegister && canRegisterNow);
+  const current = activeNavItem(pathname);
+
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem('dh-theme');
+    } catch {
+      // Storage unavailable: fall back to the cookie / system preference below.
+    }
+    const cookieDark = document.cookie.split('; ').includes('dh-theme=dark');
+    const dark = stored ? stored === 'dark' : cookieDark || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', dark);
+    // Leaving the panel must not leave the customer or login pages dark.
+    return () => document.documentElement.classList.remove('dark');
+  }, []);
 
   return (
-    <div className="bg-muted/30 min-h-dvh">
-      {/* Desktop sidebar: fixed, scrollable */}
-      <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-64 overflow-y-auto border-e lg:block">
-        <div className="border-sidebar-border flex h-14 items-center gap-2 border-b px-5">
-          <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg text-sm font-semibold">
-            D
-          </span>
-          <Link href="/vendor" className="font-semibold tracking-tight">
-            {t('common.appName')}
-          </Link>
-          <span className="text-muted-foreground ms-auto text-xs">{t('vendor.panel')}</span>
-        </div>
-        <VendorSidebarNav onNavigate={undefined} />
-      </aside>
+    <div className="bg-muted/30 min-h-dvh" style={{ ['--sb-w' as string]: collapsed ? '4.5rem' : '16.5rem' }}>
+      <a
+        href="#main"
+        className="bg-primary text-primary-foreground sr-only z-50 rounded-md px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
+      >
+        {t('vendor.shell.skipToContent')}
+      </a>
 
-      {/* Main content area */}
-      <div className="lg:ps-64">
-        {/* Header: sticky, with mobile nav, availability toggle, user menu */}
-        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-4 backdrop-blur">
-          <MobileNav adminRole={null} />
+      {!restricted ? (
+        <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-[var(--sb-w)] flex-col border-e transition-[width] duration-300 ease-[var(--ease-out)] md:flex">
+          <div
+            className={cn(
+              'border-sidebar-border flex h-14 shrink-0 items-center gap-2 border-b',
+              collapsed ? 'justify-center px-0' : 'px-4',
+            )}
+          >
+            <Link href="/shop/orders" className="flex items-center gap-2.5" aria-label={t('common.appName')}>
+              <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg text-sm font-semibold shadow-xs">
+                D
+              </span>
+              {collapsed ? null : <span className="font-semibold tracking-tight">{t('common.appName')}</span>}
+            </Link>
+            {collapsed ? null : (
+              <span className="bg-accent text-accent-foreground ms-auto rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+                {t('vendor.panel')}
+              </span>
+            )}
+          </div>
 
-          <Link href="/vendor" className="font-semibold lg:hidden">
-            {t('common.appName')}
-          </Link>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <VendorSidebarNav isOwner={isOwner} collapsed={collapsed} />
+          </div>
 
-          {/* Availability toggle (only show if vendor is APPROVED) */}
-          {vendorStatus === 'APPROVED' && (
-            <div className="hidden sm:block ms-auto">
-              <AvailabilityToggle />
-            </div>
+          <div className="border-sidebar-border shrink-0 space-y-2 border-t p-2.5">
+            <ShopIdentity name={vendorName} collapsed={collapsed} />
+            <Button
+              variant="ghost"
+              size={collapsed ? 'icon' : 'sm'}
+              className={cn('text-muted-foreground w-full', collapsed ? 'mx-auto' : 'justify-start gap-2')}
+              onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? t('vendor.shell.expand') : t('vendor.shell.collapse')}
+              title={collapsed ? t('vendor.shell.expand') : t('vendor.shell.collapse')}
+            >
+              {collapsed ? (
+                <PanelLeftOpenIcon className="rtl:-scale-x-100" />
+              ) : (
+                <PanelLeftCloseIcon className="rtl:-scale-x-100" />
+              )}
+              {collapsed ? null : <span className="text-xs">{t('vendor.shell.collapse')}</span>}
+            </Button>
+          </div>
+        </aside>
+      ) : null}
+
+      <div
+        className={cn(!restricted && 'transition-[padding] duration-300 ease-[var(--ease-out)] md:ps-[var(--sb-w)]')}
+      >
+        <header
+          className={cn(
+            'bg-background/85 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:px-5',
+            PHONE_TAP,
           )}
+        >
+          <VendorMobileNav restricted={restricted} isOwner={isOwner} vendorName={vendorName} />
 
-          <div className="ms-auto flex items-center gap-2">
-            <UserMenu name={vendorName} email="" adminRole={null} />
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
+            <span className="text-muted-foreground hidden max-w-[16rem] truncate sm:inline" data-testid="vendor-name">
+              {vendorName}
+            </span>
+            {current ? (
+              <>
+                <ChevronRightIcon className="text-muted-foreground hidden size-3.5 shrink-0 sm:block rtl:-scale-x-100" />
+                <span className="truncate font-semibold" aria-current="page">
+                  {t(current.labelKey)}
+                </span>
+              </>
+            ) : (
+              <span className="truncate font-semibold sm:hidden">{vendorName}</span>
+            )}
+          </nav>
+
+          <div className="ms-auto flex items-center gap-1.5">
+            {vendorStatus === 'APPROVED' ? (
+              <div className="hidden sm:block">
+                <AvailabilityToggle />
+              </div>
+            ) : null}
+            <ThemeToggle />
+            <VendorUserMenu name={vendorName} />
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="mx-auto w-full max-w-[1600px] p-4 sm:p-6">{children}</main>
+        {vendorStatus === 'APPROVED' ? (
+          <div className={cn('px-3 pt-3 sm:hidden', PHONE_TAP)}>
+            <AvailabilityToggle className="w-full" />
+          </div>
+        ) : null}
+
+        <main id="main" className={cn('@container mx-auto w-full max-w-[2400px] p-3 sm:p-6 2xl:p-8', PHONE_TAP)}>
+          {showStatus ? (
+            <VendorStatusScreen status={vendorStatus as BlockedStatus} reason={rejectionReason} isOwner={isOwner} />
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

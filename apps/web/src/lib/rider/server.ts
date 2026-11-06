@@ -12,10 +12,7 @@ export class RiderSessionRequiredError extends Error {
   }
 }
 
-export async function fetchRiderApi<T>(
-  path: string,
-  options: RequestOptions = {},
-): Promise<ApiResult<T>> {
+export async function fetchRiderApi<T>(path: string, options: RequestOptions = {}): Promise<ApiResult<T>> {
   const session = await readRiderSession();
   if (!session) throw new RiderSessionRequiredError();
   return apiFetch<T>(path, { ...options, accessToken: session.accessToken });
@@ -23,7 +20,9 @@ export async function fetchRiderApi<T>(
 
 export async function fetchForRiderPage<T>(
   path: string,
-  options: RequestOptions & { locale: string; returnTo?: string } = { locale: 'en' },
+  options: RequestOptions & { locale: string; returnTo?: string } = {
+    locale: 'en',
+  },
 ): Promise<ApiResult<T>> {
   const { locale, returnTo, ...rest } = options;
   try {

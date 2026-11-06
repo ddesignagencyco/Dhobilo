@@ -42,7 +42,7 @@
 
 ### OPS
 - [ ] **OPS-0.1** Create monorepo with npm workspaces (`apps/api`, `apps/web`, `packages/shared`, `packages/config`); shared eslint/tsconfig/prettier presets (TRD §4)
-- [ ] **OPS-0.2** Multi-stage Dockerfiles (api/worker share an image, web) + `docker-compose.yml` with Postgres 16, Redis 7, MailHog, migrate, api, worker, web, k6 profile (TRD §17.1)
+- [ ] **OPS-0.2** Multi-stage Dockerfiles (api/worker share an image, web) + `docker-compose.yml` with Postgres 16, Redis 7, migrate, api, worker, web, k6 profile (TRD §17.1)
 - [ ] **OPS-0.3** `.env.example`, secret-handling rules, `.gitignore`; document one-command start (`docker compose up`)
 - [ ] **OPS-0.4** CI pipeline: lint → typecheck → unit → prisma validate/migrate on throwaway PG → build images (TRD §17.4)
 - [ ] **OPS-0.5** Husky + lint-staged + commitlint; branch protection and PR template
@@ -56,7 +56,7 @@
 - [ ] **BE-0.4** Seed script: cities, service categories, admin user, global commission rule, demo data
 - [ ] **BE-0.5** Common layer: response envelope, global exception filter with error codes, `ValidationPipe`, request-id middleware, pino logger with PII redaction
 - [ ] **BE-0.6** Redis module + BullMQ module + Bull Board (admin-only, flag-controlled)
-- [ ] **BE-0.7** Mail module (Nodemailer): MailHog locally, Google SMTP via env; test email endpoint (dev only)
+- [ ] **BE-0.7** Mail module (Nodemailer): Google SMTP via env; test email endpoint (dev only)
 - [ ] **BE-0.8** Cloudinary module: signed-upload endpoint skeleton + server-side verification helper
 - [ ] **BE-0.9** Health module: `/health/live`, `/health/ready` (DB + Redis)
 - [ ] **BE-0.10** Swagger/OpenAPI generation + CI artifact for client generation

@@ -22,6 +22,14 @@ next-env.d.ts
 apps/web/AGENTS.md
 *.tsbuildinfo
 
-# Superpowers context files (local only, not for GitHub)
-docs/superpowers/plans/*.md
+# AI assistant files (local only, never commit)
+.claude/
 .superpowers/
+docs/superpowers/
+CLAUDE.md
+**/CLAUDE.md
+AGENTS.md
+**/AGENTS.md
+GEMINI.md
+**/GEMINI.md
+.mcp.json

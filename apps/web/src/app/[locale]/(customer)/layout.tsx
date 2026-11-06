@@ -1,14 +1,15 @@
 import { redirect } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/navigation';
+import { setRequestLocale } from 'next-intl/server';
+import '@/styles/customer.css';
 import { BottomNav } from '@/components/customer/bottom-nav';
-import { CartButton } from '@/components/customer/cart/cart-button';
+import { CustomerHeader } from '@/components/customer/customer-header';
 import { CartProvider } from '@/lib/customer/cart-provider';
 import { currentCustomer } from '@/lib/customer/server';
 
 /**
- * The customer shell: a compact top bar and a fixed bottom nav, the pattern customers already know
- * from every other delivery app. Mobile-first; the content column maxes out at 3xl on a tablet.
+ * The customer shell. Phones get a compact top bar and a fixed bottom nav, the pattern customers already know
+ * from every other delivery app. From md up the bottom nav gives way to a full top navigation and the content
+ * uses the screen: a fluid container capped at 1440px so ultrawide monitors do not stretch it.
  *
  * Middleware already guards these routes. The cookie read here is belt and braces (and cheap), so a
  * direct server render can never show a shell without a customer.
@@ -26,35 +27,16 @@ export default async function CustomerLayout({
   const customer = await currentCustomer();
   if (!customer) redirect(`/${locale}/login`);
 
-  const t = await getTranslations();
   const initial = (customer.name?.trim() || customer.phone || '?').slice(0, 1).toUpperCase();
 
   return (
     <CartProvider>
       <div className="bg-muted/30 flex min-h-dvh flex-col">
-        <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-20 border-b backdrop-blur">
-          <div className="mx-auto flex h-14 w-full max-w-3xl items-center gap-3 px-4">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-lg text-sm font-semibold">
-                D
-              </span>
-              <span className="font-semibold tracking-tight">{t('customer.brand')}</span>
-            </Link>
+        <CustomerHeader initial={initial} name={customer.name?.trim() || customer.phone || ''} />
 
-            <div className="ms-auto flex items-center gap-2">
-              <CartButton />
-              <Link
-                href="/profile"
-                className="bg-accent text-accent-foreground flex size-9 items-center justify-center rounded-full text-sm font-semibold"
-                aria-label={t('customer.nav.profile')}
-              >
-                {initial}
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-24">{children}</main>
+        <main className="mx-auto w-full max-w-[1600px] flex-1 px-4 pt-3 pb-28 sm:px-6 md:pt-6 md:pb-12 lg:px-10">
+          {children}
+        </main>
 
         <BottomNav />
       </div>

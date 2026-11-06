@@ -209,7 +209,7 @@ describe('Order timers and notification delivery (e2e, with the worker running)'
 
       expect(whatsapp.send).toHaveBeenCalledWith(expect.objectContaining({ to: s.customer.user.phone, templateName: 'order_placed_en', language: 'en', params: [o.orderNo, s.vendor.vendor.businessName] }));
       expect(whatsapp.send).toHaveBeenCalledWith(expect.objectContaining({ to: s.vendor.owner.user.phone, templateName: 'vendor_new_order_en' }));
-      expect(mail.send).toHaveBeenCalledWith(expect.objectContaining({ subject: 'New order', text: expect.stringContaining(o.orderNo) }));
+      expect(mail.send).toHaveBeenCalledWith(expect.objectContaining({ subject: expect.stringContaining(o.orderNo), text: expect.stringContaining(o.orderNo) }));
       expect(push.send).toHaveBeenCalledWith(`device-${s.customer.user.id}-aaaa`, expect.objectContaining({ title: 'Order placed', data: expect.objectContaining({ orderId: o.id }) }));
     });
 

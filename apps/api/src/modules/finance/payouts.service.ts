@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, Optional } from '@nestjs/common';
 import { LedgerType, PayoutStatus, Prisma } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-codes';
@@ -6,6 +6,7 @@ import { fmt, money, parseMoney } from '../../common/money/money';
 import { decodeCursor, encodeCursor } from '../../common/pagination/cursor';
 import { Clock } from '../../common/time/clock';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { LedgerService } from './ledger.service';
 import { ListPayoutsQueryDto, PayPayoutDto, RejectPayoutDto, RequestPayoutDto } from './dto/finance.dto';
 
@@ -19,13 +20,14 @@ export class PayoutsService {
     private readonly prisma: PrismaService,
     private readonly clock: Clock,
     private readonly ledger: LedgerService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   /** Vendor asks for money; the quote is re-checked under a lock so two requests cannot both spend the same balance. */
   async request(vendorId: string, dto: RequestPayoutDto) {
     const amount = parseMoney(dto.amount);
     if (!amount || amount.lte(0)) throw new AppException(ErrorCode.VALIDATION_FAILED, 'Enter a positive payout amount.', HttpStatus.BAD_REQUEST);
-    return this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, `payout:vendor:${vendorId}`);
       const available = await this.available(tx, vendorId);
       if (amount.gt(available)) {
@@ -36,8 +38,10 @@ export class PayoutsService {
       const payout = await tx.payout.create({
         data: { vendorId, amount, method: dto.method, accountRef: dto.accountRef, note: dto.note },
       });
-      return this.view(payout);
+      return payout;
     });
+    void this.notifications?.notifyPayout(created, 'REQUESTED');
+    return this.view(created);
   }
 
   async listMine(vendorId: string) {
@@ -74,6 +78,7 @@ export class PayoutsService {
       data: { status: PayoutStatus.APPROVED, processedBy: adminId },
     });
     if (changed.count !== 1) throw this.conflict();
+    await this.notify(id, 'APPROVED');
     return this.get(id);
   }
 
@@ -83,6 +88,7 @@ export class PayoutsService {
       data: { status: PayoutStatus.REJECTED, processedAt: this.clock.now(), processedBy: adminId, note: dto.reason },
     });
     if (changed.count !== 1) throw this.conflict();
+    await this.notify(id, 'REJECTED');
     return this.get(id);
   }
 
@@ -106,7 +112,13 @@ export class PayoutsService {
       }
       return tx.payout.findUniqueOrThrow({ where: { id } });
     });
+    void this.notifications?.notifyPayout(payout, 'PAID');
     return this.view(payout);
+  }
+
+  private async notify(id: string, kind: 'APPROVED' | 'REJECTED') {
+    const payout = await this.prisma.payout.findUnique({ where: { id } });
+    if (payout) void this.notifications?.notifyPayout(payout, kind);
   }
 
   private async get(id: string) {

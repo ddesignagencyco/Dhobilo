@@ -1,71 +1,90 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Store } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useDiscovery, type DiscoveryFilters } from '@/lib/customer/hooks/use-discovery';
-import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDiscovery, type DiscoveryFilters } from '@/lib/customer/hooks/use-discovery';
 import { VendorCard } from './vendor-card';
 
 interface VendorListProps {
   lat: number;
   lng: number;
   filters?: DiscoveryFilters;
+  limit?: number;
 }
 
-export function VendorList({ lat, lng, filters = {} }: VendorListProps) {
+function CardSkeleton() {
+  return (
+    <div className="bg-card space-y-3 rounded-2xl border p-4">
+      <div className="flex gap-3">
+        <Skeleton className="size-14 rounded-2xl" />
+        <div className="flex-1 space-y-2 pt-1">
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      </div>
+      <Skeleton className="h-3 w-full" />
+      <Skeleton className="h-7 w-1/3" />
+    </div>
+  );
+}
+
+export function VendorList({ lat, lng, filters = {}, limit }: VendorListProps) {
   const t = useTranslations('customer.discovery');
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } = useDiscovery(lat, lng, filters);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const paged = limit === undefined;
 
   useEffect(() => {
+    if (!paged) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) void fetchNextPage();
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: '200px' },
     );
 
     if (loadMoreRef.current) observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [paged, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const vendors = data?.pages.flatMap((page) => page.items) ?? [];
+  const all = data?.pages.flatMap((page) => page.items) ?? [];
+  const vendors = limit ? all.slice(0, limit) : all;
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-40" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
+        {Array.from({ length: limit ?? 6 }).map((_, index) => (
+          <CardSkeleton key={index} />
         ))}
       </div>
     );
   }
 
   if (vendors.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-        <p className="text-muted-foreground">{t('empty')}</p>
-        <p className="text-muted-foreground text-sm">{t('emptyHint')}</p>
-      </div>
-    );
+    return <EmptyState icon={<Store aria-hidden />} title={t('empty')} description={t('emptyHint')} />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
         {vendors.map((vendor) => (
           <VendorCard key={vendor.id} vendor={vendor} />
         ))}
       </div>
 
-      <div ref={loadMoreRef} className="flex justify-center pt-8">
-        {hasNextPage ? (
-          <Button onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
-            {isFetchingNextPage ? t('loading') : t('loadMore')}
-          </Button>
-        ) : null}
-      </div>
+      {paged ? (
+        <>
+          <div ref={loadMoreRef} className="h-1" aria-hidden />
+          {isFetchingNextPage ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
+              <CardSkeleton />
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }

@@ -12,7 +12,15 @@ import { humanise } from '@/lib/format';
 /** Sentinel for "no filter". Radix Select cannot hold an empty-string value. */
 export const ANY = '__any__';
 
-export function FilterBar({ children, onClear, hasFilters }: { children: ReactNode; onClear?: () => void; hasFilters?: boolean }) {
+export function FilterBar({
+  children,
+  onClear,
+  hasFilters,
+}: {
+  children: ReactNode;
+  onClear?: () => void;
+  hasFilters?: boolean;
+}) {
   const t = useTranslations('common');
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">

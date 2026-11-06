@@ -1,14 +1,35 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
+import type { Env } from '../../config/env';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 import { QUEUES } from '../../infra/queue/queues';
+import { resolvePrefs } from './notification-prefs';
+import { rs } from './order-email-data';
 import { SEND_EMAIL_JOB, SEND_SMS_JOB, SendEmailJob, SendSmsJob } from './notifications.jobs';
+import { DEFAULT_APP_URL, renderEmail } from './templates/email';
+import type { PayoutKind } from './templates/email';
 
 export type VendorDecision = 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'REACTIVATED';
 
 interface Recipient {
   phone: string;
   email?: string | null;
+  /** The recipient's language; English when unknown. */
+  locale?: 'EN' | 'UR' | null;
+}
+
+const lang = (r: Recipient) => (r.locale === 'UR' ? 'ur' : 'en');
+
+/** What the payout email needs from a payout row. */
+export interface PayoutForEmail {
+  vendorId: string;
+  amount: { toString(): string };
+  method: string;
+  accountRef: string;
+  txnRef?: string | null;
+  note?: string | null;
 }
 
 /** Plain-English decision texts. Per-locale (en/ur) templates arrive with the Phase 4 notifications orchestrator. */
@@ -61,7 +82,15 @@ export function riderDecisionMessage(decision: VendorDecision, reason?: string):
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(@InjectQueue(QUEUES.NOTIFICATIONS) private readonly queue: Queue) {}
+  constructor(
+    @InjectQueue(QUEUES.NOTIFICATIONS) private readonly queue: Queue,
+    @Optional() private readonly prisma?: PrismaService,
+    @Optional() private readonly config?: ConfigService<Env, true>,
+  ) {}
+
+  private get appUrl(): string {
+    return this.config?.get('APP_URL', { infer: true }) ?? DEFAULT_APP_URL;
+  }
 
   /**
    * Tells a vendor owner about an admin decision by email (if known) and SMS. Never throws: the decision is
@@ -74,7 +103,8 @@ export class NotificationsService {
         this.queue.add(SEND_SMS_JOB, { to: to.phone, message: msg.sms, requestId } satisfies SendSmsJob),
       ];
       if (to.email) {
-        jobs.push(this.queue.add(SEND_EMAIL_JOB, { to: to.email, subject: msg.subject, text: msg.text, requestId } satisfies SendEmailJob));
+        const email = renderEmail('vendor_decision', { name: businessName, decision, reason }, lang(to), { appUrl: this.appUrl });
+        jobs.push(this.queue.add(SEND_EMAIL_JOB, { to: to.email, subject: email.subject, text: email.text, html: email.html, requestId } satisfies SendEmailJob));
       }
       await Promise.all(jobs);
     } catch (err) {
@@ -82,12 +112,52 @@ export class NotificationsService {
     }
   }
 
-  /** Tells a rider about an admin decision by SMS. Never throws, for the same reason as notifyVendorDecision. */
+  /** Tells a rider about an admin decision by SMS, and by email when they have one. Never throws, for the same reason as notifyVendorDecision. */
   async notifyRiderDecision(to: Recipient, decision: VendorDecision, reason?: string, requestId?: string) {
     try {
-      await this.queue.add(SEND_SMS_JOB, { to: to.phone, message: riderDecisionMessage(decision, reason), requestId } satisfies SendSmsJob);
+      const jobs: Promise<unknown>[] = [this.queue.add(SEND_SMS_JOB, { to: to.phone, message: riderDecisionMessage(decision, reason), requestId } satisfies SendSmsJob)];
+      if (to.email) {
+        const email = renderEmail('rider_decision', { decision, reason }, lang(to), { appUrl: this.appUrl });
+        jobs.push(this.queue.add(SEND_EMAIL_JOB, { to: to.email, subject: email.subject, text: email.text, html: email.html, requestId } satisfies SendEmailJob));
+      }
+      await Promise.all(jobs);
     } catch (err) {
       this.logger.error({ err, decision, requestId }, 'Could not enqueue rider decision notification');
+    }
+  }
+
+  /**
+   * Emails the vendor owner about a payout (requested, approved, paid or rejected), if they have an email address
+   * and allow email. Never throws: the payout change is already committed.
+   */
+  async notifyPayout(payout: PayoutForEmail, kind: PayoutKind, requestId?: string) {
+    if (!this.prisma) return;
+    try {
+      const vendor = await this.prisma.vendor.findUnique({
+        where: { id: payout.vendorId },
+        select: { businessName: true, owner: { select: { email: true, locale: true, notificationPrefs: true } } },
+      });
+      const owner = vendor?.owner;
+      if (!vendor || !owner?.email || !resolvePrefs(owner.notificationPrefs).email) return;
+      const email = renderEmail(
+        'vendor_payout',
+        {
+          vendor: vendor.businessName,
+          payout: {
+            kind,
+            amount: rs(payout.amount),
+            method: owner.locale === 'UR' ? (payout.method === 'WALLET' ? 'موبائل والیٹ' : 'بینک ٹرانسفر') : payout.method === 'WALLET' ? 'Mobile wallet' : 'Bank transfer',
+            accountRef: `\u2022\u2022\u2022\u2022${payout.accountRef.slice(-4)}`,
+            txnRef: payout.txnRef ?? undefined,
+            note: kind === 'REJECTED' ? (payout.note ?? undefined) : undefined,
+          },
+        },
+        owner.locale === 'UR' ? 'ur' : 'en',
+        { appUrl: this.appUrl },
+      );
+      await this.queue.add(SEND_EMAIL_JOB, { to: owner.email, subject: email.subject, text: email.text, html: email.html, requestId } satisfies SendEmailJob);
+    } catch (err) {
+      this.logger.error({ err, kind, requestId }, 'Could not enqueue a payout email');
     }
   }
 

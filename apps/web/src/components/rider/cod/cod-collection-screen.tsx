@@ -1,116 +1,96 @@
 'use client';
 
 import { useState } from 'react';
+import { Banknote, HandCoins } from 'lucide-react';
+import { formatMoney } from '@dhoblio/shared';
 import { useTranslations } from 'next-intl';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRiderCod } from '@/lib/rider/hooks';
+import { MoneyCount } from '../money-count';
+
+const LIMIT = 8;
 
 export function CodCollectionScreen() {
   const t = useTranslations('rider.cod');
-  const [balance, setBalance] = useState(8750);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [showDepositForm, setShowDepositForm] = useState(false);
+  const { data, isLoading, isError } = useRiderCod();
+  const [showAll, setShowAll] = useState(false);
 
-  const codHistory = [
-    { id: 'ORD001', amount: 2500, collectedAt: '2 hours ago', status: 'COLLECTED' },
-    { id: 'ORD002', amount: 1850, collectedAt: '4 hours ago', status: 'COLLECTED' },
-    { id: 'ORD003', amount: 3400, collectedAt: 'Today, 9:30 AM', status: 'COLLECTED' },
-  ];
-
-  const handleDeposit = () => {
-    const amount = parseFloat(depositAmount);
-    if (!amount || amount <= 0) {
-      toast.error(t('invalidAmount'));
-      return;
-    }
-    toast.success(t('depositSubmitted'));
-    setBalance((prev) => prev - amount);
-    setDepositAmount('');
-    setShowDepositForm(false);
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-40 rounded-3xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+    );
+  }
+  if (isError || !data) return <EmptyState icon={<Banknote aria-hidden />} title={t('error')} />;
 
   return (
-    <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-200">
-        <p className="text-sm text-muted-foreground font-medium">{t('cashBalance')}</p>
-        <p className="text-4xl font-bold mt-3">Rs. {balance.toLocaleString()}</p>
-        <p className="text-xs text-muted-foreground mt-2">
-          {t('hint')}: {balance > 0 ? t('readyToDeposit') : t('noCash')}
-        </p>
-      </Card>
-
-      {!showDepositForm ? (
-        <Button
-          onClick={() => setShowDepositForm(true)}
-          className="w-full"
-          size="lg"
-          disabled={balance === 0}
-        >
-          {t('depositCash')}
-        </Button>
-      ) : (
-        <Card className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">{t('amount')}</label>
-              <div className="relative mt-2">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">Rs.</span>
-                <Input
-                  type="number"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="pl-10"
-                  max={balance}
-                  step="50"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('available')}: Rs. {balance.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDepositForm(false)}
-                className="flex-1"
-              >
-                {t('cancel')}
-              </Button>
-              <Button onClick={handleDeposit} className="flex-1">
-                {t('confirmDeposit')}
-              </Button>
-            </div>
+    <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+      <div className="space-y-5 lg:sticky lg:top-24">
+        <section className="bg-card animate-pop space-y-3 rounded-3xl border p-6 shadow-xs">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-muted-foreground text-sm font-medium">{t('cashBalance')}</p>
+            <span className="bg-warning/15 text-warning-text flex size-10 items-center justify-center rounded-full">
+              <HandCoins className="size-5" aria-hidden />
+            </span>
           </div>
-        </Card>
-      )}
+          <p className="tabular text-4xl font-semibold tracking-tight">
+            <MoneyCount value={data.cashInHand} />
+          </p>
+          <p className="text-muted-foreground text-sm">
+            <AnimatedNumber value={data.unsettledOrders} /> {t('unsettled')}
+          </p>
+        </section>
 
-      <div>
-        <h3 className="font-semibold mb-4">{t('collectionHistory')}</h3>
-        <div className="space-y-3">
-          {codHistory.map((entry) => (
-            <Card key={entry.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{entry.id}</p>
-                  <p className="text-sm text-muted-foreground">{entry.collectedAt}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">Rs. {entry.amount.toLocaleString()}</p>
-                  <Badge className="mt-1">{t('collected')}</Badge>
-                </div>
-              </div>
-            </Card>
-          ))}
+        <div className="bg-muted/60 text-muted-foreground max-lg:hidden rounded-2xl p-4 text-xs leading-relaxed">
+          <p className="text-foreground mb-1 font-medium">{t('notice')}</p>
+          <p>{t('noticeText')}</p>
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground bg-muted/50 p-4 rounded-lg">
-        <p className="font-medium mb-2">{t('notice')}</p>
+      <section className="space-y-3">
+        <h3 className="font-semibold">{t('collectionHistory')}</h3>
+        {data.collections.length === 0 ? (
+          <EmptyState icon={<Banknote aria-hidden />} title={t('noCash')} />
+        ) : (
+          <ul className="stagger grid gap-2.5 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            {(showAll ? data.collections : data.collections.slice(0, LIMIT)).map((entry) => (
+              <li
+                key={entry.id}
+                className="bg-card flex items-center justify-between gap-3 rounded-2xl border p-4 shadow-xs"
+              >
+                <div className="min-w-0">
+                  <p className="tabular font-medium break-words" dir="ltr">
+                    {entry.orderNo}
+                  </p>
+                  <p className="text-muted-foreground tabular text-xs">
+                    {new Date(entry.collectedAt).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
+                </div>
+                <div className="space-y-1 text-end">
+                  <p className="tabular font-semibold">{formatMoney(entry.amount)}</p>
+                  <Badge variant={entry.settled ? 'success' : 'warning'}>
+                    {entry.settled ? t('settled') : t('collected')}
+                  </Badge>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {data.collections.length > LIMIT && !showAll ? (
+          <Button variant="outline" size="lg" className="h-12 w-full md:w-auto" onClick={() => setShowAll(true)}>
+            {t('showMore', { count: data.collections.length - LIMIT })}
+          </Button>
+        ) : null}
+      </section>
+
+      <div className="bg-muted/60 text-muted-foreground rounded-2xl p-4 text-xs leading-relaxed lg:hidden">
+        <p className="text-foreground mb-1 font-medium">{t('notice')}</p>
         <p>{t('noticeText')}</p>
       </div>
     </div>

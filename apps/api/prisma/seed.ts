@@ -55,9 +55,15 @@ async function seedDemoVendors() {
   const categories = new Map((await prisma.serviceCategory.findMany()).map((c) => [c.name, c.id]));
   const cities = await prisma.city.findMany({ where: { name: { in: Object.keys(CITY_CENTRES) } }, orderBy: { id: 'asc' } });
 
+  const SHOPS: Record<string, { name: string; owner: string; email: string; ref: string; addr: string }> = {
+    Lahore: { name: 'Al-Karam Dry Cleaners', owner: 'Usman Ghani', email: 'usman.ghani@dhoblio.local', ref: 'USMA0011', addr: 'Shop 12, Main Boulevard, Gulberg III, Lahore' },
+    Karachi: { name: 'Burns Road Dry Cleaners', owner: 'Syed Asif Raza', email: 'asif.raza@dhoblio.local', ref: 'ASIF0012', addr: 'Shop 5, Burns Road, Saddar, Karachi' },
+    Islamabad: { name: 'F-7 Markaz Laundry', owner: 'Tariq Mehmood', email: 'tariq.mehmood@dhoblio.local', ref: 'TARI0013', addr: 'Shop 9, Jinnah Super Market, F-7 Markaz, Islamabad' },
+  };
+  const PENDING_SHOP = { name: 'Gulshan Steam Press', owner: 'Rana Imtiaz Ahmad', email: 'imtiaz.ahmad@dhoblio.local', ref: 'RANA0019', addr: 'Shop 3, Main Market, Gulberg II, Lahore' };
   const demos = [
-    ...cities.map((city, i) => ({ city, n: i + 1, status: VendorStatus.APPROVED, name: `Demo Laundry ${city.name}` })),
-    { city: cities.find((c) => c.name === 'Lahore') ?? cities[0], n: 9, status: VendorStatus.PENDING, name: 'Demo Pending Laundry' },
+    ...cities.map((city, i) => ({ city, n: i + 1, status: VendorStatus.APPROVED, ...(SHOPS[city.name] ?? SHOPS.Lahore) })),
+    { city: cities.find((c) => c.name === 'Lahore') ?? cities[0], n: 9, status: VendorStatus.PENDING, ...PENDING_SHOP },
   ];
 
   for (const d of demos) {
@@ -70,11 +76,11 @@ async function seedDemoVendors() {
       update: {},
       create: {
         phone,
-        email: `demo-vendor-${d.n}@dhoblio.local`,
-        name: `Demo Owner ${d.n}`,
+        email: d.email,
+        name: d.owner,
         role: Role.VENDOR_OWNER,
         phoneVerifiedAt: new Date(),
-        referralCode: `DEMOV${d.n}00`,
+        referralCode: d.ref,
       },
     });
     const vendor = await prisma.vendor.upsert({
@@ -84,8 +90,8 @@ async function seedDemoVendors() {
         ownerId: owner.id,
         cityId: d.city.id,
         businessName: d.name,
-        description: 'Demo vendor for local development',
-        addressLine: `Main Market, ${d.city.name}`,
+        description: 'Wash, iron and dry cleaning for everyday and wedding wear, with free pickup and delivery.',
+        addressLine: d.addr,
         lat: centre.lat + d.n * 0.003,
         lng: centre.lng + d.n * 0.003,
         cnicEnc: crypto.encrypt(cnic, 'vendor.cnic'),
@@ -100,8 +106,8 @@ async function seedDemoVendors() {
         data: [DocType.CNIC_FRONT, DocType.CNIC_BACK, DocType.SHOP_PHOTO].map((type) => ({
           vendorId: vendor.id,
           type,
-          publicId: `dhoblio/seed/demo/${vendor.id}/${type.toLowerCase()}`,
-          url: `https://example.invalid/demo/${type.toLowerCase()}.jpg`,
+          publicId: `dhoblio/seed/${vendor.id}/${type.toLowerCase()}`,
+          url: `https://res.cloudinary.com/dhoblio/image/upload/seed/${vendor.id}/${type.toLowerCase()}.jpg`,
           ...(approved ? { verifiedAt: new Date() } : {}),
         })),
       });
@@ -110,7 +116,7 @@ async function seedDemoVendors() {
 
     await prisma.vendorHours.deleteMany({ where: { vendorId: vendor.id } });
     await prisma.vendorHours.createMany({
-      // Open around the clock so the demo always shows up in discovery, whatever time you try it.
+      // Open around the clock so the starter shops always show up in discovery, whatever time you try it.
       data: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({ vendorId: vendor.id, dayOfWeek, opensAt: 0, closesAt: 1440 })),
     });
     for (const [itemName, itemNameUr, category, serviceType, price, turnaroundHours] of DEMO_ITEMS) {
@@ -123,13 +129,13 @@ async function seedDemoVendors() {
       });
     }
   }
-  console.log(`Demo vendors ready (${demos.length}); owners sign in with +923000000011 ... via the OTP bypass code`);
+  console.log(`Starter shops ready (${demos.length}); owners sign in with +923000000011 ... via the OTP bypass code`);
 }
 
 /**
  * One demo account per non-admin role so the whole flow (customer → vendor → rider → admin) can be
  * walked through on a fresh database. All of them sign in with phone + the dev OTP bypass; the email
- * is there for identification/reporting and matches the `demo-*@dhoblio.local` pattern.
+ * is there for identification and reporting.
  */
 async function seedDemoAccounts() {
   const crypto = demoCrypto();
@@ -149,11 +155,11 @@ async function seedDemoAccounts() {
     update: {},
     create: {
       phone: '+923000000001',
-      email: 'customer@dhoblio.local',
-      name: 'Demo Customer',
+      email: 'hira.fatima@dhoblio.local',
+      name: 'Hira Fatima',
       role: Role.CUSTOMER,
       phoneVerifiedAt: new Date(),
-      referralCode: 'DEMOC100',
+      referralCode: 'HIRA0001',
     },
   });
   const hasAddress = await prisma.address.findFirst({ where: { userId: customer.id, deletedAt: null } });
@@ -162,7 +168,7 @@ async function seedDemoAccounts() {
       data: {
         userId: customer.id,
         label: 'Home',
-        line1: '12 Gulberg Main Boulevard',
+        line1: 'House 12, Main Boulevard',
         area: 'Gulberg III',
         cityId: lahore.id,
         lat: CITY_CENTRES.Lahore.lat,
@@ -178,11 +184,11 @@ async function seedDemoAccounts() {
     update: {},
     create: {
       phone: '+923000000031',
-      email: 'staff@dhoblio.local',
-      name: 'Demo Staff',
+      email: 'kashif.ali@dhoblio.local',
+      name: 'Kashif Ali',
       role: Role.VENDOR_STAFF,
       phoneVerifiedAt: new Date(),
-      referralCode: 'DEMOS100',
+      referralCode: 'KASH0031',
     },
   });
   const vendor = await prisma.vendor.findFirst({ where: { owner: { phone: '+923000000011' } } });
@@ -200,11 +206,11 @@ async function seedDemoAccounts() {
     update: {},
     create: {
       phone: '+923000000021',
-      email: 'rider@dhoblio.local',
-      name: 'Demo Rider',
+      email: 'rizwan.akhtar@dhoblio.local',
+      name: 'Rizwan Akhtar',
       role: Role.RIDER,
       phoneVerifiedAt: new Date(),
-      referralCode: 'DEMOR100',
+      referralCode: 'RIZW0021',
     },
   });
   const cnic = '3520200000042'; // 13 digits, not a real CNIC
@@ -225,7 +231,7 @@ async function seedDemoAccounts() {
     },
   });
 
-  console.log('Demo accounts ready: customer +923000000001, staff +923000000031, rider +923000000021');
+  console.log('Starter accounts ready: customer +923000000001, staff +923000000031, rider +923000000021');
 }
 
 /** Sub-role admins so each area of the panel (operations, finance, support) can be tested. */

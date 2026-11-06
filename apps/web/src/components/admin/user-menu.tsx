@@ -29,10 +29,13 @@ export function UserMenu({
   name,
   email,
   adminRole,
+  variant = 'avatar',
 }: {
   name: string | null;
   email: string | null;
   adminRole: AdminRole | null;
+  /** `block` is the sidebar footer (avatar + name + role); `rail` is the avatar alone with a menu that opens sideways. */
+  variant?: 'avatar' | 'block' | 'rail';
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -43,21 +46,41 @@ export function UserMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('nav.account')}>
-          <Avatar>
-            <AvatarFallback>{initials(name, email)}</AvatarFallback>
-          </Avatar>
-        </Button>
+        {variant === 'block' ? (
+          <button
+            type="button"
+            aria-label={t('nav.account')}
+            className="hover:bg-sidebar-accent flex w-full items-center gap-3 rounded-lg p-2 text-start transition-colors"
+          >
+            <Avatar>
+              <AvatarFallback>{initials(name, email)}</AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{name || email}</span>
+              {adminRole ? (
+                <span className="text-muted-foreground block truncate text-xs">{t(`roles.${adminRole}`)}</span>
+              ) : null}
+            </span>
+          </button>
+        ) : (
+          <Button variant="ghost" size="icon" className="rounded-full" aria-label={t('nav.account')}>
+            <Avatar>
+              <AvatarFallback>{initials(name, email)}</AvatarFallback>
+            </Avatar>
+          </Button>
+        )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent
+        align={variant === 'avatar' ? 'end' : 'start'}
+        side={variant === 'avatar' ? 'bottom' : 'top'}
+        className="w-60"
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col gap-0.5">
             <span className="truncate text-sm font-medium">{name || email}</span>
             {email && name ? <span className="text-muted-foreground truncate text-xs">{email}</span> : null}
-            {adminRole ? (
-              <span className="text-muted-foreground mt-1 text-xs">{t(`roles.${adminRole}`)}</span>
-            ) : null}
+            {adminRole ? <span className="text-muted-foreground mt-1 text-xs">{t(`roles.${adminRole}`)}</span> : null}
           </div>
         </DropdownMenuLabel>
 

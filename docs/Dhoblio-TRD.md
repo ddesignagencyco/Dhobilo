@@ -23,7 +23,7 @@ This document turns the SRS into concrete technical decisions: architecture, sta
 | ORM | **Prisma 6** | migrations via `prisma migrate` |
 | Cache / queues | **Redis 7** + **BullMQ** | |
 | Media | **Cloudinary** | signed direct uploads |
-| Email | **Google SMTP** (prod/staging) / **MailHog** (local) | via Nodemailer |
+| Email | **Google SMTP** (all environments) | via Nodemailer |
 | Containers | **Docker** + Docker Compose | |
 | Load testing | **k6** | |
 
@@ -370,7 +370,7 @@ Each gateway is a Nest provider registered in `PaymentsModule`; a `GatewayRegist
 ## 14. Notifications (FR-C10, A7)
 
 - Domain event (`order.status_changed`) → `NotificationOrchestrator` → picks channels per user prefs → enqueues one job per channel.
-- Channels behind interfaces: `SmsProvider`, `WhatsAppProvider`, `PushProvider` (FCM), `MailProvider` (Nodemailer → **MailHog** locally, **Google SMTP** with an app password in staging/prod).
+- Channels behind interfaces: `SmsProvider`, `WhatsAppProvider`, `PushProvider` (FCM), `MailProvider` (Nodemailer → **Google SMTP** with an app password).
 - **Templates:** versioned in code (`templates/{name}.{en|ur}.ts`); WhatsApp templates must be pre-approved by the BSP — keep a name↔template-id map in config.
 - Every send is logged in `Notification` (status, attempts, error).
 - Email is used for admin/vendor communications (approval decisions, reports, password reset), not for customers (phone-first).
@@ -428,10 +428,6 @@ services:
     ports: ["6379:6379"]
     volumes: [redisdata:/data]
 
-  mailhog:
-    image: mailhog/mailhog
-    ports: ["1025:1025","8025:8025"]      # SMTP / web UI
-
   migrate:
     build: { context: ., dockerfile: docker/api.Dockerfile, target: build }
     command: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
@@ -443,7 +439,7 @@ services:
     command: node dist/main.js
     env_file: .env
     ports: ["4000:4000"]
-    depends_on: [migrate, redis, mailhog]
+    depends_on: [migrate, redis]
 
   worker:
     build: { context: ., dockerfile: docker/api.Dockerfile }
@@ -471,7 +467,7 @@ Dockerfiles are **multi-stage** (deps → build → slim runtime, non-root user,
 ### 17.2 Environments
 | Env | Purpose | Mail | Gateways | OTP |
 |---|---|---|---|---|
-| local | dev | MailHog | mock | bypass `123456` |
+| local | dev | Google SMTP (+ `NOTIFY_MIRROR_EMAIL`) | mock | bypass `123456` |
 | staging | QA/UAT, k6 | Google SMTP (test inbox) | sandbox | real SMS to whitelisted numbers |
 | production | pilot cities | Google SMTP | live | real |
 
@@ -489,7 +485,7 @@ OTP_BYPASS=true               OTP_TTL_SECONDS=300
 ENC_KEY_ID=k1                 ENC_KEY_BASE64=         HMAC_KEY_BASE64=
 CLOUDINARY_CLOUD_NAME=        CLOUDINARY_API_KEY=     CLOUDINARY_API_SECRET=
 CLOUDINARY_UPLOAD_PRESET=
-SMTP_HOST=mailhog             SMTP_PORT=1025          SMTP_USER=      SMTP_PASS=
+SMTP_HOST=smtp.gmail.com       SMTP_PORT=465           SMTP_USER=      SMTP_PASS=
 SMTP_FROM="Dhoblio <no-reply@dhoblio.pk>"
 # prod: SMTP_HOST=smtp.gmail.com SMTP_PORT=587 (App Password)
 SMS_PROVIDER=mock             SMS_API_KEY=

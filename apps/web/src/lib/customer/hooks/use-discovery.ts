@@ -26,10 +26,10 @@ export function useDiscovery(lat: number, lng: number, filters: DiscoveryFilters
     queryKey: discoveryQueryKeys.list({ lat, lng, ...rest, sort: sortBy }),
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const result = await apiClient.get<DiscoveryResult>('/vendors', {
+      const result = await apiClient.get<VendorCard[]>('/vendors', {
         params: { lat, lng, sort: sortBy, ...rest, cursor: pageParam },
       });
-      return result.data;
+      return { items: result.data, nextCursor: (result.meta?.nextCursor as string | null | undefined) ?? null } satisfies DiscoveryResult;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: Number.isFinite(lat) && Number.isFinite(lng),

@@ -1,5 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { DiscoveryFilters, FilterSidebar } from '@/components/customer/discovery/discovery-filters';
 import { DiscoveryView } from '@/components/customer/discovery/discovery-view';
+import { LocationChip } from '@/components/customer/location-chip';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const metadata = { title: 'Discover Vendors' };
 
@@ -8,7 +11,7 @@ export default async function DiscoveryPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string>>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const { locale } = await params;
   const search = await searchParams;
@@ -16,27 +19,31 @@ export default async function DiscoveryPage({
 
   const t = await getTranslations('customer.discovery');
 
-  // Parse filters from URL
+  const sortBy = search.sort === 'rating' || search.sort === 'price' ? search.sort : 'distance';
   const filters = {
-    sortBy: (search.sort as 'distance' | 'rating' | 'price' | undefined) ?? 'distance',
+    q: search.q?.trim() || undefined,
+    sortBy: sortBy as 'distance' | 'rating' | 'price',
     minRating: search.minRating ? Number(search.minRating) : undefined,
-    maxPrice: search.maxPrice ? Number(search.maxPrice) : undefined,
     serviceType: search.serviceType,
   };
 
+  const query = { q: search.q, serviceType: search.serviceType, sort: search.sort, minRating: search.minRating };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
+    <div className="space-y-5 lg:space-y-6">
+      <PageHeader title={t('title')} description={t('subtitle')} />
+      <div className="lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <aside className="sticky top-20 hidden lg:block">
+          <FilterSidebar query={query} />
+        </aside>
+        <div className="min-w-0 space-y-5">
+          <div className="xl:hidden">
+            <LocationChip />
+          </div>
+          <DiscoveryFilters query={query} />
+          <DiscoveryView key={JSON.stringify(filters)} filters={filters} />
+        </div>
       </div>
-
-      {/* Filters row (placeholder for future) */}
-      <div className="flex gap-2">
-        {/* TODO: Add filter/sort buttons here in Task 3 extension */}
-      </div>
-
-      <DiscoveryView filters={filters} />
     </div>
   );
 }

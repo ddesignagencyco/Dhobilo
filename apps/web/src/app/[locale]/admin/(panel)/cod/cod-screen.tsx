@@ -203,7 +203,7 @@ function CollectionsTab() {
                   <TableCell>
                     <Link
                       href={`/admin/orders/${row.orderId}`}
-                      className="font-mono text-xs hover:text-primary hover:underline"
+                      className="font-mono text-xs whitespace-nowrap hover:text-primary hover:underline"
                       dir="ltr"
                     >
                       {row.orderNo}

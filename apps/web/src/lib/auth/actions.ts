@@ -5,13 +5,7 @@ import { z } from 'zod';
 import { TOKEN_TRANSPORT_HEADER } from '../api/config';
 import { ApiError, ApiUnreachableError } from '../api/errors';
 import { apiFetch } from '../api/fetch';
-import {
-  type SessionUser,
-  clearSession,
-  readSession,
-  sessionFromAuthResponse,
-  writeSession,
-} from './session';
+import { type SessionUser, clearSession, readSession, sessionFromAuthResponse, writeSession } from './session';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1).email(),
@@ -19,6 +13,8 @@ const loginSchema = z.object({
 });
 
 export interface LoginState {
+  /** Echoed back so a failed attempt does not wipe what the person typed (React resets the form). */
+  email?: string;
   error?: { code: string; message: string; requestId?: string };
 }
 
@@ -43,13 +39,17 @@ export async function signIn(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  const submittedEmail = String(formData.get('email') ?? '');
   const parsed = loginSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
   });
 
   if (!parsed.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter a valid email address and your password.' } };
+    return {
+      email: submittedEmail,
+      error: { code: 'VALIDATION_FAILED', message: 'Enter a valid email address and your password.' },
+    };
   }
 
   let destination: string;
@@ -70,17 +70,17 @@ export async function signIn(
     });
 
     if (data.user.role !== 'ADMIN') {
-      return { error: { code: 'NOT_ADMIN', message: 'That account is not an admin account.' } };
+      return { email: submittedEmail, error: { code: 'NOT_ADMIN', message: 'That account is not an admin account.' } };
     }
 
     await writeSession(sessionFromAuthResponse(data));
     destination = safeReturnTo(next, locale);
   } catch (error) {
     if (error instanceof ApiError) {
-      return { error: error.toDisplay() };
+      return { email: submittedEmail, error: error.toDisplay() };
     }
     if (error instanceof ApiUnreachableError) {
-      return { error: { code: 'API_UNREACHABLE', message: error.message } };
+      return { email: submittedEmail, error: { code: 'API_UNREACHABLE', message: error.message } };
     }
     throw error;
   }

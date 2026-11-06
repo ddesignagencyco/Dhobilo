@@ -179,7 +179,7 @@ export class VendorReviewService {
     const before = await this.prisma.$transaction(async (tx) => {
       const current = await tx.vendor.findUnique({
         where: { id },
-        select: { status: true, rejectionReason: true, businessName: true, owner: { select: { phone: true, email: true } } },
+        select: { status: true, rejectionReason: true, businessName: true, owner: { select: { phone: true, email: true, locale: true } } },
       });
       if (!current) throw this.notFound();
 

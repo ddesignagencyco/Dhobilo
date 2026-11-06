@@ -79,7 +79,7 @@ export function ComplaintConsole({ initial }: { initial: AdminComplaint }) {
   const copy = resolving ? outcomeCopy[resolving] : null;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         {detail.isError ? <ErrorState error={detail.error} onRetry={() => void detail.refetch()} /> : null}
 

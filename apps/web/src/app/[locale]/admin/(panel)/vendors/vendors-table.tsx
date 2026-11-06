@@ -10,6 +10,7 @@ import { LoadMore } from '@/components/admin/load-more';
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/admin/states';
 import { StatusBadge } from '@/components/admin/status-badge';
 import { Card } from '@/components/ui/card';
+import { EntityCell } from '@/components/admin/entity-cell';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { AdminVendorListItem } from '@/lib/api/types';
 import { formatDate } from '@/lib/format';
@@ -91,9 +92,13 @@ export function VendorsTable({ initialStatus }: { initialStatus: string }) {
             ) : (
               list.items.map((vendor) => (
                 <TableRow key={vendor.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/admin/vendors/${vendor.id}`} className="hover:text-primary hover:underline">
-                      {vendor.businessName}
+                  <TableCell>
+                    <Link href={`/admin/vendors/${vendor.id}`} className="group block">
+                      <EntityCell
+                        name={vendor.businessName}
+                        detail={vendor.owner?.email}
+                        className="[&_span.font-medium]:group-hover:text-primary"
+                      />
                     </Link>
                   </TableCell>
                   <TableCell>

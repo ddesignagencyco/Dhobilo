@@ -10,6 +10,7 @@ import { QUEUES } from '../../infra/queue/queues';
 import { SMS_PROVIDER } from '../../infra/sms/sms.provider';
 import type { SmsProvider } from '../../infra/sms/sms.provider';
 import { WHATSAPP_PROVIDER } from '../../infra/whatsapp/whatsapp.provider';
+import { NotificationMirror } from './notification-mirror.service';
 import { AnnouncementFanoutService, FANOUT_ANNOUNCEMENT_JOB, FanoutAnnouncementJob } from '../announcements/announcement-fanout.service';
 import type { WhatsAppProvider } from '../../infra/whatsapp/whatsapp.provider';
 import { SEND_EMAIL_JOB, SEND_PUSH_JOB, SEND_SMS_JOB, SEND_WHATSAPP_JOB, SendEmailJob, SendPushJob, SendSmsJob, SendWhatsAppJob } from './notifications.jobs';
@@ -35,6 +36,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUES.NOTIFICATIONS) private readonly queue: Queue,
     private readonly announcements: AnnouncementFanoutService,
+    private readonly mirror: NotificationMirror,
   ) {
     super();
   }
@@ -52,6 +54,7 @@ export class NotificationsProcessor extends WorkerHost {
     const attempt = job.attemptsMade + 1;
     const maxAttempts = job.opts.attempts ?? 1;
     try {
+      if (job.attemptsMade === 0) await this.mirror.mirror(job);
       await this.handle(job);
       await this.record(job.data.notificationId, { status: NotificationStatus.SENT, attempts: attempt, error: null, sentAt: new Date() });
     } catch (err) {
@@ -74,7 +77,7 @@ export class NotificationsProcessor extends WorkerHost {
       }
       case SEND_EMAIL_JOB: {
         const d = job.data as SendEmailJob;
-        await this.mail.send({ to: d.to, subject: d.subject, text: d.text });
+        await this.mail.send({ to: d.to, subject: d.subject, text: d.text, ...(d.html ? { html: d.html } : {}) });
         return;
       }
       case SEND_WHATSAPP_JOB: {

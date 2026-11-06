@@ -9,6 +9,8 @@ import {
   readSession,
   writeSession,
 } from '../auth/session';
+import { fetchVendorProfileSummary } from '../vendor/server';
+import { readVendorSession } from '../vendor/session';
 import { ApiError } from './errors';
 import { type ApiResult, type RequestOptions, apiFetch } from './fetch';
 
@@ -107,11 +109,20 @@ export async function currentAdmin() {
 
 /** The signed-in vendor (owner or staff), or null. For role-based layout guards. */
 export async function currentVendor() {
-  const session = await readSession();
+  const session = await readVendorSession();
   const user = session?.user ?? null;
-  // Return user if role is VENDOR_OWNER or VENDOR_STAFF; null otherwise
-  const isVendor = user?.role === 'VENDOR_OWNER' || user?.role === 'VENDOR_STAFF';
-  return isVendor ? { ...user, vendorStatus: 'PENDING' as const } : null;
+  if (!user) return null;
+  const result = await fetchVendorProfileSummary();
+  if (result.kind === 'none') return null;
+  if (result.kind === 'unregistered') {
+    return { ...user, businessName: null, vendorStatus: 'UNREGISTERED' as const, rejectionReason: null };
+  }
+  return {
+    ...user,
+    businessName: result.profile.businessName,
+    vendorStatus: result.profile.status,
+    rejectionReason: result.profile.rejectionReason,
+  };
 }
 
 /** The signed-in customer, or null. For role-based layout guards. */

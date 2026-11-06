@@ -2,122 +2,21 @@
 
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { TOKEN_TRANSPORT_HEADER } from '../api/config';
 import { ApiError, ApiUnreachableError } from '../api/errors';
 import { apiFetch } from '../api/fetch';
 import { routing } from '@/i18n/routing';
 import { mutateCustomerApi } from './server';
-import {
-  type CustomerSessionUser,
-  clearCustomerSession,
-  readCustomerSession,
-  sessionFromAuthResponse,
-  writeCustomerSession,
-} from './session';
-
-const phoneSchema = z.string().trim().min(10).max(20);
-const codeSchema = z.string().trim().regex(/^\d{6}$/);
-
-export interface OtpState {
-  step?: 'phone' | 'code';
-  phone?: string;
-  expiresInSeconds?: number;
-  error?: { code: string; message: string; requestId?: string };
-}
+import { clearCustomerSession, readCustomerSession } from './session';
 
 export interface ProfileState {
   ok?: boolean;
   error?: { code: string; message: string; requestId?: string };
 }
 
-function toError(error: unknown): OtpState['error'] {
+function toError(error: unknown): ProfileState['error'] {
   if (error instanceof ApiError) return error.toDisplay();
   if (error instanceof ApiUnreachableError) return { code: 'API_UNREACHABLE', message: error.message };
   throw error;
-}
-
-/** Only ever return to a path on this site, and never back to the login or admin app. */
-function safeReturnTo(next: string | undefined, locale: string): string {
-  const fallback = `/${locale}`;
-  if (!next) return fallback;
-  if (!next.startsWith('/') || next.startsWith('//')) return fallback;
-  const rest = next.replace(/^\/[a-z]{2}(?=\/|$)/, '');
-  if (!rest || rest === '/') return fallback;
-  if (rest.startsWith('/login') || rest.startsWith('/admin')) return fallback;
-  return next;
-}
-
-/** Send a 6-digit SMS code. Returns the code step on success; never throws for a user-facing error. */
-export async function requestOtp(
-  _locale: string,
-  _prev: OtpState,
-  formData: FormData,
-): Promise<OtpState> {
-  const parsed = phoneSchema.safeParse(formData.get('phone'));
-  if (!parsed.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter a valid phone number.' } };
-  }
-
-  try {
-    const { data } = await apiFetch<{ expiresInSeconds: number }>('/auth/otp/request', {
-      method: 'POST',
-      body: { phone: parsed.data },
-      retries: 0,
-    });
-
-    return { step: 'code', phone: parsed.data, expiresInSeconds: data.expiresInSeconds };
-  } catch (error) {
-    return { step: 'phone', error: toError(error) };
-  }
-}
-
-/** Exchange the code for tokens, then land on the page the customer came from. */
-export async function verifyOtp(
-  locale: string,
-  next: string | undefined,
-  _prev: OtpState,
-  formData: FormData,
-): Promise<OtpState> {
-  const phone = phoneSchema.safeParse(formData.get('phone'));
-  const code = codeSchema.safeParse(formData.get('code'));
-
-  if (!phone.success || !code.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter the 6-digit code.' } };
-  }
-
-  let destination: string;
-
-  try {
-    const { data } = await apiFetch<{
-      accessToken: string;
-      refreshToken?: string;
-      expiresIn: number;
-      user: CustomerSessionUser;
-    }>('/auth/otp/verify', {
-      method: 'POST',
-      body: { phone: phone.data, code: code.data, role: 'CUSTOMER' },
-      headers: { ...TOKEN_TRANSPORT_HEADER },
-      retries: 0,
-    });
-
-    // A vendor or rider token must not become a customer session; their apps are separate.
-    if (data.user.role !== 'CUSTOMER') {
-      return {
-        step: 'phone',
-        error: {
-          code: 'NOT_CUSTOMER',
-          message: 'This number belongs to a vendor or staff account. Use the right app.',
-        },
-      };
-    }
-
-    await writeCustomerSession(sessionFromAuthResponse(data));
-    destination = safeReturnTo(next, locale);
-  } catch (error) {
-    return { step: 'code', error: toError(error) };
-  }
-
-  redirect(destination);
 }
 
 export async function signOutCustomer(locale: string): Promise<void> {
@@ -154,7 +53,12 @@ export async function updateCustomerProfile(
     .safeParse(formData.get('name') ?? '');
 
   if (!name.success) {
-    return { error: { code: 'VALIDATION_FAILED', message: 'Enter your name (up to 80 characters).' } };
+    return {
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'Enter your name (up to 80 characters).',
+      },
+    };
   }
 
   try {
