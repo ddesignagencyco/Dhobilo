@@ -8,6 +8,6 @@
     "isolatedModules": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": ["src/**/*", "test/**/*", "prisma/seed.ts", "scripts/**/*"],
+  "include": ["src/**/*", "test/**/*", "prisma/seed.ts", "prisma/seed-lahore.ts", "prisma/seed-lahore-data.ts", "scripts/**/*"],
   "exclude": ["node_modules", "dist"]
 }

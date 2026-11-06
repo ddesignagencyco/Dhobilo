@@ -19,7 +19,8 @@
     "db:seed": "node --env-file=.env ./node_modules/ts-node/dist/bin.js --project apps/api/tsconfig.json apps/api/prisma/seed.ts",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "db:seed:lahore": "node --env-file=.env ./node_modules/ts-node/dist/bin.js --project apps/api/tsconfig.json apps/api/prisma/seed-lahore.ts"
   },
   "overrides": {
     "@nestjs/platform-express": {
