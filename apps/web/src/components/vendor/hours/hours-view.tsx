@@ -26,7 +26,7 @@ export function HoursView() {
         <AvailabilityToggle className="hidden sm:grid" />
       </section>
 
-      <div className="space-y-6">
+      <div className="grid items-start gap-6 @7xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section className="space-y-3">
           <h2 className="text-base font-semibold">{t('weekly')}</h2>
           {hours.isLoading ? (
@@ -38,7 +38,7 @@ export function HoursView() {
           )}
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3 @7xl:sticky @7xl:top-20">
           <h2 className="text-base font-semibold">{t('settings.title')}</h2>
           {profile.isLoading ? (
             <Skeleton className="h-48 w-full rounded-xl" />

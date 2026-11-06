@@ -229,7 +229,7 @@ export function CatalogManager() {
           />
         </div>
       ) : (
-        <div className="stagger space-y-7">
+        <div className="stagger grid items-start gap-7 @7xl:grid-cols-2">
           {[...groups.entries()].map(([id, group]) => (
             <section key={id} aria-labelledby={`cat-${id}`}>
               <h2 id={`cat-${id}`} className="mb-2.5 flex items-center text-sm font-semibold">
@@ -238,58 +238,60 @@ export function CatalogManager() {
                   {group.items.length}
                 </span>
               </h2>
-              <ul className="bg-card divide-y overflow-hidden rounded-xl border shadow-xs">
-                {group.items.map((item) => (
-                  <li
-                    key={item.id}
-                    className={cn(
-                      'hover:bg-muted/40 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 transition-colors',
-                      !item.isActive && 'opacity-60',
-                    )}
-                  >
-                    <span className="bg-accent text-accent-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
-                      {(() => {
-                        const Icon = SERVICE_ICON[item.serviceType] ?? ShirtIcon;
-                        return <Icon className="size-5" aria-hidden />;
-                      })()}
-                    </span>
-                    <div className="min-w-0 flex-1 basis-40">
-                      <p className="truncate font-medium">{itemName(item)}</p>
-                      {itemSecondary(item) ? (
-                        <p className="text-muted-foreground truncate text-xs" dir={locale === 'ur' ? 'ltr' : 'rtl'}>
-                          {itemSecondary(item)}
-                        </p>
-                      ) : null}
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{t(`serviceType.${item.serviceType}`)}</Badge>
-                        <span className="text-muted-foreground text-xs">
-                          {t('turnaround', { hours: item.turnaroundHours })}
-                        </span>
+              <div className="bg-card overflow-hidden rounded-xl border shadow-xs">
+                <ul className="divide-y">
+                  {group.items.map((item) => (
+                    <li
+                      key={item.id}
+                      className={cn(
+                        'hover:bg-muted/40 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 transition-colors',
+                        !item.isActive && 'opacity-60',
+                      )}
+                    >
+                      <span className="bg-accent text-accent-foreground flex size-10 shrink-0 items-center justify-center rounded-xl">
+                        {(() => {
+                          const Icon = SERVICE_ICON[item.serviceType] ?? ShirtIcon;
+                          return <Icon className="size-5" aria-hidden />;
+                        })()}
+                      </span>
+                      <div className="min-w-0 flex-1 basis-40">
+                        <p className="truncate font-medium">{itemName(item)}</p>
+                        {itemSecondary(item) ? (
+                          <p className="text-muted-foreground truncate text-xs" dir={locale === 'ur' ? 'ltr' : 'rtl'}>
+                            {itemSecondary(item)}
+                          </p>
+                        ) : null}
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">{t(`serviceType.${item.serviceType}`)}</Badge>
+                          <span className="text-muted-foreground text-xs">
+                            {t('turnaround', { hours: item.turnaroundHours })}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <PriceCell item={item} />
-                    <ActiveSwitch item={item} />
-                    <div className="flex items-center">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setEditing(item)}
-                        aria-label={`${t('edit')}: ${item.itemName}`}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setDeleting(item)}
-                        aria-label={`${t('delete')}: ${item.itemName}`}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                      <PriceCell item={item} />
+                      <ActiveSwitch item={item} />
+                      <div className="flex items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditing(item)}
+                          aria-label={`${t('edit')}: ${item.itemName}`}
+                        >
+                          <Pencil />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setDeleting(item)}
+                          aria-label={`${t('delete')}: ${item.itemName}`}
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </section>
           ))}
         </div>

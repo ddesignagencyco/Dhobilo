@@ -112,9 +112,9 @@ function OrderCard({
           </div>
         </div>
 
-        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+        <p className="text-muted-foreground flex items-start gap-1.5 text-xs">
           <CalendarClockIcon className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">
+          <span className="min-w-0">
             {t('pickup')}: <SlotText start={order.pickupSlotStart} end={order.pickupSlotEnd} locale={locale} />
           </span>
         </p>
@@ -205,7 +205,7 @@ function Column({
           className="border-transparent bg-transparent py-10"
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-3">
           {orders.map((o) => (
             <OrderCard key={o.id} order={o} column={columnKey} fresh={freshIds.has(o.id)} onReject={onReject} />
           ))}
@@ -310,7 +310,7 @@ export function OrderBoard() {
           </AlertDescription>
         </Alert>
       ) : board.isLoading ? (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 @4xl:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className="bg-muted/50 space-y-3 rounded-2xl p-3">
               <Skeleton className="h-8" />
@@ -324,7 +324,7 @@ export function OrderBoard() {
           <div
             role="tablist"
             aria-label={t('title')}
-            className="bg-muted sticky top-14 z-20 grid grid-cols-3 gap-1 rounded-xl p-1 lg:hidden"
+            className="bg-muted sticky top-14 z-20 grid grid-cols-3 gap-1 rounded-xl p-1 @4xl:hidden"
           >
             {columns.map((c) => (
               <button
@@ -352,7 +352,7 @@ export function OrderBoard() {
           </div>
 
           <div
-            className="grid items-start gap-4 lg:grid-cols-3"
+            className="grid items-start gap-4 @4xl:grid-cols-3"
             onTouchStart={(e) => (touch.current = e.touches[0]!.clientX)}
             onTouchEnd={(e) => onTouchEnd(e.changedTouches[0]!.clientX)}
           >
@@ -366,7 +366,7 @@ export function OrderBoard() {
                 empty={c.empty}
                 freshIds={freshIds}
                 onReject={setRejecting}
-                className={cn(tab === c.key ? 'block' : 'hidden', 'lg:block')}
+                className={cn(tab === c.key ? 'block' : 'hidden', '@4xl:block')}
               />
             ))}
           </div>

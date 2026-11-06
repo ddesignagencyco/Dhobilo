@@ -15,24 +15,34 @@ import { VendorMobileNav } from './vendor-mobile-nav';
 import { type BlockedStatus, VendorStatusScreen } from './vendor-status-screen';
 import { VendorUserMenu } from './vendor-user-menu';
 
+/** Phone-only tap target floor (44px) for every control inside the panel, without touching shared primitives. */
+const PHONE_TAP =
+  "max-sm:[&_input:not([type=checkbox]):not([type=radio])]:h-11 max-sm:[&_select]:h-11 max-sm:[&_[role=radiogroup]]:h-12 max-sm:[&_button:not([role=switch])]:min-h-11 max-sm:[&_button[class*='size-8']]:size-11 max-sm:[&_button[class*='size-9']]:size-11 max-sm:[&_[role=switch]]:relative max-sm:[&_[role=switch]]:before:absolute max-sm:[&_[role=switch]]:before:-inset-x-2 max-sm:[&_[role=switch]]:before:-inset-y-3";
+
 const COLLAPSE_KEY = 'dh-vendor-sidebar';
 const COLLAPSE_EVENT = 'dh-vendor-sidebar-change';
 
 function subscribe(onChange: () => void) {
   window.addEventListener(COLLAPSE_EVENT, onChange);
   window.addEventListener('storage', onChange);
+  window.addEventListener('resize', onChange);
   return () => {
     window.removeEventListener(COLLAPSE_EVENT, onChange);
     window.removeEventListener('storage', onChange);
+    window.removeEventListener('resize', onChange);
   };
 }
 
+/** An explicit choice wins; otherwise tablets and small laptops get the icon rail and wide screens the full sidebar. */
+function readCollapsed(): boolean {
+  const stored = localStorage.getItem(COLLAPSE_KEY);
+  if (stored === '1') return true;
+  if (stored === '0') return false;
+  return window.innerWidth < 1280;
+}
+
 function useCollapsed(): [boolean, (next: boolean) => void] {
-  const collapsed = useSyncExternalStore(
-    subscribe,
-    () => localStorage.getItem(COLLAPSE_KEY) === '1',
-    () => false,
-  );
+  const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const set = useCallback((next: boolean) => {
     try {
       localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
@@ -135,7 +145,7 @@ export function VendorShell({
       </a>
 
       {!restricted ? (
-        <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-[var(--sb-w)] flex-col border-e transition-[width] duration-300 ease-[var(--ease-out)] lg:flex">
+        <aside className="bg-sidebar border-sidebar-border fixed inset-y-0 start-0 z-30 hidden w-[var(--sb-w)] flex-col border-e transition-[width] duration-300 ease-[var(--ease-out)] md:flex">
           <div
             className={cn(
               'border-sidebar-border flex h-14 shrink-0 items-center gap-2 border-b',
@@ -181,9 +191,14 @@ export function VendorShell({
       ) : null}
 
       <div
-        className={cn(!restricted && 'transition-[padding] duration-300 ease-[var(--ease-out)] lg:ps-[var(--sb-w)]')}
+        className={cn(!restricted && 'transition-[padding] duration-300 ease-[var(--ease-out)] md:ps-[var(--sb-w)]')}
       >
-        <header className="bg-background/85 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:px-5">
+        <header
+          className={cn(
+            'bg-background/85 sticky top-0 z-20 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:px-5',
+            PHONE_TAP,
+          )}
+        >
           <VendorMobileNav restricted={restricted} isOwner={isOwner} vendorName={vendorName} />
 
           <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -214,12 +229,12 @@ export function VendorShell({
         </header>
 
         {vendorStatus === 'APPROVED' ? (
-          <div className="px-3 pt-3 sm:hidden">
+          <div className={cn('px-3 pt-3 sm:hidden', PHONE_TAP)}>
             <AvailabilityToggle className="w-full" />
           </div>
         ) : null}
 
-        <main id="main" className="mx-auto w-full max-w-[1600px] p-3 sm:p-6">
+        <main id="main" className={cn('@container mx-auto w-full max-w-[2400px] p-3 sm:p-6 2xl:p-8', PHONE_TAP)}>
           {showStatus ? (
             <VendorStatusScreen status={vendorStatus as BlockedStatus} reason={rejectionReason} isOwner={isOwner} />
           ) : (

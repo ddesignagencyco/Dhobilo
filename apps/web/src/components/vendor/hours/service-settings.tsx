@@ -28,7 +28,7 @@ export function ServiceSettings({ profile }: { profile: VendorProfile }) {
 
   return (
     <form
-      className="grid gap-4 sm:grid-cols-3"
+      className="grid gap-4 @3xl:grid-cols-3 @7xl:grid-cols-1"
       onSubmit={(e) => {
         e.preventDefault();
         if (hasErrors) return;
@@ -91,7 +91,7 @@ export function ServiceSettings({ profile }: { profile: VendorProfile }) {
           onChange={(e) => setSlots(e.target.value)}
         />
       </Field>
-      <div className="sm:col-span-3">
+      <div className="@3xl:col-span-3 @7xl:col-span-1">
         <Button type="submit" disabled={hasErrors || update.isPending}>
           {update.isPending ? <Loader2 className="animate-spin" /> : null}
           {t('save')}

@@ -133,11 +133,11 @@ export function VendorEarningsDashboard() {
         <ErrorState error={error} onRetry={() => void refetch()} />
       ) : isLoading || !data ? (
         <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Skeleton className="h-40 rounded-xl lg:col-span-2" />
+          <div className="grid gap-4 @4xl:grid-cols-3">
+            <Skeleton className="h-40 rounded-xl @4xl:col-span-2" />
             <Skeleton className="h-40 rounded-xl" />
           </div>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 @3xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-24 rounded-xl" />
             ))}
@@ -146,8 +146,8 @@ export function VendorEarningsDashboard() {
         </div>
       ) : (
         <>
-          <section aria-label={t('balance')} className="stagger grid gap-4 lg:grid-cols-3">
-            <Card className="bg-accent/50 border-primary/20 gap-3 p-6 lg:col-span-2">
+          <section aria-label={t('balance')} className="stagger grid gap-4 @4xl:grid-cols-3">
+            <Card className="bg-accent/50 border-primary/20 gap-3 p-6 @4xl:col-span-2">
               <p className="text-muted-foreground text-sm font-medium">{t('net')}</p>
               <p className="tabular text-4xl leading-none font-semibold tracking-tight" dir="ltr">
                 <Money amount={data.totals.net} />
@@ -174,7 +174,7 @@ export function VendorEarningsDashboard() {
             </Card>
           </section>
 
-          <section aria-label={t('periodTotals')} className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <section aria-label={t('periodTotals')} className="stagger grid grid-cols-2 gap-4 @3xl:grid-cols-4">
             <StatTile
               label={t('orders')}
               value={<AnimatedNumber value={data.totals.orders} />}
@@ -194,51 +194,53 @@ export function VendorEarningsDashboard() {
             />
           </section>
 
-          <EarningsChart data={data} range={range} />
+          <div className="grid items-start gap-4 @7xl:grid-cols-2">
+            <EarningsChart data={data} range={range} />
 
-          <Card className="gap-0 overflow-hidden p-0">
-            <h2 className="px-5 pt-5 pb-3 text-base font-semibold">{t('deliveredOrders')}</h2>
-            {data.orders.length === 0 ? (
-              <EmptyState
-                icon={<ReceiptTextIcon aria-hidden />}
-                title={t('empty')}
-                className="m-5 mt-0 border-transparent py-8"
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('order')}</TableHead>
-                      <TableHead>{t('delivered')}</TableHead>
-                      <TableHead className="text-end">{t('subtotal')}</TableHead>
-                      <TableHead className="text-end">{t('commission')}</TableHead>
-                      <TableHead className="text-end">{t('net')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="[&_tr]:animate-fade">
-                    {data.orders.map((o) => (
-                      <TableRow key={o.id}>
-                        <TableCell className="tabular font-medium" dir="ltr">
-                          {o.orderNo}
-                        </TableCell>
-                        <TableCell>{format.dateTime(new Date(o.deliveredAt), { dateStyle: 'medium' })}</TableCell>
-                        <TableCell className="tabular text-end" dir="ltr">
-                          {formatMoney(o.subtotal)}
-                        </TableCell>
-                        <TableCell className="tabular text-muted-foreground text-end" dir="ltr">
-                          −{formatMoney(o.commission)}
-                        </TableCell>
-                        <TableCell className="tabular text-end font-semibold" dir="ltr">
-                          {formatMoney(o.net)}
-                        </TableCell>
+            <Card className="gap-0 overflow-hidden p-0">
+              <h2 className="px-5 pt-5 pb-3 text-base font-semibold">{t('deliveredOrders')}</h2>
+              {data.orders.length === 0 ? (
+                <EmptyState
+                  icon={<ReceiptTextIcon aria-hidden />}
+                  title={t('empty')}
+                  className="m-5 mt-0 border-transparent py-8"
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('order')}</TableHead>
+                        <TableHead>{t('delivered')}</TableHead>
+                        <TableHead className="text-end">{t('subtotal')}</TableHead>
+                        <TableHead className="text-end">{t('commission')}</TableHead>
+                        <TableHead className="text-end">{t('net')}</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </Card>
+                    </TableHeader>
+                    <TableBody className="[&_tr]:animate-fade">
+                      {data.orders.map((o) => (
+                        <TableRow key={o.id}>
+                          <TableCell className="tabular font-medium" dir="ltr">
+                            {o.orderNo}
+                          </TableCell>
+                          <TableCell>{format.dateTime(new Date(o.deliveredAt), { dateStyle: 'medium' })}</TableCell>
+                          <TableCell className="tabular text-end" dir="ltr">
+                            {formatMoney(o.subtotal)}
+                          </TableCell>
+                          <TableCell className="tabular text-muted-foreground text-end" dir="ltr">
+                            −{formatMoney(o.commission)}
+                          </TableCell>
+                          <TableCell className="tabular text-end font-semibold" dir="ltr">
+                            {formatMoney(o.net)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          </div>
         </>
       )}
     </div>

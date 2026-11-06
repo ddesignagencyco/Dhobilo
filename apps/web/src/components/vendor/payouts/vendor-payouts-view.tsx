@@ -29,8 +29,8 @@ export function VendorPayoutsView() {
   const payouts = useVendorPayouts();
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-5">
-      <div className="space-y-6 lg:col-span-3">
+    <div className="grid items-start gap-6 @4xl:grid-cols-5">
+      <div className="space-y-6 @4xl:col-span-3">
         {earnings.data ? (
           <Card className="bg-accent/50 border-primary/20 animate-pop gap-4 p-6">
             <div className="flex items-center justify-between gap-3">
@@ -53,7 +53,7 @@ export function VendorPayoutsView() {
         {earnings.data ? <PayoutRequestForm available={earnings.data.balance.available} /> : null}
       </div>
 
-      <section className="space-y-3 lg:col-span-2">
+      <section className="space-y-3 @4xl:col-span-2">
         <h2 className="text-base font-semibold">{t('history')}</h2>
         {payouts.error ? (
           <ErrorState error={payouts.error} onRetry={() => void payouts.refetch()} />

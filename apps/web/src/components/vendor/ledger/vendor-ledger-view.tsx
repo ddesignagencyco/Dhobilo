@@ -79,7 +79,7 @@ export function VendorLedgerView() {
 
   return (
     <div className="space-y-5">
-      <section className="stagger grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="stagger grid grid-cols-2 gap-3 @3xl:grid-cols-3 @3xl:gap-4">
         <StatTile
           label={t('summaryIn')}
           value={<AnimatedNumber value={sums.credit} format={asMoney} />}
@@ -94,6 +94,7 @@ export function VendorLedgerView() {
           label={t('summaryNet')}
           value={<AnimatedNumber value={sums.net} format={asMoney} />}
           icon={<ScaleIcon />}
+          className="col-span-2 @3xl:col-span-1"
         />
       </section>
 

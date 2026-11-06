@@ -25,7 +25,7 @@ export function VendorMobileNav({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('nav.openMenu')}>
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('nav.openMenu')}>
           <Menu />
         </Button>
       </SheetTrigger>

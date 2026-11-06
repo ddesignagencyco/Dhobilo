@@ -122,8 +122,8 @@ export function OrderDetail({ orderId }: { orderId: string }) {
         </div>
       )}
 
-      <div className="stagger grid items-start gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="stagger grid items-start gap-6 @4xl:grid-cols-3">
+        <div className="space-y-6 @4xl:col-span-2">
           <section className="bg-card overflow-hidden rounded-xl border shadow-xs">
             <h2 className="border-b px-5 py-4 font-semibold">{t('itemsTitle')}</h2>
             <ul className="divide-y">

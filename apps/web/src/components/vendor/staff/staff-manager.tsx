@@ -75,8 +75,8 @@ export function StaffManager() {
   }
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-5">
-      <div className="bg-card overflow-hidden rounded-xl border shadow-xs lg:col-span-3">
+    <div className="grid items-start gap-6 @4xl:grid-cols-5">
+      <div className="bg-card overflow-hidden rounded-xl border shadow-xs @4xl:col-span-3">
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h2 className="font-semibold">{t('listTitle')}</h2>
           {staff.data ? (
@@ -128,7 +128,7 @@ export function StaffManager() {
 
       <form
         onSubmit={onAdd}
-        className="bg-card space-y-4 rounded-xl border p-5 shadow-xs lg:sticky lg:top-20 lg:col-span-2"
+        className="bg-card space-y-4 rounded-xl border p-5 shadow-xs @4xl:sticky @4xl:top-20 @4xl:col-span-2"
         noValidate
       >
         <div className="flex items-center gap-3">

@@ -29,9 +29,9 @@ export function ProfileForm({ isOwner }: { isOwner: boolean }) {
 
   if (profile.isLoading) {
     return (
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 @4xl:grid-cols-3">
         <Skeleton className="h-64 rounded-xl" />
-        <Skeleton className="h-96 rounded-xl lg:col-span-2" />
+        <Skeleton className="h-96 rounded-xl @4xl:col-span-2" />
       </div>
     );
   }
@@ -85,8 +85,8 @@ function ProfileFormFields({ profile, isOwner }: { profile: VendorProfile; isOwn
   }
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-3">
-      <aside className="bg-card animate-pop space-y-4 rounded-xl border p-6 text-center shadow-xs lg:sticky lg:top-20">
+    <div className="grid items-start gap-6 @4xl:grid-cols-3">
+      <aside className="bg-card animate-pop space-y-4 rounded-xl border p-6 text-center shadow-xs @4xl:sticky @4xl:top-20">
         <ShopAvatar name={profile.businessName} className="mx-auto size-16 text-xl" rounded="rounded-2xl" />
         <div className="space-y-1">
           <h2 className="text-lg leading-tight font-semibold">{profile.businessName}</h2>
@@ -108,7 +108,7 @@ function ProfileFormFields({ profile, isOwner }: { profile: VendorProfile; isOwn
 
       <form
         onSubmit={onSubmit}
-        className="bg-card space-y-6 rounded-xl border p-5 shadow-xs sm:p-6 lg:col-span-2"
+        className="bg-card space-y-6 rounded-xl border p-5 shadow-xs sm:p-6 @4xl:col-span-2"
         noValidate
       >
         {!isOwner ? (
