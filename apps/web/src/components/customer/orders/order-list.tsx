@@ -68,7 +68,7 @@ export function OrderList() {
 
   return (
     <div className="space-y-4">
-      <div role="tablist" className="bg-muted relative grid grid-cols-2 rounded-full p-1">
+      <div role="tablist" className="bg-muted relative grid grid-cols-2 rounded-full p-1 md:max-w-sm">
         <span
           aria-hidden
           className={cn(
@@ -109,7 +109,10 @@ export function OrderList() {
           }
         />
       ) : (
-        <div key={tab} className="stagger space-y-3">
+        <div
+          key={tab}
+          className="stagger space-y-3 md:grid md:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] md:gap-4 md:space-y-0"
+        >
           {shown.map((order) => (
             <div key={order.id} className="bg-card hover-lift relative rounded-2xl border p-4 shadow-xs">
               <Link href={`/orders/${order.id}`} className="absolute inset-0 rounded-2xl" aria-label={order.orderNo} />

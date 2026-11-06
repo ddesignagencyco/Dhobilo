@@ -31,8 +31,8 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
   const displayName = profile.name?.trim() || t('guestName');
 
   return (
-    <div className="space-y-4">
-      <section className="bg-card flex items-center gap-4 rounded-3xl border p-4 shadow-xs">
+    <div className="space-y-4 lg:space-y-6">
+      <section className="bg-card flex items-center gap-4 rounded-3xl border p-4 shadow-xs md:p-6">
         <Monogram name={displayName} size="lg" className="rounded-full" />
         <div className="min-w-0">
           <h1 className="truncate text-xl font-semibold tracking-tight">{displayName}</h1>
@@ -45,41 +45,47 @@ export default async function CustomerProfilePage({ params }: { params: Promise<
         </div>
       </section>
 
-      <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
-        <h2 className="text-base font-semibold">{t('detailsTitle')}</h2>
-        <ProfileForm locale={locale} name={profile.name} />
-      </section>
+      <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="min-w-0 space-y-4">
+          <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
+            <h2 className="text-base font-semibold">{t('detailsTitle')}</h2>
+            <ProfileForm locale={locale} name={profile.name} />
+          </section>
 
-      <AddressBook />
-
-      <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
-        <h2 className="text-base font-semibold">{t('language')}</h2>
-        <div className="bg-muted grid grid-cols-2 gap-1 rounded-full p-1">
-          {routing.locales.map((nextLocale) => (
-            <form key={nextLocale} action={changeCustomerLanguage.bind(null, locale, nextLocale)}>
-              <button
-                type="submit"
-                aria-pressed={nextLocale === locale}
-                className={cn(
-                  'w-full rounded-full py-2 text-sm font-medium transition-all duration-300 active:scale-95',
-                  nextLocale === locale ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
-                )}
-              >
-                <span lang={nextLocale}>{LOCALE_LABELS[nextLocale]}</span>
-              </button>
-            </form>
-          ))}
+          <AddressBook />
         </div>
-      </section>
 
-      <NotificationPreferences initial={prefs} />
+        <div className="min-w-0 space-y-4">
+          <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
+            <h2 className="text-base font-semibold">{t('language')}</h2>
+            <div className="bg-muted grid grid-cols-2 gap-1 rounded-full p-1">
+              {routing.locales.map((nextLocale) => (
+                <form key={nextLocale} action={changeCustomerLanguage.bind(null, locale, nextLocale)}>
+                  <button
+                    type="submit"
+                    aria-pressed={nextLocale === locale}
+                    className={cn(
+                      'w-full rounded-full py-2 text-sm font-medium transition-all duration-300 active:scale-95',
+                      nextLocale === locale ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
+                    )}
+                  >
+                    <span lang={nextLocale}>{LOCALE_LABELS[nextLocale]}</span>
+                  </button>
+                </form>
+              ))}
+            </div>
+          </section>
 
-      <form action={signOutCustomer.bind(null, locale)}>
-        <Button type="submit" variant="outline" className="text-destructive h-11 w-full rounded-full">
-          <LogOut aria-hidden />
-          {t('signOut')}
-        </Button>
-      </form>
+          <NotificationPreferences initial={prefs} />
+
+          <form action={signOutCustomer.bind(null, locale)}>
+            <Button type="submit" variant="outline" className="text-destructive h-11 w-full rounded-full">
+              <LogOut aria-hidden />
+              {t('signOut')}
+            </Button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

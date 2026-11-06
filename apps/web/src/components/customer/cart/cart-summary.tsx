@@ -24,7 +24,7 @@ export function CartSummary({ cart, estimate, isEstimating, onCheckout }: CartSu
   const ready = !!estimate && !isEstimating;
 
   return (
-    <div className="dh-slide-up safe-bottom pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-20 px-4">
+    <div className="dh-slide-up safe-bottom pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-20 px-4 md:bottom-4 lg:hidden">
       <button
         type="button"
         onClick={onCheckout}

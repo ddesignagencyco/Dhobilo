@@ -55,7 +55,7 @@ export function VendorList({ lat, lng, filters = {}, limit }: VendorListProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
         {Array.from({ length: limit ?? 6 }).map((_, index) => (
           <CardSkeleton key={index} />
         ))}
@@ -69,7 +69,7 @@ export function VendorList({ lat, lng, filters = {}, limit }: VendorListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="stagger grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
         {vendors.map((vendor) => (
           <VendorCard key={vendor.id} vendor={vendor} />
         ))}
@@ -79,7 +79,7 @@ export function VendorList({ lat, lng, filters = {}, limit }: VendorListProps) {
         <>
           <div ref={loadMoreRef} className="h-1" aria-hidden />
           {isFetchingNextPage ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
               <CardSkeleton />
             </div>
           ) : null}

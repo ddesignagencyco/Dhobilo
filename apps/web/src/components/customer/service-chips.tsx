@@ -10,18 +10,21 @@ export function ServiceChips({
   active,
   onSelect,
   className,
+  cards = false,
 }: {
   active?: string;
   onSelect?: (value: string | undefined) => void;
   className?: string;
+  /** From md up render the services as a grid of cards instead of a scrolling pill row (home page). */
+  cards?: boolean;
 }) {
   const t = useTranslations('customer.services');
 
   const base =
     'inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-200 active:scale-95';
 
-  return (
-    <div className={cn('no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1', className)}>
+  const pills = (
+    <div className={cn('no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1', cards && 'md:hidden', className)}>
       {onSelect ? (
         <button
           type="button"
@@ -64,5 +67,27 @@ export function ServiceChips({
         );
       })}
     </div>
+  );
+
+  if (!cards) return pills;
+
+  return (
+    <>
+      {pills}
+      <div className="stagger hidden gap-4 md:grid md:grid-cols-4">
+        {SERVICE_TYPES.map(({ value, icon: Icon }) => (
+          <Link
+            key={value}
+            href={{ pathname: '/discovery', query: { serviceType: value } }}
+            className="bg-card hover-lift group flex items-center gap-3 rounded-2xl border p-4 shadow-xs"
+          >
+            <span className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-xl transition-colors duration-300">
+              <Icon className="size-5" aria-hidden />
+            </span>
+            <span className="font-semibold">{t(value)}</span>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }

@@ -294,7 +294,7 @@ export function CheckoutView() {
   const money = (n: number) => formatMoney(fromPaisa(Math.round(n * 100)));
 
   return (
-    <div className="space-y-4 pb-44">
+    <div className="space-y-4 pb-44 lg:pb-0">
       <PageHeader
         title={t('title')}
         description={t('subtitle', {
@@ -302,231 +302,251 @@ export function CheckoutView() {
         })}
       />
 
-      <Steps steps={[t('stepAddress'), t('stepSchedule'), t('stepPayment')]} current={currentStep} />
+      <div className="lg:max-w-2xl">
+        <Steps steps={[t('stepAddress'), t('stepSchedule'), t('stepPayment')]} current={currentStep} />
+      </div>
 
-      <Section step={1} title={t('addressTitle')} done={addressDone}>
-        {addresses.isLoading ? (
-          <Skeleton className="h-16 rounded-xl" />
-        ) : addressMissing || showAddressForm ? (
-          <AddressForm
-            cityId={vendor.data?.cityId ?? 0}
-            defaultLat={Number(vendor.data?.lat ?? 0)}
-            defaultLng={Number(vendor.data?.lng ?? 0)}
-            onCreated={(address) => {
-              setAddressId(address.id);
-              setShowAddressForm(false);
-              void addresses.refetch();
-            }}
-            onCancel={addressMissing ? undefined : () => setShowAddressForm(false)}
-          />
-        ) : (
-          <div className="space-y-2">
-            {addresses.data?.map((address) => {
-              const selected = address.id === effectiveAddressId;
-              return (
-                <button
-                  key={address.id}
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8 lg:space-y-0">
+        <div className="min-w-0 space-y-4">
+          <Section step={1} title={t('addressTitle')} done={addressDone}>
+            {addresses.isLoading ? (
+              <Skeleton className="h-16 rounded-xl" />
+            ) : addressMissing || showAddressForm ? (
+              <AddressForm
+                cityId={vendor.data?.cityId ?? 0}
+                defaultLat={Number(vendor.data?.lat ?? 0)}
+                defaultLng={Number(vendor.data?.lng ?? 0)}
+                onCreated={(address) => {
+                  setAddressId(address.id);
+                  setShowAddressForm(false);
+                  void addresses.refetch();
+                }}
+                onCancel={addressMissing ? undefined : () => setShowAddressForm(false)}
+              />
+            ) : (
+              <div className="space-y-2">
+                {addresses.data?.map((address) => {
+                  const selected = address.id === effectiveAddressId;
+                  return (
+                    <button
+                      key={address.id}
+                      type="button"
+                      onClick={() => setAddressId(address.id)}
+                      aria-pressed={selected}
+                      className={cn(
+                        'flex w-full items-start gap-3 rounded-xl border p-3 text-start transition-all duration-200 active:scale-[0.99]',
+                        selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:bg-muted/60',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
+                          selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        <MapPin className="size-4" aria-hidden />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">
+                          {address.label || address.area || address.line1}
+                        </span>
+                        <span className="text-muted-foreground block text-xs">
+                          {[address.line1, address.line2, address.area].filter(Boolean).join(', ')}
+                        </span>
+                      </span>
+                      {selected ? (
+                        <CheckCircle2 className="dh-tick text-primary mt-1 size-5 shrink-0" aria-hidden />
+                      ) : null}
+                    </button>
+                  );
+                })}
+                <Button
                   type="button"
-                  onClick={() => setAddressId(address.id)}
-                  aria-pressed={selected}
-                  className={cn(
-                    'flex w-full items-start gap-3 rounded-xl border p-3 text-start transition-all duration-200 active:scale-[0.99]',
-                    selected ? 'border-primary bg-primary/5 ring-primary/30 ring-2' : 'hover:bg-muted/60',
-                  )}
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary"
+                  onClick={() => setShowAddressForm(true)}
                 >
-                  <span
-                    className={cn(
-                      'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
-                      selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    <MapPin className="size-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">
-                      {address.label || address.area || address.line1}
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {[address.line1, address.line2, address.area].filter(Boolean).join(', ')}
-                    </span>
-                  </span>
-                  {selected ? <CheckCircle2 className="dh-tick text-primary mt-1 size-5 shrink-0" aria-hidden /> : null}
-                </button>
-              );
-            })}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-primary"
-              onClick={() => setShowAddressForm(true)}
-            >
-              <Plus aria-hidden />
-              {t('addAddress')}
-            </Button>
-          </div>
-        )}
-      </Section>
+                  <Plus aria-hidden />
+                  {t('addAddress')}
+                </Button>
+              </div>
+            )}
+          </Section>
 
-      <Section step={2} title={t('pickupTitle')} done={!!pickupStart}>
-        <DayChips
-          days={pickupDays}
-          value={effectivePickupDate}
-          onChange={(value) => {
-            setPickupDate(value);
-            setPickupStart('');
-            setDeliveryStart('');
-            setDeliveryDate('');
-          }}
-          locale={locale}
-          timeZone={timeZone}
-        />
-        {pickupSlots.isLoading ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-11 rounded-xl" />
-            ))}
-          </div>
-        ) : pickupSlots.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription>{t('slotsError')}</AlertDescription>
-          </Alert>
-        ) : (
-          <SlotPicker
-            key={effectivePickupDate}
-            slots={pickupSlots.data?.slots ?? []}
-            value={pickupStart}
-            onChange={(value) => {
-              setPickupStart(value);
-              setDeliveryStart('');
-            }}
-            locale={locale}
-            timeZone={timeZone}
-            emptyLabel={t('noSlots')}
-          />
-        )}
-      </Section>
-
-      <Section step={3} title={t('deliveryTitle')} done={!!deliveryStart}>
-        {!pickupStart ? (
-          <p className="text-muted-foreground bg-muted/50 rounded-xl p-3 text-sm">{t('pickupFirst')}</p>
-        ) : (
-          <>
+          <Section step={2} title={t('pickupTitle')} done={!!pickupStart}>
             <DayChips
-              days={deliveryDays}
-              value={effectiveDeliveryDate}
+              days={pickupDays}
+              value={effectivePickupDate}
               onChange={(value) => {
-                setDeliveryDate(value);
+                setPickupDate(value);
+                setPickupStart('');
                 setDeliveryStart('');
+                setDeliveryDate('');
               }}
               locale={locale}
               timeZone={timeZone}
             />
-            {deliverySlots.isLoading ? (
+            {pickupSlots.isLoading ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-11 rounded-xl" />
                 ))}
               </div>
-            ) : deliverySlots.isError ? (
+            ) : pickupSlots.isError ? (
               <Alert variant="destructive">
                 <AlertDescription>{t('slotsError')}</AlertDescription>
               </Alert>
             ) : (
               <SlotPicker
-                key={effectiveDeliveryDate}
-                slots={deliverySlots.data?.slots ?? []}
-                value={deliveryStart}
-                onChange={setDeliveryStart}
+                key={effectivePickupDate}
+                slots={pickupSlots.data?.slots ?? []}
+                value={pickupStart}
+                onChange={(value) => {
+                  setPickupStart(value);
+                  setDeliveryStart('');
+                }}
                 locale={locale}
                 timeZone={timeZone}
                 emptyLabel={t('noSlots')}
               />
             )}
-          </>
-        )}
-      </Section>
+          </Section>
 
-      <Section step={4} title={t('paymentTitle')} done={scheduleDone}>
-        <div className="border-primary bg-primary/5 ring-primary/30 flex items-center gap-3 rounded-xl border p-3 ring-2">
-          <span className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
-            <Banknote className="size-4" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold">{t('cod')}</span>
-            <span className="text-muted-foreground block text-xs">{t('codHint')}</span>
-          </span>
-          <CheckCircle2 className="text-primary size-5 shrink-0" aria-hidden />
-        </div>
-        <div className="text-muted-foreground bg-muted/40 flex items-center gap-2 rounded-xl p-3 text-xs">
-          <Wallet className="size-4 shrink-0" aria-hidden />
-          {t('onlineSoon')}
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="checkout-note" className="text-sm font-medium">
-            {t('noteTitle')}
-          </label>
-          <Textarea
-            id="checkout-note"
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder={t('notePlaceholder')}
-            maxLength={300}
-          />
-        </div>
-      </Section>
+          <Section step={3} title={t('deliveryTitle')} done={!!deliveryStart}>
+            {!pickupStart ? (
+              <p className="text-muted-foreground bg-muted/50 rounded-xl p-3 text-sm">{t('pickupFirst')}</p>
+            ) : (
+              <>
+                <DayChips
+                  days={deliveryDays}
+                  value={effectiveDeliveryDate}
+                  onChange={(value) => {
+                    setDeliveryDate(value);
+                    setDeliveryStart('');
+                  }}
+                  locale={locale}
+                  timeZone={timeZone}
+                />
+                {deliverySlots.isLoading ? (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="h-11 rounded-xl" />
+                    ))}
+                  </div>
+                ) : deliverySlots.isError ? (
+                  <Alert variant="destructive">
+                    <AlertDescription>{t('slotsError')}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <SlotPicker
+                    key={effectiveDeliveryDate}
+                    slots={deliverySlots.data?.slots ?? []}
+                    value={deliveryStart}
+                    onChange={setDeliveryStart}
+                    locale={locale}
+                    timeZone={timeZone}
+                    emptyLabel={t('noSlots')}
+                  />
+                )}
+              </>
+            )}
+          </Section>
 
-      <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
-        <h2 className="text-base font-semibold">{t('summaryTitle')}</h2>
-        {cart.items.map((item) => {
-          const line = estimate.data?.lines.find((entry) => entry.serviceItemId === item.itemId);
-          return (
-            <div key={item.itemId} className="flex justify-between gap-2">
-              <span className="text-muted-foreground">
-                {line ? (locale === 'ur' && line.nameUr ? line.nameUr : line.name) : item.itemId}{' '}
-                <span className="tabular">× {item.quantity}</span>
+          <Section step={4} title={t('paymentTitle')} done={scheduleDone}>
+            <div className="border-primary bg-primary/5 ring-primary/30 flex items-center gap-3 rounded-xl border p-3 ring-2">
+              <span className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-full">
+                <Banknote className="size-4" aria-hidden />
               </span>
-              <span className="tabular">{line ? formatMoney(line.lineTotal) : '—'}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{t('cod')}</span>
+                <span className="text-muted-foreground block text-xs">{t('codHint')}</span>
+              </span>
+              <CheckCircle2 className="text-primary size-5 shrink-0" aria-hidden />
             </div>
-          );
-        })}
-        <div className="space-y-2 border-t border-dashed pt-3">
-          {estimate.data ? (
-            <>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t('subtotal')}</span>
-                <span className="tabular">{formatMoney(estimate.data.subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t('deliveryFee')}</span>
-                <span className="tabular">{formatMoney(estimate.data.deliveryFee)}</span>
-              </div>
-              {Number(estimate.data.discountTotal) > 0 ? (
-                <div className="text-success-text flex justify-between">
-                  <span>{t('discount')}</span>
-                  <span className="tabular">-{formatMoney(estimate.data.discountTotal)}</span>
-                </div>
-              ) : null}
-              <div className="flex justify-between border-t pt-2 text-base font-bold">
-                <span>{t('total')}</span>
-                <span className="tabular">{formatMoney(estimate.data.total)}</span>
-              </div>
-            </>
-          ) : (
-            <Skeleton className="h-5" />
-          )}
+            <div className="text-muted-foreground bg-muted/40 flex items-center gap-2 rounded-xl p-3 text-xs">
+              <Wallet className="size-4 shrink-0" aria-hidden />
+              {t('onlineSoon')}
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="checkout-note" className="text-sm font-medium">
+                {t('noteTitle')}
+              </label>
+              <Textarea
+                id="checkout-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder={t('notePlaceholder')}
+                maxLength={300}
+              />
+            </div>
+          </Section>
         </div>
-      </section>
 
-      {placeOrder.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>{placeOrder.error.message}</AlertDescription>
-        </Alert>
-      ) : null}
+        <aside className="space-y-4 lg:sticky lg:top-24">
+          <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
+            <h2 className="text-base font-semibold">{t('summaryTitle')}</h2>
+            {cart.items.map((item) => {
+              const line = estimate.data?.lines.find((entry) => entry.serviceItemId === item.itemId);
+              return (
+                <div key={item.itemId} className="flex justify-between gap-2">
+                  <span className="text-muted-foreground">
+                    {line ? (locale === 'ur' && line.nameUr ? line.nameUr : line.name) : item.itemId}{' '}
+                    <span className="tabular">× {item.quantity}</span>
+                  </span>
+                  <span className="tabular">{line ? formatMoney(line.lineTotal) : '—'}</span>
+                </div>
+              );
+            })}
+            <div className="space-y-2 border-t border-dashed pt-3">
+              {estimate.data ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t('subtotal')}</span>
+                    <span className="tabular">{formatMoney(estimate.data.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t('deliveryFee')}</span>
+                    <span className="tabular">{formatMoney(estimate.data.deliveryFee)}</span>
+                  </div>
+                  {Number(estimate.data.discountTotal) > 0 ? (
+                    <div className="text-success-text flex justify-between">
+                      <span>{t('discount')}</span>
+                      <span className="tabular">-{formatMoney(estimate.data.discountTotal)}</span>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between border-t pt-2 text-base font-bold">
+                    <span>{t('total')}</span>
+                    <span className="tabular">{formatMoney(estimate.data.total)}</span>
+                  </div>
+                </>
+              ) : (
+                <Skeleton className="h-5" />
+              )}
+            </div>
+          </section>
 
-      <p className="text-muted-foreground text-center text-xs">{t('idempotencyHint')}</p>
+          {placeOrder.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{placeOrder.error.message}</AlertDescription>
+            </Alert>
+          ) : null}
 
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/85 safe-bottom fixed inset-x-0 bottom-[4.25rem] z-20 border-t backdrop-blur-md">
+          <Button
+            size="lg"
+            className="hidden h-12 w-full rounded-2xl text-base shadow-md lg:flex"
+            onClick={() => void place()}
+            disabled={!canPlace}
+          >
+            {placeOrder.isPending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+            {placeOrder.isPending ? t('placing') : t('placeOrder')}
+          </Button>
+
+          <p className="text-muted-foreground text-center text-xs">{t('idempotencyHint')}</p>
+        </aside>
+      </div>
+
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/85 safe-bottom fixed inset-x-0 bottom-[4.25rem] z-20 border-t backdrop-blur-md md:bottom-0 lg:hidden">
         <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="text-muted-foreground text-xs">{t('total')}</p>

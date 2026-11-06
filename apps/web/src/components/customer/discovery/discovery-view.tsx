@@ -57,7 +57,7 @@ export function DiscoveryView({ filters, limit }: { filters: DiscoveryFilters; l
 
   if (addresses.isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))] md:gap-4">
         {Array.from({ length: limit ?? 4 }).map((_, index) => (
           <Skeleton key={index} className="h-40 rounded-2xl" />
         ))}

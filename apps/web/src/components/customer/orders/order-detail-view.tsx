@@ -101,7 +101,7 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
   const flow: string[] = ended ? [...ORDER_FLOW.filter((step) => reachedAt.has(step)), liveStatus] : [...ORDER_FLOW];
 
   return (
-    <div className="space-y-4 pb-10">
+    <div className="space-y-4 pb-10 lg:space-y-6">
       {placed ? (
         <div className="bg-success/10 border-success/30 animate-pop flex items-center gap-4 rounded-3xl border p-4">
           <span className="dh-ring-pop bg-success text-success-foreground flex size-14 shrink-0 items-center justify-center rounded-full">
@@ -125,209 +125,219 @@ export function OrderDetailView({ orderId, placed }: { orderId: string; placed: 
         </div>
       ) : null}
 
-      <section className="bg-card space-y-4 rounded-3xl border p-4 shadow-xs">
-        <div className="flex items-start gap-3">
-          <Monogram name={data.vendor.businessName} size="md" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h1 className="tabular text-lg leading-tight font-semibold tracking-tight whitespace-nowrap">
-                {data.orderNo}
-              </h1>
-              <OrderStatusBadge status={liveStatus} />
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start lg:gap-8 lg:space-y-0">
+        <div className="min-w-0 space-y-4">
+          <section className="bg-card space-y-4 rounded-3xl border p-4 shadow-xs md:p-6">
+            <div className="flex items-start gap-3">
+              <Monogram name={data.vendor.businessName} size="md" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h1 className="tabular text-lg leading-tight font-semibold tracking-tight whitespace-nowrap">
+                    {data.orderNo}
+                  </h1>
+                  <OrderStatusBadge status={liveStatus} />
+                </div>
+                <Link
+                  href={`/vendor/${data.vendor.id}`}
+                  className="text-muted-foreground hover:text-primary mt-0.5 inline-flex items-center gap-1 text-sm transition-colors"
+                >
+                  <Store className="size-3.5" aria-hidden />
+                  {data.vendor.businessName}
+                </Link>
+                <p className="text-muted-foreground text-xs">{formatDateTime(data.placedAt, locale)}</p>
+              </div>
             </div>
-            <Link
-              href={`/vendor/${data.vendor.id}`}
-              className="text-muted-foreground hover:text-primary mt-0.5 inline-flex items-center gap-1 text-sm transition-colors"
-            >
-              <Store className="size-3.5" aria-hidden />
-              {data.vendor.businessName}
-            </Link>
-            <p className="text-muted-foreground text-xs">{formatDateTime(data.placedAt, locale)}</p>
-          </div>
-        </div>
-        {!ended ? <ProgressBar status={liveStatus} /> : null}
-        <p className="text-sm font-medium" aria-live="polite">
-          {t(`statusHint.${statusKey}`)}
-        </p>
-      </section>
+            {!ended ? <ProgressBar status={liveStatus} /> : null}
+            <p className="text-sm font-medium" aria-live="polite">
+              {t(`statusHint.${statusKey}`)}
+            </p>
+          </section>
 
-      <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
-        <h2 className="text-base font-semibold">{t('trackTitle')}</h2>
-        {timeline.isLoading ? (
-          <Skeleton className="h-24" />
-        ) : (
-          <ol className="stagger relative space-y-0">
-            {flow.map((step, index) => {
-              const at = reachedAt.get(step);
-              const reached = !!at && (ended || index <= currentIndex);
-              const current = step === liveStatus;
-              const bad = step === 'CANCELLED' || step === 'REJECTED';
-              return (
-                <li key={step} className="relative flex gap-3 pb-5 last:pb-0">
-                  {index < flow.length - 1 ? (
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'absolute start-[0.8125rem] top-7 -bottom-0.5 w-0.5 rounded-full transition-colors duration-500',
-                        reached && !current ? 'bg-primary' : 'bg-border',
-                      )}
-                    />
-                  ) : null}
-                  <span
-                    className={cn(
-                      'relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300',
-                      bad && 'bg-destructive border-destructive text-destructive-foreground',
-                      !bad && reached && !current && 'bg-primary border-primary text-primary-foreground',
-                      !bad && current && 'bg-background border-primary text-primary dh-live',
-                      !bad && !reached && 'bg-background border-border text-transparent',
-                    )}
-                  >
-                    {bad ? (
-                      <X className="size-3.5" aria-hidden />
-                    ) : reached && !current ? (
-                      <Check className="size-3.5" aria-hidden />
-                    ) : current ? (
-                      <span className="bg-primary size-2 rounded-full" />
-                    ) : null}
-                  </span>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                      <p className={cn('text-sm', reached || current ? 'font-semibold' : 'text-muted-foreground')}>
-                        {t(`status.${step.toLowerCase()}`)}
-                      </p>
-                      <p className="text-muted-foreground tabular text-xs">
-                        {at ? formatDateTime(at, locale) : t('pending')}
-                      </p>
-                    </div>
-                    {at && timelineEntries.find((entry) => entry.status === step)?.note ? (
-                      <p className="text-muted-foreground mt-0.5 text-xs">
-                        {timelineEntries.find((entry) => entry.status === step)?.note}
-                      </p>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-        {data.cancelReason || data.rejectionReason ? (
-          <Alert variant="destructive">
-            <AlertDescription>{data.cancelReason ?? data.rejectionReason}</AlertDescription>
-          </Alert>
-        ) : null}
-      </section>
-
-      {rider ? (
-        <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
-          <h2 className="text-base font-semibold">{t('ridersOnTheWay')}</h2>
-          <div className="flex items-center gap-3">
-            {rider.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={rider.photoUrl} alt={rider.name ?? t('rider')} className="size-12 rounded-full object-cover" />
+          <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
+            <h2 className="text-base font-semibold">{t('trackTitle')}</h2>
+            {timeline.isLoading ? (
+              <Skeleton className="h-24" />
             ) : (
-              <Monogram name={rider.name ?? t('rider')} size="md" className="rounded-full" />
+              <ol className="stagger relative space-y-0">
+                {flow.map((step, index) => {
+                  const at = reachedAt.get(step);
+                  const reached = !!at && (ended || index <= currentIndex);
+                  const current = step === liveStatus;
+                  const bad = step === 'CANCELLED' || step === 'REJECTED';
+                  return (
+                    <li key={step} className="relative flex gap-3 pb-5 last:pb-0">
+                      {index < flow.length - 1 ? (
+                        <span
+                          aria-hidden
+                          className={cn(
+                            'absolute start-[0.8125rem] top-7 -bottom-0.5 w-0.5 rounded-full transition-colors duration-500',
+                            reached && !current ? 'bg-primary' : 'bg-border',
+                          )}
+                        />
+                      ) : null}
+                      <span
+                        className={cn(
+                          'relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300',
+                          bad && 'bg-destructive border-destructive text-destructive-foreground',
+                          !bad && reached && !current && 'bg-primary border-primary text-primary-foreground',
+                          !bad && current && 'bg-background border-primary text-primary dh-live',
+                          !bad && !reached && 'bg-background border-border text-transparent',
+                        )}
+                      >
+                        {bad ? (
+                          <X className="size-3.5" aria-hidden />
+                        ) : reached && !current ? (
+                          <Check className="size-3.5" aria-hidden />
+                        ) : current ? (
+                          <span className="bg-primary size-2 rounded-full" />
+                        ) : null}
+                      </span>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                          <p className={cn('text-sm', reached || current ? 'font-semibold' : 'text-muted-foreground')}>
+                            {t(`status.${step.toLowerCase()}`)}
+                          </p>
+                          <p className="text-muted-foreground tabular text-xs">
+                            {at ? formatDateTime(at, locale) : t('pending')}
+                          </p>
+                        </div>
+                        {at && timelineEntries.find((entry) => entry.status === step)?.note ? (
+                          <p className="text-muted-foreground mt-0.5 text-xs">
+                            {timelineEntries.find((entry) => entry.status === step)?.note}
+                          </p>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             )}
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold">{rider.name ?? t('rider')}</p>
-              <OrderStatusBadge status={riderStatus ?? 'OUT_FOR_DELIVERY'} />
-            </div>
-          </div>
-          {riderLocationQuery.data ? (
-            <a
-              href={`https://www.google.com/maps?q=${riderLocationQuery.data.lat},${riderLocationQuery.data.lng}`}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-info/10 text-info-text flex items-center gap-3 rounded-xl p-3 text-sm font-medium transition-colors hover:bg-info/15"
-            >
-              <span className="dh-live bg-info text-info-foreground flex size-8 items-center justify-center rounded-full">
-                <Navigation className="size-4" aria-hidden />
-              </span>
-              <span className="flex-1">{t('riderLocation')}</span>
-              <span className="text-xs underline">{t('openMaps')}</span>
-            </a>
-          ) : null}
-        </section>
-      ) : null}
+            {data.cancelReason || data.rejectionReason ? (
+              <Alert variant="destructive">
+                <AlertDescription>{data.cancelReason ?? data.rejectionReason}</AlertDescription>
+              </Alert>
+            ) : null}
+          </section>
+        </div>
 
-      <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
-        <h2 className="text-base font-semibold">{t('itemsTitle')}</h2>
-        {data.items.map((item) => (
-          <div key={item.id} className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-medium">{locale === 'ur' && item.nameUr ? item.nameUr : item.name}</p>
-              <p className="text-muted-foreground tabular text-xs">
-                {formatMoney(item.unitPrice)} × {item.qty}
+        <aside className="min-w-0 space-y-4">
+          {rider ? (
+            <section className="bg-card space-y-3 rounded-2xl border p-4 shadow-xs">
+              <h2 className="text-base font-semibold">{t('ridersOnTheWay')}</h2>
+              <div className="flex items-center gap-3">
+                {rider.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={rider.photoUrl}
+                    alt={rider.name ?? t('rider')}
+                    className="size-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <Monogram name={rider.name ?? t('rider')} size="md" className="rounded-full" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{rider.name ?? t('rider')}</p>
+                  <OrderStatusBadge status={riderStatus ?? 'OUT_FOR_DELIVERY'} />
+                </div>
+              </div>
+              {riderLocationQuery.data ? (
+                <a
+                  href={`https://www.google.com/maps?q=${riderLocationQuery.data.lat},${riderLocationQuery.data.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-info/10 text-info-text flex items-center gap-3 rounded-xl p-3 text-sm font-medium transition-colors hover:bg-info/15"
+                >
+                  <span className="dh-live bg-info text-info-foreground flex size-8 items-center justify-center rounded-full">
+                    <Navigation className="size-4" aria-hidden />
+                  </span>
+                  <span className="flex-1">{t('riderLocation')}</span>
+                  <span className="text-xs underline">{t('openMaps')}</span>
+                </a>
+              ) : null}
+            </section>
+          ) : null}
+
+          <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
+            <h2 className="text-base font-semibold">{t('itemsTitle')}</h2>
+            {data.items.map((item) => (
+              <div key={item.id} className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">{locale === 'ur' && item.nameUr ? item.nameUr : item.name}</p>
+                  <p className="text-muted-foreground tabular text-xs">
+                    {formatMoney(item.unitPrice)} × {item.qty}
+                  </p>
+                </div>
+                <span className="tabular font-medium">{formatMoney(item.lineTotal)}</span>
+              </div>
+            ))}
+            <div className="space-y-2 border-t border-dashed pt-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('subtotal')}</span>
+                <span className="tabular">{formatMoney(data.subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{t('deliveryFee')}</span>
+                <span className="tabular">{formatMoney(data.deliveryFee)}</span>
+              </div>
+              {Number(data.discountTotal) > 0 ? (
+                <div className="text-success-text flex justify-between">
+                  <span>{t('discount')}</span>
+                  <span className="tabular">-{formatMoney(data.discountTotal)}</span>
+                </div>
+              ) : null}
+              <div className="flex justify-between text-base font-bold">
+                <span>{t('total')}</span>
+                <span className="tabular">{formatMoney(data.total)}</span>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {data.paymentMethod === 'COD' ? t('cod') : data.paymentMethod} ·{' '}
+                {data.paymentStatus.replaceAll('_', ' ').toLowerCase()}
               </p>
             </div>
-            <span className="tabular font-medium">{formatMoney(item.lineTotal)}</span>
-          </div>
-        ))}
-        <div className="space-y-2 border-t border-dashed pt-3">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('subtotal')}</span>
-            <span className="tabular">{formatMoney(data.subtotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('deliveryFee')}</span>
-            <span className="tabular">{formatMoney(data.deliveryFee)}</span>
-          </div>
-          {Number(data.discountTotal) > 0 ? (
-            <div className="text-success-text flex justify-between">
-              <span>{t('discount')}</span>
-              <span className="tabular">-{formatMoney(data.discountTotal)}</span>
-            </div>
-          ) : null}
-          <div className="flex justify-between text-base font-bold">
-            <span>{t('total')}</span>
-            <span className="tabular">{formatMoney(data.total)}</span>
-          </div>
-          <p className="text-muted-foreground text-xs">
-            {data.paymentMethod === 'COD' ? t('cod') : data.paymentMethod} ·{' '}
-            {data.paymentStatus.replaceAll('_', ' ').toLowerCase()}
-          </p>
-        </div>
-      </section>
+          </section>
 
-      <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
-        <h2 className="text-base font-semibold">{t('scheduleTitle')}</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="bg-muted/50 rounded-xl p-3">
-            <p className="text-muted-foreground text-xs">{t('pickup')}</p>
-            <p className="tabular mt-0.5 font-medium">
-              {formatSlotRange(data.pickupSlotStart, data.pickupSlotEnd, locale, timeZone)}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {formatDateTime(data.pickupSlotStart, locale, timeZone).split(',')[0]}
-            </p>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-3">
-            <p className="text-muted-foreground text-xs">{t('delivery')}</p>
-            <p className="tabular mt-0.5 font-medium">
-              {formatSlotRange(data.deliverySlotStart, data.deliverySlotEnd, locale, timeZone)}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {formatDateTime(data.deliverySlotStart, locale, timeZone).split(',')[0]}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-3 pt-1">
-          <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full">
-            <MapPin className="size-4" aria-hidden />
-          </span>
-          <div>
-            <p className="font-medium">{address.label || address.area || address.line1}</p>
-            <p className="text-muted-foreground text-xs">
-              {[address.line1, address.line2, address.area].filter(Boolean).join(', ')}
-            </p>
-          </div>
-        </div>
-        {data.customerNote ? (
-          <p className="bg-muted/50 rounded-xl p-3 text-xs">
-            <span className="font-medium">{t('noteTitle')}: </span>
-            {data.customerNote}
-          </p>
-        ) : null}
-      </section>
+          <section className="bg-card space-y-3 rounded-2xl border p-4 text-sm shadow-xs">
+            <h2 className="text-base font-semibold">{t('scheduleTitle')}</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="bg-muted/50 rounded-xl p-3">
+                <p className="text-muted-foreground text-xs">{t('pickup')}</p>
+                <p className="tabular mt-0.5 font-medium">
+                  {formatSlotRange(data.pickupSlotStart, data.pickupSlotEnd, locale, timeZone)}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {formatDateTime(data.pickupSlotStart, locale, timeZone).split(',')[0]}
+                </p>
+              </div>
+              <div className="bg-muted/50 rounded-xl p-3">
+                <p className="text-muted-foreground text-xs">{t('delivery')}</p>
+                <p className="tabular mt-0.5 font-medium">
+                  {formatSlotRange(data.deliverySlotStart, data.deliverySlotEnd, locale, timeZone)}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {formatDateTime(data.deliverySlotStart, locale, timeZone).split(',')[0]}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 pt-1">
+              <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full">
+                <MapPin className="size-4" aria-hidden />
+              </span>
+              <div>
+                <p className="font-medium">{address.label || address.area || address.line1}</p>
+                <p className="text-muted-foreground text-xs">
+                  {[address.line1, address.line2, address.area].filter(Boolean).join(', ')}
+                </p>
+              </div>
+            </div>
+            {data.customerNote ? (
+              <p className="bg-muted/50 rounded-xl p-3 text-xs">
+                <span className="font-medium">{t('noteTitle')}: </span>
+                {data.customerNote}
+              </p>
+            ) : null}
+          </section>
+        </aside>
+      </div>
 
       <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <DialogContent>

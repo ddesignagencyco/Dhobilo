@@ -59,138 +59,154 @@ export function CartView() {
   const money = (n: number) => formatMoney(fromPaisa(Math.round(n * 100)));
 
   return (
-    <div className="space-y-5 pb-36">
+    <div className="space-y-5 pb-36 lg:pb-0">
       <PageHeader title={t('title')} />
 
-      {vendorName ? (
-        <Link
-          href={`/vendor/${cart.vendorId}`}
-          className="bg-card hover-lift flex items-center gap-3 rounded-2xl border p-3 shadow-xs"
-        >
-          <Monogram name={vendorName} size="sm" />
-          <div className="min-w-0 flex-1">
-            <p className="text-muted-foreground text-xs">{t('orderingFrom')}</p>
-            <p className="truncate font-semibold">{vendorName}</p>
-          </div>
-          <span className="text-primary flex items-center gap-1 text-sm font-medium">
-            <Store className="size-4" aria-hidden />
-            {t('addMore')}
-          </span>
-        </Link>
-      ) : null}
-
-      {vendor.isError || estimate.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>{t('loadError')}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {unavailable ? (
-        <Alert variant="warning">
-          <AlertDescription>{t('vendorPaused')}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <div className="bg-card stagger divide-y overflow-hidden rounded-2xl border shadow-xs">
-        {cart.items.map((item) => {
-          const line = lineFor(item.itemId);
-          const name = line ? (locale === 'ur' && line.nameUr ? line.nameUr : line.name) : item.itemId;
-          return (
-            <div key={item.itemId} className="flex items-center gap-3 p-4">
+      <div className="space-y-5 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8 lg:space-y-0">
+        <div className="min-w-0 space-y-5">
+          {vendorName ? (
+            <Link
+              href={`/vendor/${cart.vendorId}`}
+              className="bg-card hover-lift flex items-center gap-3 rounded-2xl border p-3 shadow-xs"
+            >
+              <Monogram name={vendorName} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{name}</p>
-                {line ? (
-                  <p className="text-muted-foreground tabular text-xs">
-                    {formatMoney(line.unitPrice)} × {item.quantity}
-                  </p>
-                ) : (
-                  <Skeleton className="mt-1 h-3 w-20" />
-                )}
+                <p className="text-muted-foreground text-xs">{t('orderingFrom')}</p>
+                <p className="truncate font-semibold">{vendorName}</p>
               </div>
+              <span className="text-primary flex items-center gap-1 text-sm font-medium">
+                <Store className="size-4" aria-hidden />
+                {t('addMore')}
+              </span>
+            </Link>
+          ) : null}
 
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="bg-muted flex items-center gap-0.5 rounded-full p-0.5">
+          {vendor.isError || estimate.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{t('loadError')}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {unavailable ? (
+            <Alert variant="warning">
+              <AlertDescription>{t('vendorPaused')}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="bg-card stagger divide-y overflow-hidden rounded-2xl border shadow-xs">
+            {cart.items.map((item) => {
+              const line = lineFor(item.itemId);
+              const name = line ? (locale === 'ur' && line.nameUr ? line.nameUr : line.name) : item.itemId;
+              return (
+                <div key={item.itemId} className="flex items-center gap-3 p-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{name}</p>
+                    {line ? (
+                      <p className="text-muted-foreground tabular text-xs">
+                        {formatMoney(line.unitPrice)} × {item.quantity}
+                      </p>
+                    ) : (
+                      <Skeleton className="mt-1 h-3 w-20" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="bg-muted flex items-center gap-0.5 rounded-full p-0.5">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 rounded-full"
+                        onClick={() => updateQuantity(item.itemId, item.quantity - 1)}
+                        aria-label={t('decrease')}
+                      >
+                        <Minus className="size-3.5" aria-hidden />
+                      </Button>
+                      <span key={item.quantity} className="dh-tick tabular min-w-6 text-center text-sm font-semibold">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 rounded-full"
+                        onClick={() => updateQuantity(item.itemId, item.quantity + 1)}
+                        aria-label={t('increase')}
+                      >
+                        <Plus className="size-3.5" aria-hidden />
+                      </Button>
+                    </div>
+                    {line ? <p className="tabular text-sm font-semibold">{formatMoney(line.lineTotal)}</p> : null}
+                  </div>
+
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="size-8 rounded-full"
-                    onClick={() => updateQuantity(item.itemId, item.quantity - 1)}
-                    aria-label={t('decrease')}
+                    className="text-muted-foreground hover:text-destructive size-8"
+                    onClick={() => removeItem(item.itemId)}
+                    aria-label={t('remove')}
                   >
-                    <Minus className="size-3.5" aria-hidden />
-                  </Button>
-                  <span key={item.quantity} className="dh-tick tabular min-w-6 text-center text-sm font-semibold">
-                    {item.quantity}
-                  </span>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="size-8 rounded-full"
-                    onClick={() => updateQuantity(item.itemId, item.quantity + 1)}
-                    aria-label={t('increase')}
-                  >
-                    <Plus className="size-3.5" aria-hidden />
+                    <Trash2 className="size-4" aria-hidden />
                   </Button>
                 </div>
-                {line ? <p className="tabular text-sm font-semibold">{formatMoney(line.lineTotal)}</p> : null}
-              </div>
-
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="text-muted-foreground hover:text-destructive size-8"
-                onClick={() => removeItem(item.itemId)}
-                aria-label={t('remove')}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="bg-card space-y-2.5 rounded-2xl border p-4 text-sm shadow-xs">
-        {estimate.isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-5 w-1/2" />
+              );
+            })}
           </div>
-        ) : estimate.data ? (
-          <>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('subtotal')}</span>
-              <span className="tabular">{formatMoney(estimate.data.subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('deliveryFee')}</span>
-              <span className="tabular">{formatMoney(estimate.data.deliveryFee)}</span>
-            </div>
-            {Number(estimate.data.discountTotal) > 0 ? (
-              <div className="text-success-text flex justify-between">
-                <span>{t('discount')}</span>
-                <span className="tabular">-{formatMoney(estimate.data.discountTotal)}</span>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-24">
+          <div className="bg-card space-y-2.5 rounded-2xl border p-4 text-sm shadow-xs">
+            {estimate.isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-5 w-1/2" />
               </div>
-            ) : null}
-            <div className="border-t border-dashed pt-3 text-base font-semibold">
-              <div className="flex items-baseline justify-between">
-                <span>{t('total')}</span>
-                <span className="text-lg">
-                  <AnimatedNumber value={Number(estimate.data.total)} format={money} duration={600} />
-                </span>
-              </div>
-              <p className="text-muted-foreground mt-1 text-xs font-normal">{t('payOnDelivery')}</p>
-            </div>
-          </>
-        ) : (
-          <p className="text-muted-foreground">{t('estimatePending')}</p>
-        )}
+            ) : estimate.data ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('subtotal')}</span>
+                  <span className="tabular">{formatMoney(estimate.data.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('deliveryFee')}</span>
+                  <span className="tabular">{formatMoney(estimate.data.deliveryFee)}</span>
+                </div>
+                {Number(estimate.data.discountTotal) > 0 ? (
+                  <div className="text-success-text flex justify-between">
+                    <span>{t('discount')}</span>
+                    <span className="tabular">-{formatMoney(estimate.data.discountTotal)}</span>
+                  </div>
+                ) : null}
+                <div className="border-t border-dashed pt-3 text-base font-semibold">
+                  <div className="flex items-baseline justify-between">
+                    <span>{t('total')}</span>
+                    <span className="text-lg">
+                      <AnimatedNumber value={Number(estimate.data.total)} format={money} duration={600} />
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground mt-1 text-xs font-normal">{t('payOnDelivery')}</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground">{t('estimatePending')}</p>
+            )}
+          </div>
+
+          <Button
+            size="lg"
+            className="hidden h-12 w-full rounded-2xl text-base shadow-md lg:flex"
+            onClick={() => router.push('/checkout')}
+            disabled={!estimate.data || estimate.isFetching || unavailable}
+          >
+            {t('checkout')}
+            <ArrowRight className="size-4 rtl:rotate-180" aria-hidden />
+          </Button>
+        </aside>
       </div>
 
-      <div className="safe-bottom dh-slide-up pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-20 px-4">
+      <div className="safe-bottom dh-slide-up pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-20 px-4 md:bottom-4 lg:hidden">
         <div className="pointer-events-auto mx-auto flex w-full max-w-3xl">
           <Button
             size="lg"

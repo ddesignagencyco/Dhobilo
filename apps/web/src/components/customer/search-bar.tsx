@@ -12,11 +12,13 @@ export function SearchBar({
   extraQuery,
   className,
   onDark = false,
+  size = 'default',
 }: {
   initial?: string;
   extraQuery?: Record<string, string | undefined>;
   className?: string;
   onDark?: boolean;
+  size?: 'default' | 'sm';
 }) {
   const t = useTranslations('customer.home');
   const router = useRouter();
@@ -26,7 +28,8 @@ export function SearchBar({
     <form
       role="search"
       className={cn(
-        'focus-within:ring-ring/40 flex items-center gap-2 rounded-2xl border px-3 shadow-sm transition-shadow focus-within:ring-4',
+        'focus-within:ring-ring/40 flex items-center gap-2 border px-3 shadow-sm transition-shadow focus-within:ring-4',
+        size === 'sm' ? 'rounded-full' : 'rounded-2xl',
         onDark ? 'border-white/0 bg-white text-slate-900 focus-within:ring-white/40' : 'bg-card text-foreground',
         className,
       )}
@@ -47,7 +50,8 @@ export function SearchBar({
         placeholder={t('searchPlaceholder')}
         aria-label={t('searchPlaceholder')}
         className={cn(
-          'h-12 min-w-0 flex-1 bg-transparent text-sm outline-none',
+          'min-w-0 flex-1 bg-transparent text-sm outline-none',
+          size === 'sm' ? 'h-9' : 'h-12',
           onDark ? 'placeholder:text-slate-500' : 'placeholder:text-muted-foreground',
         )}
         enterKeyHint="search"

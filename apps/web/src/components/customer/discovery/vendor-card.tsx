@@ -14,7 +14,10 @@ export function VendorCard({ vendor }: { vendor: VendorCardType }) {
   const ts = useTranslations('customer.services');
 
   return (
-    <Link href={`/vendor/${vendor.id}`} className="bg-card hover-lift group block rounded-2xl border p-4 shadow-xs">
+    <Link
+      href={`/vendor/${vendor.id}`}
+      className="bg-card hover-lift group flex h-full flex-col rounded-2xl border p-4 shadow-xs"
+    >
       <div className="flex items-start gap-3">
         <Monogram
           name={vendor.businessName}
@@ -53,6 +56,7 @@ export function VendorCard({ vendor }: { vendor: VendorCardType }) {
         </p>
       ) : null}
 
+      <div className="flex-1" />
       <div className="mt-3 flex items-center justify-between gap-3 border-t pt-3">
         <div className="flex flex-wrap gap-1.5">
           {vendor.serviceTypes.slice(0, 4).map((type) => {

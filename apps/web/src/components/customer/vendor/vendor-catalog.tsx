@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CartSidebar } from '@/components/customer/cart/cart-sidebar';
 import { CartSummary } from '@/components/customer/cart/cart-summary';
 import { Monogram } from '@/components/customer/ui/monogram';
 import { RatingPill } from '@/components/customer/ui/rating';
@@ -118,8 +119,8 @@ export function VendorCatalog({ vendor, catalog }: { vendor: PublicVendorDetail;
     locale === 'ur' ? category.nameUr : category.name;
 
   return (
-    <div className="space-y-5 pb-32">
-      <section className="bg-card space-y-4 rounded-3xl border p-4 shadow-xs">
+    <div className="space-y-5 pb-32 lg:space-y-6 lg:pb-0">
+      <section className="bg-card space-y-4 rounded-3xl border p-4 shadow-xs md:p-6">
         <div className="flex items-start gap-4">
           <Monogram name={vendor.businessName} size="lg" />
           <div className="min-w-0 flex-1 space-y-2">
@@ -130,7 +131,10 @@ export function VendorCatalog({ vendor, catalog }: { vendor: PublicVendorDetail;
               </Badge>
               <RatingPill value={Number(vendor.ratingAvg)} count={vendor.ratingCount} newLabel={td('new')} />
             </div>
-            <h1 dir="auto" className="text-xl leading-snug font-semibold tracking-tight text-balance text-start">
+            <h1
+              dir="auto"
+              className="text-xl leading-snug font-semibold tracking-tight text-balance text-start md:text-2xl"
+            >
               {vendor.businessName}
             </h1>
             {vendor.addressLine ? (
@@ -148,7 +152,7 @@ export function VendorCatalog({ vendor, catalog }: { vendor: PublicVendorDetail;
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Fact icon={Clock}>
             {hours.kind === 'allDay'
               ? t('open24')
@@ -190,94 +194,105 @@ export function VendorCatalog({ vendor, catalog }: { vendor: PublicVendorDetail;
       {catalog.categories.length === 0 ? (
         <EmptyState title={t('emptyCatalog')} />
       ) : (
-        <>
-          {catalog.categories.length > 1 ? (
-            <div className="bg-background/90 sticky top-12 z-10 -mx-4 border-b px-4 backdrop-blur-md">
-              <div ref={tabsRef} className="no-scrollbar flex gap-1 overflow-x-auto py-2" role="tablist">
-                {catalog.categories.map((category) => {
-                  const active = category.id === activeCategory;
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      data-cat={category.id}
-                      onClick={() => {
-                        setActiveCategory(category.id);
-                        document
-                          .getElementById(`cat-${category.id}`)
-                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                      className={cn(
-                        'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200 active:scale-95',
-                        active
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-muted-foreground hover:bg-accent',
-                      )}
-                    >
-                      {categoryName(category)}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="space-y-6">
-            {catalog.categories.map((category) => (
-              <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-28 space-y-2">
-                <h2 className="text-base font-semibold">{categoryName(category)}</h2>
-                <div className="bg-card divide-y overflow-hidden rounded-2xl border shadow-xs">
-                  {category.items.map((item) => {
-                    const quantity = quantityFor(item.id);
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="min-w-0 space-y-5">
+            {catalog.categories.length > 1 ? (
+              <div className="bg-background/90 sticky top-12 z-10 -mx-4 border-b px-4 backdrop-blur-md sm:-mx-6 sm:px-6 md:top-14 lg:mx-0 lg:rounded-xl lg:border lg:px-2">
+                <div ref={tabsRef} className="no-scrollbar flex gap-1 overflow-x-auto py-2" role="tablist">
+                  {catalog.categories.map((category) => {
+                    const active = category.id === activeCategory;
                     return (
-                      <div
-                        key={item.id}
+                      <button
+                        key={category.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        data-cat={category.id}
+                        onClick={() => {
+                          setActiveCategory(category.id);
+                          document
+                            .getElementById(`cat-${category.id}`)
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
                         className={cn(
-                          'flex items-center gap-3 p-3.5 transition-colors duration-300',
-                          quantity > 0 && 'bg-primary/[0.04]',
+                          'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200 active:scale-95',
+                          active
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:bg-accent',
                         )}
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">
-                            {locale === 'ur' && item.itemNameUr ? item.itemNameUr : item.itemName}
-                          </p>
-                          <p className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
-                            <span className="tabular font-semibold text-foreground">{formatMoney(item.price)}</span>
-                            <span aria-hidden>·</span>
-                            <span>{t('itemTurnaround', { hours: item.turnaroundHours })}</span>
-                          </p>
-                        </div>
-                        {!hydrated ? (
-                          <Skeleton className="h-9 w-24 rounded-full" />
-                        ) : quantity > 0 ? (
-                          <QuantityStepper
-                            quantity={quantity}
-                            onDecrease={() => changeQuantity(item.id, quantity - 1)}
-                            onIncrease={() => changeQuantity(item.id, quantity + 1)}
-                          />
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="text-primary border-primary/40 hover:bg-primary hover:text-primary-foreground rounded-full px-4 font-semibold"
-                            disabled={!vendor.openNow}
-                            onClick={() => changeQuantity(item.id, 1)}
-                          >
-                            <Plus className="size-3.5" aria-hidden />
-                            {t('add')}
-                          </Button>
-                        )}
-                      </div>
+                        {categoryName(category)}
+                      </button>
                     );
                   })}
                 </div>
-              </section>
-            ))}
+              </div>
+            ) : null}
+
+            <div className="space-y-6">
+              {catalog.categories.map((category) => (
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-28 space-y-2 lg:scroll-mt-36">
+                  <h2 className="text-base font-semibold">{categoryName(category)}</h2>
+                  <div className="bg-card divide-y overflow-hidden rounded-2xl border shadow-xs">
+                    {category.items.map((item) => {
+                      const quantity = quantityFor(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={cn(
+                            'flex items-center gap-3 p-3.5 transition-colors duration-300',
+                            quantity > 0 && 'bg-primary/[0.04]',
+                          )}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium">
+                              {locale === 'ur' && item.itemNameUr ? item.itemNameUr : item.itemName}
+                            </p>
+                            <p className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                              <span className="tabular font-semibold text-foreground">{formatMoney(item.price)}</span>
+                              <span aria-hidden>·</span>
+                              <span>{t('itemTurnaround', { hours: item.turnaroundHours })}</span>
+                            </p>
+                          </div>
+                          {!hydrated ? (
+                            <Skeleton className="h-9 w-24 rounded-full" />
+                          ) : quantity > 0 ? (
+                            <QuantityStepper
+                              quantity={quantity}
+                              onDecrease={() => changeQuantity(item.id, quantity - 1)}
+                              onIncrease={() => changeQuantity(item.id, quantity + 1)}
+                            />
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="text-primary border-primary/40 hover:bg-primary hover:text-primary-foreground rounded-full px-4 font-semibold"
+                              disabled={!vendor.openNow}
+                              onClick={() => changeQuantity(item.id, 1)}
+                            >
+                              <Plus className="size-3.5" aria-hidden />
+                              {t('add')}
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
           </div>
-        </>
+
+          <aside className="sticky top-24 hidden lg:block">
+            <CartSidebar
+              cart={ownCart}
+              estimate={estimate.data ?? null}
+              isEstimating={estimate.isFetching}
+              onCheckout={() => router.push('/cart')}
+            />
+          </aside>
+        </div>
       )}
 
       <CartSummary

@@ -667,7 +667,8 @@
       "label": "Main",
       "home": "Home",
       "orders": "Orders",
-      "profile": "Profile"
+      "profile": "Profile",
+      "account": "Account"
     },
     "home": {
       "greeting": "Welcome, {name}",
@@ -690,7 +691,11 @@
       "nearYou": "Near you",
       "seeAll": "See all",
       "deliverTo": "Deliver to",
-      "addAddress": "Add your address"
+      "addAddress": "Add your address",
+      "howTitle": "How it works",
+      "how1": "Pick a laundry near you",
+      "how2": "Choose pickup and delivery times",
+      "how3": "Pay in cash when it arrives"
     },
     "discovery": {
       "title": "Discover vendors",
@@ -964,7 +969,8 @@
       "WASH_FOLD": "Wash & Fold",
       "WASH_IRON": "Wash & Iron",
       "DRY_CLEAN": "Dry Cleaning",
-      "IRON_ONLY": "Ironing"
+      "IRON_ONLY": "Ironing",
+      "title": "Service"
     }
   },
   "vendor": {

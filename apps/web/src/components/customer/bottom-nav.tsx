@@ -1,30 +1,20 @@
 'use client';
 
-import { Home, ReceiptText, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/navigation';
+import { CUSTOMER_NAV as ITEMS, isNavActive } from '@/components/customer/nav-items';
 import { cn } from '@/lib/utils';
-
-const ITEMS = [
-  { href: '/', label: 'home', icon: Home },
-  { href: '/orders', label: 'orders', icon: ReceiptText },
-  { href: '/profile', label: 'profile', icon: UserRound },
-] as const;
 
 export function BottomNav() {
   const t = useTranslations('customer.nav');
   const pathname = usePathname();
 
-  const activeIndex = ITEMS.findIndex(({ href }) =>
-    href === '/'
-      ? pathname === '/' || pathname.startsWith('/discovery') || pathname.startsWith('/vendor')
-      : pathname.startsWith(href),
-  );
+  const activeIndex = ITEMS.findIndex(({ href }) => isNavActive(pathname, href));
 
   return (
     <nav
       aria-label={t('label')}
-      className="bg-background/90 supports-[backdrop-filter]:bg-background/75 safe-bottom fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md"
+      className="bg-background/90 supports-[backdrop-filter]:bg-background/75 safe-bottom fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur-md md:hidden"
     >
       <ul className="relative mx-auto flex w-full max-w-3xl items-stretch">
         {activeIndex >= 0 ? (
