@@ -50,8 +50,13 @@ export default async function LocaleLayout({
   const dir = textDirection(locale);
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning className={locale === 'ur' ? notoUrdu.variable : undefined}>
-      <body className={`${inter.variable} min-h-dvh antialiased`}>
+    <html
+      lang={locale}
+      dir={dir}
+      suppressHydrationWarning
+      className={locale === 'ur' ? `${inter.variable} ${notoUrdu.variable}` : inter.variable}
+    >
+      <body className="min-h-dvh antialiased">
         <NextIntlClientProvider>
           <QueryProvider>{children}</QueryProvider>
           <Toaster />

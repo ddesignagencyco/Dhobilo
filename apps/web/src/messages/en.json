@@ -978,7 +978,10 @@
       "ledger": "Ledger",
       "payouts": "Payouts",
       "staff": "Staff",
-      "profile": "Profile"
+      "profile": "Profile",
+      "groupOperations": "Operations",
+      "groupFinance": "Finance",
+      "groupShop": "Your shop"
     },
     "earnings": {
       "title": "Earnings",
@@ -1113,7 +1116,9 @@
       "commission": "Platform commission",
       "yourEarning": "Your earning",
       "timeline": "Timeline",
-      "backToBoard": "Back to orders"
+      "backToBoard": "Back to orders",
+      "youEarn": "You earn",
+      "newBadge": "New"
     },
     "catalog": {
       "title": "Catalog",
@@ -1253,7 +1258,10 @@
         }
       },
       "loginAsVendor": "Shop owner? Sign in or register here",
-      "loginAsCustomer": "Back to customer sign-in"
+      "loginAsCustomer": "Back to customer sign-in",
+      "skipToContent": "Skip to content",
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar"
     },
     "staff": {
       "title": "Staff",
@@ -1363,7 +1371,8 @@
     "nav": {
       "earnings": "Earnings",
       "profile": "Profile",
-      "cod": "Cash"
+      "cod": "Cash",
+      "jobs": "Jobs"
     },
     "home": {
       "title": "Jobs",
@@ -1393,7 +1402,26 @@
         "APPROVED": "You are approved.",
         "REJECTED": "Your application was rejected.",
         "SUSPENDED": "Your account is suspended."
-      }
+      },
+      "greeting": "Hello, {name}",
+      "onlineTitle": "You're online",
+      "offlineTitle": "You're offline",
+      "slideOnline": "Slide to go online",
+      "slideOffline": "Slide to go offline",
+      "onlineHint": "New jobs near you appear here automatically.",
+      "offlineHint": "Go online to start receiving jobs.",
+      "nowOnline": "You are online.",
+      "nowOffline": "You are offline.",
+      "todayEarned": "Earned today",
+      "todayJobs": "Jobs today",
+      "activeCapacity": "{active} of {max} active",
+      "continueJob": "Continue",
+      "goOnlineToSee": "Go online to see jobs",
+      "goOnlineToSeeHint": "Jobs near you show up as soon as you are online.",
+      "noJobsHint": "Stay online. We will show new jobs the moment they arrive.",
+      "distanceKm": "{km} km away",
+      "offerExpired": "Offer expired",
+      "offerEnds": "Offer ends in {time}"
     },
     "job": {
       "title": "Job details",
@@ -1424,7 +1452,26 @@
         "COMPLETED": "Completed",
         "FAILED": "Failed",
         "CANCELLED": "Cancelled"
-      }
+      },
+      "roleCustomer": "Customer",
+      "roleShop": "Shop",
+      "stepAccepted": "Accepted",
+      "stepOnTheWay": "On the way",
+      "stepPickedUp": "Picked up",
+      "stepDelivered": "Delivered",
+      "progress": "Job progress",
+      "copyAddress": "Copy address",
+      "copied": "Address copied.",
+      "copyFailed": "Could not copy.",
+      "backToJobs": "Back to jobs",
+      "earnedForJob": "You earned {amount} for this job.",
+      "yourFee": "Your fee",
+      "failTitle": "Report a problem",
+      "failPlaceholder": "Or type the reason",
+      "reasonUnreachable": "Customer not answering",
+      "reasonWrongAddress": "Wrong address",
+      "reasonRefused": "Order refused",
+      "reasonClosed": "Shop closed"
     },
     "earnings": {
       "title": "Earnings",
@@ -1437,7 +1484,10 @@
       "byDay": "By day",
       "noEarnings": "No earnings in this period.",
       "jobs": "jobs",
-      "deliveries": "deliveries"
+      "deliveries": "deliveries",
+      "perJob": "Per job",
+      "bestDay": "Best day",
+      "noEarningsHint": "Finish a delivery and it will show up here."
     },
     "profile": {
       "title": "Profile",
@@ -1457,7 +1507,11 @@
       "cod": "Cash on delivery",
       "notRegistered": "You have not applied to ride yet.",
       "register": "Apply to ride",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "online": "Online",
+      "offline": "Offline",
+      "language": "Language",
+      "jobsToday": "Jobs today"
     },
     "register": {
       "title": "Become a rider",
@@ -1480,7 +1534,12 @@
       "submitting": "Submitting...",
       "registrationSubmitted": "Application submitted. We will review it soon.",
       "uploadFailed": "Could not upload your photo. Try again.",
-      "toJobs": "Go to jobs"
+      "toJobs": "Go to jobs",
+      "stepInfo": "Details",
+      "stepPhoto": "Photo",
+      "progress": "Application steps",
+      "changePhoto": "Change photo",
+      "uploadHint": "Tap to take or choose a photo"
     },
     "cod": {
       "title": "Cash on delivery",
@@ -1493,6 +1552,12 @@
       "notice": "Cash on delivery",
       "noticeText": "Cash you collect belongs to Dhoblio. Hand it over when support settles your account.",
       "error": "Could not load your cash balance."
+    },
+    "shell": {
+      "online": "Online",
+      "offline": "Offline",
+      "switchLanguage": "Switch language",
+      "tabs": "Main navigation"
     }
   },
   "auth": {

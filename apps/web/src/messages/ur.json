@@ -981,7 +981,10 @@
       "ledger": "رجسٹر",
       "payouts": "ادائیگی",
       "staff": "عملہ",
-      "profile": "پروفائل"
+      "profile": "پروفائل",
+      "groupOperations": "آپریشنز",
+      "groupFinance": "مالیات",
+      "groupShop": "آپ کی دکان"
     },
     "earnings": {
       "title": "کمائی",
@@ -1116,7 +1119,9 @@
       "commission": "پلیٹ فارم کمیشن",
       "yourEarning": "آپ کی کمائی",
       "timeline": "ٹائم لائن",
-      "backToBoard": "آرڈرز پر واپس"
+      "backToBoard": "آرڈرز پر واپس",
+      "youEarn": "آپ کی کمائی",
+      "newBadge": "نیا"
     },
     "catalog": {
       "title": "کیٹلاگ",
@@ -1256,7 +1261,10 @@
         }
       },
       "loginAsVendor": "دکان کے مالک؟ یہاں سائن ان یا رجسٹر کریں",
-      "loginAsCustomer": "کسٹمر سائن ان پر واپس جائیں"
+      "loginAsCustomer": "کسٹمر سائن ان پر واپس جائیں",
+      "skipToContent": "مواد پر جائیں",
+      "collapse": "سائیڈبار چھوٹی کریں",
+      "expand": "سائیڈبار کھولیں"
     },
     "staff": {
       "title": "اسٹاف",
@@ -1366,7 +1374,8 @@
     "nav": {
       "earnings": "کمائی",
       "profile": "پروفائل",
-      "cod": "کیش"
+      "cod": "کیش",
+      "jobs": "جابز"
     },
     "home": {
       "title": "جابز",
@@ -1396,7 +1405,26 @@
         "APPROVED": "آپ منظور ہو چکے ہیں۔",
         "REJECTED": "آپ کی درخواست مسترد ہو گئی۔",
         "SUSPENDED": "آپ کا اکاؤنٹ معطل ہے۔"
-      }
+      },
+      "greeting": "سلام، {name}",
+      "onlineTitle": "آپ آن لائن ہیں",
+      "offlineTitle": "آپ آف لائن ہیں",
+      "slideOnline": "آن لائن ہونے کے لیے سلائیڈ کریں",
+      "slideOffline": "آف لائن ہونے کے لیے سلائیڈ کریں",
+      "onlineHint": "آپ کے قریب نئی جابز یہاں خود آ جائیں گی۔",
+      "offlineHint": "جابز لینے کے لیے آن لائن ہوں۔",
+      "nowOnline": "آپ آن لائن ہو گئے۔",
+      "nowOffline": "آپ آف لائن ہو گئے۔",
+      "todayEarned": "آج کی کمائی",
+      "todayJobs": "آج کی جابز",
+      "activeCapacity": "{max} میں سے {active} فعال",
+      "continueJob": "جاری رکھیں",
+      "goOnlineToSee": "جابز دیکھنے کے لیے آن لائن ہوں",
+      "goOnlineToSeeHint": "آن لائن ہوتے ہی آپ کے قریب کی جابز نظر آئیں گی۔",
+      "noJobsHint": "آن لائن رہیں۔ نئی جاب آتے ہی ہم دکھا دیں گے۔",
+      "distanceKm": "{km} کلومیٹر دور",
+      "offerExpired": "آفر ختم ہو گئی",
+      "offerEnds": "آفر {time} میں ختم"
     },
     "job": {
       "title": "جاب کی تفصیل",
@@ -1427,7 +1455,26 @@
         "COMPLETED": "مکمل",
         "FAILED": "ناکام",
         "CANCELLED": "منسوخ"
-      }
+      },
+      "roleCustomer": "کسٹمر",
+      "roleShop": "دکان",
+      "stepAccepted": "قبول",
+      "stepOnTheWay": "راستے میں",
+      "stepPickedUp": "پک اپ ہو گیا",
+      "stepDelivered": "ڈیلیور ہو گیا",
+      "progress": "جاب کی پیش رفت",
+      "copyAddress": "پتہ کاپی کریں",
+      "copied": "پتہ کاپی ہو گیا۔",
+      "copyFailed": "کاپی نہیں ہو سکا۔",
+      "backToJobs": "جابز پر واپس",
+      "earnedForJob": "اس جاب سے آپ نے {amount} کمائے۔",
+      "yourFee": "آپ کی فیس",
+      "failTitle": "مسئلہ بتائیں",
+      "failPlaceholder": "یا وجہ خود لکھیں",
+      "reasonUnreachable": "کسٹمر جواب نہیں دے رہا",
+      "reasonWrongAddress": "پتہ غلط ہے",
+      "reasonRefused": "آرڈر لینے سے انکار",
+      "reasonClosed": "دکان بند ہے"
     },
     "earnings": {
       "title": "کمائی",
@@ -1440,7 +1487,10 @@
       "byDay": "دن کے حساب سے",
       "noEarnings": "اس مدت میں کوئی کمائی نہیں۔",
       "jobs": "جابز",
-      "deliveries": "ڈیلیوریز"
+      "deliveries": "ڈیلیوریز",
+      "perJob": "فی جاب",
+      "bestDay": "بہترین دن",
+      "noEarningsHint": "ڈیلیوری مکمل کریں تو یہاں نظر آئے گی۔"
     },
     "profile": {
       "title": "پروفائل",
@@ -1460,7 +1510,11 @@
       "cod": "کیش آن ڈیلیوری",
       "notRegistered": "آپ نے ابھی رائیڈر بننے کے لیے درخواست نہیں دی۔",
       "register": "رائیڈر بننے کی درخواست دیں",
-      "logout": "سائن آؤٹ"
+      "logout": "سائن آؤٹ",
+      "online": "آن لائن",
+      "offline": "آف لائن",
+      "language": "زبان",
+      "jobsToday": "آج کی جابز"
     },
     "register": {
       "title": "رائیڈر بنیں",
@@ -1483,7 +1537,12 @@
       "submitting": "بھیجا جا رہا ہے...",
       "registrationSubmitted": "درخواست بھیج دی گئی۔ ہم جلد جائزہ لیں گے۔",
       "uploadFailed": "آپ کی تصویر اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
-      "toJobs": "جابز پر جائیں"
+      "toJobs": "جابز پر جائیں",
+      "stepInfo": "تفصیل",
+      "stepPhoto": "تصویر",
+      "progress": "درخواست کے مراحل",
+      "changePhoto": "تصویر تبدیل کریں",
+      "uploadHint": "تصویر لینے یا چننے کے لیے ٹیپ کریں"
     },
     "cod": {
       "title": "کیش آن ڈیلیوری",
@@ -1496,6 +1555,12 @@
       "notice": "کیش آن ڈیلیوری",
       "noticeText": "جو کیش آپ وصول کرتے ہیں وہ ڈھوبلیو کا ہے۔ جب سپورٹ آپ کا حساب کرے تو اسے جمع کروا دیں۔",
       "error": "آپ کا کیش بیلنس لوڈ نہیں ہو سکا۔"
+    },
+    "shell": {
+      "online": "آن لائن",
+      "offline": "آف لائن",
+      "switchLanguage": "زبان تبدیل کریں",
+      "tabs": "مین نیویگیشن"
     }
   },
   "auth": {

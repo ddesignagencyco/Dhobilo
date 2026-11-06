@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { DiscoveryFilters } from '@/components/customer/discovery/discovery-filters';
 import { DiscoveryView } from '@/components/customer/discovery/discovery-view';
+import { LocationChip } from '@/components/customer/location-chip';
 import { PageHeader } from '@/components/ui/page-header';
 
 export const metadata = { title: 'Discover Vendors' };
@@ -9,7 +11,7 @@ export default async function DiscoveryPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string>>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const { locale } = await params;
   const search = await searchParams;
@@ -17,22 +19,22 @@ export default async function DiscoveryPage({
 
   const t = await getTranslations('customer.discovery');
 
-  // Parse filters from URL
+  const sortBy = search.sort === 'rating' || search.sort === 'price' ? search.sort : 'distance';
   const filters = {
-    sortBy: (search.sort as 'distance' | 'rating' | 'price' | undefined) ?? 'distance',
+    q: search.q?.trim() || undefined,
+    sortBy: sortBy as 'distance' | 'rating' | 'price',
     minRating: search.minRating ? Number(search.minRating) : undefined,
-    maxPrice: search.maxPrice ? Number(search.maxPrice) : undefined,
     serviceType: search.serviceType,
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader title={t('title')} description={t('subtitle')} />
-
-      {/* Filters row (placeholder for future) */}
-      <div className="flex gap-2">{/* TODO: Add filter/sort buttons here in Task 3 extension */}</div>
-
-      <DiscoveryView filters={filters} />
+      <LocationChip />
+      <DiscoveryFilters
+        query={{ q: search.q, serviceType: search.serviceType, sort: search.sort, minRating: search.minRating }}
+      />
+      <DiscoveryView key={JSON.stringify(filters)} filters={filters} />
     </div>
   );
 }

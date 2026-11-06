@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useNotificationPrefs, useUpdateNotificationPrefs } from '@/lib/customer/hooks/use-notifications';
 import type { NotificationPrefs } from '@/lib/customer/types';
@@ -24,9 +23,14 @@ export function NotificationPreferences({ initial }: NotificationPreferencesProp
   const t = useTranslations('customer.notifications');
   const { data } = useNotificationPrefs();
   const updatePrefs = useUpdateNotificationPrefs();
-  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(() =>
-    typeof window === 'undefined' ? 'unsupported' : 'Notification' in window ? Notification.permission : 'unsupported',
-  );
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>('unsupported');
+
+  // Read in an effect: the server cannot know the browser's permission, so reading it during render
+  // would produce different HTML on the server and the client.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPushPermission('Notification' in window ? Notification.permission : 'unsupported');
+  }, []);
 
   const prefs = data ?? initial;
 
@@ -41,18 +45,18 @@ export function NotificationPreferences({ initial }: NotificationPreferencesProp
     if (permission === 'granted') toggle('push', true);
   };
 
-  const supported = typeof window !== 'undefined' && 'Notification' in window;
+  const supported = pushPermission !== 'unsupported';
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
+    <section className="bg-card space-y-4 rounded-2xl border p-4 shadow-xs">
+      <div>
+        <h2 className="flex items-center gap-2 text-base font-semibold">
           <Bell className="text-muted-foreground size-4" aria-hidden />
-          <CardTitle className="text-base">{t('title')}</CardTitle>
-        </div>
-        <CardDescription>{t('subtitle')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+          {t('title')}
+        </h2>
+        <p className="text-muted-foreground mt-1 text-xs">{t('subtitle')}</p>
+      </div>
+      <div className="space-y-4">
         {CHANNELS.map((channel) => (
           <div key={channel.key} className="flex items-start justify-between gap-3">
             <div className="space-y-0.5">
@@ -74,16 +78,19 @@ export function NotificationPreferences({ initial }: NotificationPreferencesProp
             <p className="text-muted-foreground text-xs">{t('pushPermissionHint')}</p>
           </div>
           {supported && pushPermission !== 'denied' ? (
-            <Button size="sm" variant="outline" onClick={() => void requestPush()} disabled={pushPermission === 'granted'}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void requestPush()}
+              disabled={pushPermission === 'granted'}
+            >
               {pushPermission === 'granted' ? t('pushGranted') : t('pushEnable')}
             </Button>
           ) : supported && pushPermission === 'denied' ? (
-            <Button size="sm" variant="outline" disabled>
-              {t('pushDenied')}
-            </Button>
+            <p className="text-warning-text bg-warning/10 max-w-[11rem] rounded-lg p-2 text-xs">{t('pushDenied')}</p>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

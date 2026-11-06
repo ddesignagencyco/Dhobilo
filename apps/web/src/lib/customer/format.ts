@@ -1,4 +1,4 @@
-﻿const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Calendar date (YYYY-MM-DD) for `now` in an IANA time zone. */
 export function todayInTimeZone(timeZone: string, now = new Date()): string {
@@ -37,7 +37,7 @@ export function formatTime(iso: string, locale: string, timeZone: string): strin
   }).format(new Date(iso));
 }
 
-export function formatDateTime(iso: string, locale: string, timeZone?: string): string {
+export function formatDateTime(iso: string, locale: string, timeZone = 'Asia/Karachi'): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -45,17 +45,12 @@ export function formatDateTime(iso: string, locale: string, timeZone?: string): 
   }).format(new Date(iso));
 }
 
-export function formatDateOnly(iso: string, locale: string, timeZone?: string): string {
+export function formatDateOnly(iso: string, locale: string, timeZone = 'Asia/Karachi'): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone }).format(new Date(iso));
 }
 
-export function formatSlotRange(
-  start: string,
-  end: string,
-  locale: string,
-  timeZone: string,
-): string {
-  return `${formatTime(start, locale, timeZone)} â€“ ${formatTime(end, locale, timeZone)}`;
+export function formatSlotRange(start: string, end: string, locale: string, timeZone: string): string {
+  return `${formatTime(start, locale, timeZone)} – ${formatTime(end, locale, timeZone)}`;
 }
 
 /** i18n key for an order status; falls back to the raw enum when a status is new. */

@@ -239,7 +239,7 @@
    * right for Inter. FE-9.3 covers the full RTL pass; this is the baseline so ur is never unreadable.
    */
   [lang='ur'] {
-    font-family: var(--font-urdu);
+    font-family: var(--font-inter), var(--font-urdu);
     line-height: 2.1;
   }
 
