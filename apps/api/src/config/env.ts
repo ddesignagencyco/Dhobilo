@@ -139,6 +139,18 @@ export const envSchema = z
     RETENTION_SESSION_DAYS: z.coerce.number().int().min(1).default(30),
     RETENTION_NOTIFICATION_DAYS: z.coerce.number().int().min(7).default(180),
     RETENTION_WEBHOOK_EVENT_DAYS: z.coerce.number().int().min(7).default(90),
+    // Order clean-up: delivery address details and the customer's note are blanked this long after the order was placed.
+    RETENTION_ORDER_PII_DAYS: z.coerce.number().int().min(90).default(730),
+    // Documents and CNIC data of vendor/rider applications that were rejected are deleted after this long.
+    RETENTION_REJECTED_APPLICATION_DAYS: z.coerce.number().int().min(7).default(90),
+    // Records the law may require (orders, payments, the ledger, payouts) and the append-only audit log are NOT deleted
+    // by the job; these two only make the nightly log say how much is past its window (proposed, needs sign-off).
+    RETENTION_FINANCIAL_YEARS: z.coerce.number().int().min(1).default(8),
+    RETENTION_AUDIT_YEARS: z.coerce.number().int().min(1).default(7),
+    // true = the nightly clean-up only counts and logs what it would remove.
+    RETENTION_DRY_RUN: bool.default(false),
+    // A deletion request waits this long (the user can still cancel) before the account is anonymised.
+    ACCOUNT_DELETION_GRACE_DAYS: z.coerce.number().int().min(0).max(90).default(30),
 
     BULL_BOARD_ENABLED: bool.default(false),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),

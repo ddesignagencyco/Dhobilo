@@ -26,6 +26,7 @@ import { OrderTimersModule } from './modules/orders/timers/order-timers.module';
 import { OrderTimersScheduler } from './modules/orders/timers/order-timers.scheduler';
 import { OpsWorkerModule } from './modules/ops/ops-worker.module';
 import { PaymentsWorkerModule } from './modules/payments/payments-worker.module';
+import { PrivacyWorkerModule } from './modules/privacy/privacy-worker.module';
 import { TimeModule } from './common/time/clock';
 
 /**
@@ -62,6 +63,7 @@ import { TimeModule } from './common/time/clock';
     AnalyticsWorkerModule,
     ReportsWorkerModule,
     OpsWorkerModule,
+    PrivacyWorkerModule,
   ],
   // Payment success also happens in this process, so the vendor timer must be scheduled here too.
   providers: [OrderTimersBootstrap, DispatchBootstrap, OrderTimersScheduler],

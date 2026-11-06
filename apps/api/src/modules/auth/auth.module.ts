@@ -25,6 +25,6 @@ import { TokenService } from './token.service';
     { provide: APP_GUARD, useClass: OwnershipGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
-  exports: [TokenService],
+  exports: [TokenService, OtpService],
 })
 export class AuthModule {}

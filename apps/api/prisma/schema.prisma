@@ -28,6 +28,16 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   DEACTIVATED
+  // Asked to delete the account: only the deletion-status/cancel endpoints work until the grace period ends.
+  PENDING_DELETION
+  // Anonymised (personal data removed). The row stays so orders, payments and the ledger keep their references.
+  DELETED
+}
+
+enum DeletionStatus {
+  PENDING
+  CANCELLED
+  COMPLETED
 }
 
 enum Locale {
@@ -260,28 +270,58 @@ model User {
   notificationPrefs Json?
   phoneVerifiedAt   DateTime?
   lastLoginAt       DateTime?
+  // An admin froze this account's data (dispute, investigation, legal request): deletion and clean-up skip it.
+  legalHoldAt       DateTime?
+  legalHoldReason   String?
+  legalHoldById     String?    @db.Uuid
+  // Set when the account was anonymised.
+  deletedAt         DateTime?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
-  addresses     Address[]
-  sessions      Session[]
-  deviceTokens  DeviceToken[]
-  notifications Notification[]
-  vendorOwned   Vendor?
-  vendorStaff   VendorStaff[]
-  rider         Rider?
-  orders        Order[]            @relation("CustomerOrders")
-  carts         Cart[]
-  reviews       Review[]
-  complaints    Complaint[]
-  complaintMsgs ComplaintMessage[]
-  redemptions   PromoRedemption[]
-  promoCodes    PromoCode[]        @relation("UserPromos")
-  referralsMade Referral[]         @relation("Referrer")
-  referredBy    Referral?          @relation("Referee")
-  auditLogs     AuditLog[]
+  addresses        Address[]
+  sessions         Session[]
+  deviceTokens     DeviceToken[]
+  notifications    Notification[]
+  vendorOwned      Vendor?
+  vendorStaff      VendorStaff[]
+  rider            Rider?
+  orders           Order[]                  @relation("CustomerOrders")
+  carts            Cart[]
+  reviews          Review[]
+  complaints       Complaint[]
+  complaintMsgs    ComplaintMessage[]
+  redemptions      PromoRedemption[]
+  promoCodes       PromoCode[]              @relation("UserPromos")
+  referralsMade    Referral[]               @relation("Referrer")
+  referredBy       Referral?                @relation("Referee")
+  auditLogs        AuditLog[]
+  deletionRequests AccountDeletionRequest[]
 
   @@index([role, status])
+}
+
+// One row per "delete my account" request. The user row itself is kept (anonymised) after completion.
+model AccountDeletionRequest {
+  id            String         @id @default(uuid()) @db.Uuid
+  userId        String         @db.Uuid
+  roleAtRequest Role
+  status        DeletionStatus @default(PENDING)
+  // Optional fixed code from the app (e.g. NOT_USING), never free text: free text would be personal data.
+  reasonCode    String?
+  requestedAt   DateTime       @default(now())
+  scheduledFor  DateTime
+  cancelledAt   DateTime?
+  completedAt   DateTime?
+  attempts      Int            @default(0)
+  // Why the last run did not complete (LEGAL_HOLD, BLOCKED:<codes>, or an error name). Never personal data.
+  lastError     String?
+  lastAttemptAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([status, scheduledFor])
+  @@index([userId, requestedAt])
 }
 
 model OtpCode {

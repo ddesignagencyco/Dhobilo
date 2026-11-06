@@ -4,6 +4,7 @@ import { complaintDocs } from './ops/complaints';
 import { adminDeliveryDocs, customerDeliveryDocs, riderDocs, webhookDocs } from './ops/delivery';
 import { financeDocs } from './ops/finance';
 import { operationsDocs } from './ops/operations';
+import { privacyDocs } from './ops/privacy';
 import { promoDocs } from './ops/promos';
 import { reportingDocs } from './ops/reporting';
 import { reviewDocs } from './ops/reviews';
@@ -15,6 +16,7 @@ import type { OperationDocs } from './types';
 export const OPERATION_DOCS: OperationDocs = {
   ...authDocs,
   ...accountDocs,
+  ...privacyDocs,
   ...discoveryDocs,
   ...cartDocs,
   ...orderDocs,

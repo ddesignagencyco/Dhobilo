@@ -126,8 +126,9 @@ export class AuthService {
     return phone;
   }
 
+  /** A pending deletion may still sign in (to cancel it); the JWT guard limits what that session can do. */
   private assertActive(user: Pick<User, 'status'>): void {
-    if (user.status !== UserStatus.ACTIVE) {
+    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING_DELETION) {
       throw new AppException('ACCOUNT_SUSPENDED', 'This account is not active.', HttpStatus.FORBIDDEN);
     }
   }

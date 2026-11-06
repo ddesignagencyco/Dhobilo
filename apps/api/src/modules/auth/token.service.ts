@@ -73,7 +73,7 @@ export class TokenService {
       throw this.unauthenticated();
     }
     if (session.expiresAt <= new Date()) throw this.unauthenticated();
-    if (session.user.status !== UserStatus.ACTIVE) {
+    if (session.user.status !== UserStatus.ACTIVE && session.user.status !== UserStatus.PENDING_DELETION) {
       throw new AppException('ACCOUNT_SUSPENDED', 'This account is not active.', HttpStatus.FORBIDDEN);
     }
 
