@@ -1,11 +1,13 @@
 'use client';
 
+import { Store } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDiscovery, type DiscoveryFilters } from '@/lib/customer/hooks/use-discovery';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VendorCard } from './vendor-card';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface VendorListProps {
   lat: number;
@@ -43,12 +45,7 @@ export function VendorList({ lat, lng, filters = {} }: VendorListProps) {
   }
 
   if (vendors.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-        <p className="text-muted-foreground">{t('empty')}</p>
-        <p className="text-muted-foreground text-sm">{t('emptyHint')}</p>
-      </div>
-    );
+    return <EmptyState icon={<Store aria-hidden />} title={t('empty')} description={t('emptyHint')} />;
   }
 
   return (

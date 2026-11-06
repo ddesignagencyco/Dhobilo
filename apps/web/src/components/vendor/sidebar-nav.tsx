@@ -8,6 +8,7 @@ import {
   ClockIcon,
   BarChart3Icon,
   DollarSignIcon,
+  WalletIcon,
   UsersIcon,
   SettingsIcon,
 } from 'lucide-react';
@@ -48,7 +49,7 @@ const VENDOR_NAV_ITEMS: VendorNavItem[] = [
   {
     href: '/shop/payouts',
     labelKey: 'vendor.nav.payouts',
-    icon: <DollarSignIcon className="size-4" />,
+    icon: <WalletIcon className="size-4" />,
   },
   {
     href: '/shop/staff',

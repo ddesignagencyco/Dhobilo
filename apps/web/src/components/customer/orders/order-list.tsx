@@ -6,12 +6,13 @@ import { formatMoney } from '@dhoblio/shared';
 import { toast } from 'sonner';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOrders, useReorderOrder } from '@/lib/customer/hooks/use-orders';
 import { formatDateTime } from '@/lib/customer/format';
 import { OrderStatusBadge } from './order-status-badge';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export function OrderList() {
   const t = useTranslations('customer.orders');
@@ -41,20 +42,16 @@ export function OrderList() {
 
   if (orders.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-xl">
-            <ReceiptText className="size-5" aria-hidden />
-          </div>
-          <CardTitle className="text-base">{t('empty')}</CardTitle>
-          <CardDescription>{t('emptyHint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <EmptyState
+        icon={<ReceiptText aria-hidden />}
+        title={t('empty')}
+        description={t('emptyHint')}
+        action={
           <Button variant="outline" asChild>
             <Link href="/discovery">{t('browse')}</Link>
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
     );
   }
 

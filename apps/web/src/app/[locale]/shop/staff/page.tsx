@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { StaffManager } from '@/components/vendor/staff/staff-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export default async function StaffPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -8,10 +9,7 @@ export default async function StaffPage({ params }: { params: Promise<{ locale: 
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
-      </div>
+      <PageHeader title={t('title')} description={t('subtitle')} />
       <StaffManager />
     </div>
   );
