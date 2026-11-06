@@ -20,6 +20,8 @@ export const ADMIN_AREAS = {
   finance: [AdminRole.FINANCE],
   reports: [AdminRole.FINANCE, AdminRole.OPERATIONS],
   analytics: [AdminRole.FINANCE, AdminRole.OPERATIONS],
+  /** Deletion requests and legal holds (personal-data requests are handled by support). */
+  privacy: [AdminRole.SUPPORT],
 } as const satisfies Record<string, readonly AdminRole[]>;
 
 export type AdminArea = keyof typeof ADMIN_AREAS;
