@@ -1,14 +1,18 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Locale, NotificationChannel, NotificationStatus, OrderStatus, Prisma } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { DomainEvent } from '../../common/events/domain-events';
 import type { OrderPlacedEvent, OrderStatusChangedEvent } from '../../common/events/domain-events';
+import type { Env } from '../../config/env';
 import { fmt, money } from '../../common/money/money';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { QUEUES } from '../../infra/queue/queues';
 import { NotificationPrefs, resolvePrefs } from './notification-prefs';
+import { orderCard } from './order-email-data';
+import { emailForNotification } from './templates/email/from-notification';
 import {
   SEND_EMAIL_JOB,
   SEND_PUSH_JOB,
@@ -46,6 +50,8 @@ interface Notice {
   params: TemplateParams;
   reach: Reach;
   data: Record<string, string>;
+  /** The order behind the notice, used to build the order card in the email. */
+  order?: LoadedOrder;
 }
 
 /** Templates whose text carries a secret: the delivery goes out, but the log row keeps only the title. */
@@ -77,6 +83,7 @@ export class NotificationOrchestrator {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUES.NOTIFICATIONS) private readonly queue: Queue,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   @OnEvent(DomainEvent.ORDER_PLACED, { async: false })
@@ -87,7 +94,7 @@ export class NotificationOrchestrator {
       const common = { orderNo: o.orderNo, vendor: o.vendor.businessName };
       const data = { orderId: e.orderId, type: 'ORDER_PLACED' };
       const notices: Notice[] = [
-        { person: o.customer, template: 'order_placed', params: common, reach: { push: true, text: true, email: false }, data },
+        { person: o.customer, template: 'order_placed', params: common, reach: { push: true, text: true, email: true }, data, order: o },
         ...this.vendorPeople(o, 'vendor_new_order', { orderNo: o.orderNo, items: o.itemCount, total: fmt(money(o.total)), minutes: o.vendor.respondWithinMin }, data),
       ];
       await Promise.all(notices.map((n) => this.dispatch(n, e.requestId)));
@@ -109,7 +116,7 @@ export class NotificationOrchestrator {
 
       // The customer hears about every step, except cancellations they made themselves.
       if (!(e.to === OrderStatus.CANCELLED && e.actor === 'CUSTOMER')) {
-        notices.push({ person: o.customer, template, params, reach: { push: true, text: true, email: false }, data });
+        notices.push({ person: o.customer, template, params, reach: { push: true, text: true, email: true }, data, order: o });
       }
       // The vendor only needs telling about things they did not do themselves.
       if (e.to === OrderStatus.REJECTED && e.actor === 'SYSTEM') {
@@ -145,8 +152,8 @@ export class NotificationOrchestrator {
   /** Owner gets every channel (incl. email); staff get push only, so a shared shop phone isn't spammed. */
   private vendorPeople(o: LoadedOrder, template: TemplateName, params: TemplateParams, data: Record<string, string>): Notice[] {
     return [
-      { person: o.vendor.owner, template, params, reach: { push: true, text: true, email: true }, data },
-      ...o.vendor.staff.map((s) => ({ person: s.user, template, params, reach: { push: true, text: false, email: false }, data })),
+      { person: o.vendor.owner, template, params, reach: { push: true, text: true, email: true }, data, order: o },
+      ...o.vendor.staff.map((s) => ({ person: s.user, template, params, reach: { push: true, text: false, email: false }, data, order: o })),
     ];
   }
 
@@ -192,11 +199,27 @@ export class NotificationOrchestrator {
       jobs.push(queueJob(NotificationChannel.SMS, SEND_SMS_JOB, () => ({ to: n.person.phone, message: msg.body }) satisfies Omit<SendSmsJob, 'notificationId'>));
     }
     if (n.reach.email && prefs.email && n.person.email) {
-      jobs.push(queueJob(NotificationChannel.EMAIL, SEND_EMAIL_JOB, () => ({ to: n.person.email!, subject: msg.title, text: msg.body }) satisfies Omit<SendEmailJob, 'notificationId'>));
+      const designed = this.designedEmail(n, locale, requestId);
+      jobs.push(
+        queueJob(NotificationChannel.EMAIL, SEND_EMAIL_JOB, () =>
+          ({ to: n.person.email!, subject: designed?.subject ?? msg.title, text: designed?.text ?? msg.body, ...(designed ? { html: designed.html } : {}) }) satisfies Omit<SendEmailJob, 'notificationId'>,
+        ),
+      );
     }
     // One failing channel must not stop the others.
     const results = await Promise.allSettled(jobs);
     for (const r of results) if (r.status === 'rejected') this.logger.error({ err: r.reason, orderId: n.data.orderId }, 'Could not queue a notification');
+  }
+
+  /** The branded HTML email for a notice, or null (plain text is sent) if there is none or rendering fails. */
+  private designedEmail(n: Notice, locale: TemplateLocale, requestId?: string) {
+    try {
+      const card = n.order ? orderCard(n.order, locale) : undefined;
+      return emailForNotification(n.template, locale, n.params, { appUrl: this.config.get('APP_URL', { infer: true }), orderId: n.data.orderId, card });
+    } catch (err) {
+      this.logger.error({ err, template: n.template, requestId }, 'Could not render the notification email; sending plain text');
+      return null;
+    }
   }
 
   private async load(orderId: string) {
@@ -204,7 +227,17 @@ export class NotificationOrchestrator {
       where: { id: orderId },
       select: {
         orderNo: true,
+        subtotal: true,
+        discountTotal: true,
+        deliveryFee: true,
         total: true,
+        pickupSlotStart: true,
+        pickupSlotEnd: true,
+        deliverySlotStart: true,
+        deliverySlotEnd: true,
+        addressSnapshot: true,
+        paymentMethod: true,
+        items: { select: { name: true, nameUr: true, qty: true, lineTotal: true } },
         customer: { select: personSelect },
         vendor: {
           select: {

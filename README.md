@@ -82,7 +82,7 @@ Local login: any valid Pakistani mobile number plus code `123456` while `OTP_BYP
 | Prisma 6 schema from the ERD, initial migration with CHECK constraints and append-only triggers, idempotent seed | `apps/api/prisma` |
 | Response envelope, error codes and exception filter, validation pipe, request IDs, pino logging with PII redaction | `src/common` |
 | Redis, BullMQ (all 8 queues from the TRD), Bull Board (dev only, flag-controlled) | `src/infra` |
-| Mail (Nodemailer over Google SMTP) with a dev-only test endpoint and a dev-only mirror of every OTP/notification | `src/infra/mail` |
+| Mail (Nodemailer over Google SMTP) with branded bilingual HTML emails (`modules/notifications/templates/email`), a dev-only preview/test endpoint and a dev-only mirror of every OTP/notification | `src/infra/mail` |
 | Cloudinary upload signing, asset verification and short-lived private download links | `src/infra/cloudinary` |
 | Field encryption (AES-256-GCM with key ids for rotation, keyed hashes) | `src/common/crypto` |
 | `@Audit()` decorator and interceptor writing `AuditLog` | `src/modules/audit` |
@@ -120,6 +120,8 @@ npm run api:worker          # notification/dispatch worker (needs `npm run api:b
 ```
 
 Set `SMTP_*` to a real SMTP account (Gmail + app password). With `NOTIFY_MIRROR_EMAIL` set (dev/staging only), every OTP code and every notification is also emailed to that inbox for testing; with `OTP_BYPASS=false` the codes are random.
+
+Emails are designed in English and Urdu (RTL), with plain-text alternatives. In dev, browse them at http://localhost:4000/api/v1/dev/email-preview (add `/<template>?locale=ur` for one email) and send any of them to an address with `POST /api/v1/dev/test-email` (`{"to": "...", "template": "order_delivered", "locale": "en"}`). Customers and shop owners with an email address (and email enabled in their preferences) receive order, application-decision and payout emails in this design.
 
 The root `.env` is read by the API and by the `db:*` scripts. Open http://localhost:4000/api/v1/docs for the Swagger UI.
 

@@ -77,7 +77,7 @@ export class NotificationsProcessor extends WorkerHost {
       }
       case SEND_EMAIL_JOB: {
         const d = job.data as SendEmailJob;
-        await this.mail.send({ to: d.to, subject: d.subject, text: d.text });
+        await this.mail.send({ to: d.to, subject: d.subject, text: d.text, ...(d.html ? { html: d.html } : {}) });
         return;
       }
       case SEND_WHATSAPP_JOB: {

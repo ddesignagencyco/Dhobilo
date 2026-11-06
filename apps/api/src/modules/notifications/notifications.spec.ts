@@ -40,6 +40,12 @@ describe('NotificationsProcessor', () => {
     expect(p.mirror.mirror).toHaveBeenCalledTimes(1);
   });
 
+  it('sends the designed HTML next to the text when an email job carries it', async () => {
+    const p = setup();
+    await p.processor.process(job('send-email', { notificationId: 'n3', to: 'a@b.co', subject: 's', text: 't', html: '<p>hi</p>' }));
+    expect(p.mail.send).toHaveBeenCalledWith({ to: 'a@b.co', subject: 's', text: 't', html: '<p>hi</p>' });
+  });
+
   it('delivers WhatsApp template messages', async () => {
     const p = setup();
     const data = { notificationId: 'n1', to: '+923001234567', templateName: 'order_accepted_en', language: 'en', params: ['DHB-1', 'V'], fallbackText: 'accepted' };
